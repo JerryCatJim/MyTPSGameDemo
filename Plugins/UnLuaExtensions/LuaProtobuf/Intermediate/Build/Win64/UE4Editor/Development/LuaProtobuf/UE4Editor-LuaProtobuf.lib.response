@@ -1,0 +1,13 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-LuaProtobuf.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"E:\Epic Games\UE_projects\TPSGame\Intermediate\Build\Win64\TPSGameEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.NoUndef.h.obj"
+"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaProtobuf\Intermediate\Build\Win64\UE4Editor\Development\LuaProtobuf\LuaProtobufModule.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaProtobuf\Intermediate\Build\Win64\UE4Editor\Development\LuaProtobuf\pb.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaProtobuf\Intermediate\Build\Win64\UE4Editor\Development\LuaProtobuf\Default.rc2.res"
+/OUT:"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaProtobuf\Intermediate\Build\Win64\UE4Editor\Development\LuaProtobuf\UE4Editor-LuaProtobuf.lib"
