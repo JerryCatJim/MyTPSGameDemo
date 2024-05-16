@@ -25,11 +25,12 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void AddToBuffList(int32 PowerUpID, ASPowerUpActor* PowerUpActor, AActor* OverlapActor);
+	void AddToBuffList(int PowerUpID, ASPowerUpActor* PowerUpActor, AActor* OverlapActor);
 	
 protected:
 	//Buff列表
-	TMap<int32, ASPowerUpActor*> HashMap;
+	UPROPERTY()  //加UPROPERTY 防止垃圾回收
+	TMap<int, ASPowerUpActor*> HashMap;
 public:
 		
 };

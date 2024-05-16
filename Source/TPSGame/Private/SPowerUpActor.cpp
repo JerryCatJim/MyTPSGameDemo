@@ -29,7 +29,7 @@ void ASPowerUpActor::BeginPlay()
 	
 }
 
-void ASPowerUpActor::OnActivated(int32 CurrentBuffLayer)
+void ASPowerUpActor::OnActivated(int CurrentBuffLayer)
 {
 	//方便扩展
 	//
@@ -105,7 +105,7 @@ void ASPowerUpActor::ActivePowerUp(AActor* OverlapActor)  //详见SPickUpActor.c
 		OnRep_PowerUpActive();  //重点：C++代码内  服务器端bIsActive发生改变不会调用OnRep，需手动调用（蓝图中不需要手动调用）
 	}
 	
-	const int32 TempCurNum = CurrentOverlyingNum;  //储存拾取前的当前层数
+	const int TempCurNum = CurrentOverlyingNum;  //储存拾取前的当前层数
 	
 	CurrentOverlyingNum = FMath::Min(CurrentOverlyingNum+SingleOverlyingNum, MaxOverlyingNum);
 	
@@ -132,12 +132,12 @@ void ASPowerUpActor::ActivePowerUp(AActor* OverlapActor)  //详见SPickUpActor.c
 	
 }
 
-int32 ASPowerUpActor::GetPowerUpID()
+int ASPowerUpActor::GetPowerUpID()
 {
 	return PowerUpID;
 }
 
-int32 ASPowerUpActor::GetCurrentOverlyingNum()
+int ASPowerUpActor::GetCurrentOverlyingNum()
 {
 	return CurrentOverlyingNum;
 }

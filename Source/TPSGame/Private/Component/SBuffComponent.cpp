@@ -36,7 +36,7 @@ void USBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 }
 
 //每种道具只保留一个实例，方便在其内部使用计时器，计算叠加层数等操作
-void USBuffComponent::AddToBuffList(int32 PowerUpID, ASPowerUpActor* PowerUpActor, AActor* OverlapActor)
+void USBuffComponent::AddToBuffList(int PowerUpID, ASPowerUpActor* PowerUpActor, AActor* OverlapActor)
 {
 	if(!PowerUpActor)
 	{
