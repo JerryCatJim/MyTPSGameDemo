@@ -3,6 +3,7 @@
 
 #include "InventoryItemBase.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/CollisionProfile.h"
 #include "Net/UnrealNetwork.h"
 
 

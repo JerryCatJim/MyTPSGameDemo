@@ -28,11 +28,11 @@
 /wd4244
 /wd4838
 /I .
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Source\Private"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLua\Intermediate\Build\Win64\UE4Editor\Inc\UnLua"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLua\Source"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLua\Source\UnLua\Private"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLua\Source\UnLua\Public"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Source\Private"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLua\Intermediate\Build\Win64\UE4Editor\Inc\UnLua"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLua\Source"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLua\Source\UnLua\Private"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLua\Source\UnLua\Public"
 /I Runtime
 /I Runtime\TraceLog\Public
 /I Runtime\Core\Public
@@ -78,8 +78,6 @@
 /I ..\Intermediate\Build\Win64\UE4Editor\Inc\GameplayTags
 /I Runtime\GameplayTags\Classes
 /I Runtime\GameplayTags\Public
-/I ..\Intermediate\Build\Win64\UE4Editor\Inc\DeveloperSettings
-/I Runtime\DeveloperSettings\Public
 /I ..\Intermediate\Build\Win64\UE4Editor\Inc\PacketHandler
 /I Runtime\PacketHandlers
 /I Runtime\PacketHandlers\PacketHandler\Classes
@@ -97,6 +95,8 @@
 /I Runtime\NetworkReplayStreaming\NetworkReplayStreaming\Public
 /I ..\Intermediate\Build\Win64\UE4Editor\Inc\PhysicsCore
 /I Runtime\PhysicsCore\Public
+/I ..\Intermediate\Build\Win64\UE4Editor\Inc\DeveloperSettings
+/I Runtime\DeveloperSettings\Public
 /I ..\Intermediate\Build\Win64\UE4Editor\Inc\Chaos
 /I Runtime\Experimental
 /I Runtime\Experimental\Chaos\Public
@@ -232,12 +232,12 @@
 /I Editor\Kismet\Public
 /I ..\Intermediate\Build\Win64\UE4Editor\Inc\ClothingSystemRuntimeInterface
 /I Runtime\ClothingSystemRuntimeInterface\Public
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLua\Source\ThirdParty"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLua\Source\ThirdParty\Lua\lua-5.4.3\src"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Source\src"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Source"
-/I "E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Source\Public"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLua\Source\ThirdParty"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLua\Source\ThirdParty\Lua\lua-5.4.3\src"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Source\src"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Source"
+/I "E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Source\Public"
 /I ThirdParty\PhysX3\PxShared\include
 /I ThirdParty\PhysX3\PxShared\include\cudamanager
 /I ThirdParty\PhysX3\PxShared\include\filebuf
@@ -267,12 +267,12 @@
 /I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"
 /I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"
 /I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"
-/FI"E:\Epic Games\UE_projects\TPSGame\Intermediate\Build\Win64\TPSGameEditor\DebugGame\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.NoUndef.h"
-/Yu"E:\Epic Games\UE_projects\TPSGame\Intermediate\Build\Win64\TPSGameEditor\DebugGame\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.NoUndef.h"
-/Fp"E:\Epic Games\UE_projects\TPSGame\Intermediate\Build\Win64\TPSGameEditor\DebugGame\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.NoUndef.h.pch"
-"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Source\src\auxiliar.cpp"
-/FI"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\DebugGame\LuaSocket\Definitions.LuaSocket.h"
-/Fo"E:\Epic Games\UE_projects\TPSGame\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\DebugGame\LuaSocket\auxiliar.cpp.obj"
+/FI"E:\Epic Games\UnrealEngine-4.26\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.NoUndef.h"
+/Yu"E:\Epic Games\UnrealEngine-4.26\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.NoUndef.h"
+/Fp"E:\Epic Games\UnrealEngine-4.26\Engine\Intermediate\Build\Win64\UE4Editor\Development\Engine\SharedPCH.Engine.NonOptimized.ShadowErrors.NoUndef.h.pch"
+"E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Source\src\auxiliar.cpp"
+/FI"E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\DebugGame\LuaSocket\Definitions.LuaSocket.h"
+/Fo"E:\Epic Games\UE_projects\TPSGame_426\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\DebugGame\LuaSocket\auxiliar.cpp.obj"
 /TP
 /GR-
 /W4
