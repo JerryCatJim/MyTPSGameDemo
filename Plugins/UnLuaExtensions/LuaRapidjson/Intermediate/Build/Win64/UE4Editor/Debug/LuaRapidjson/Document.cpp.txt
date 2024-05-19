@@ -1,0 +1,87 @@
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Intermediate\Build\Win64\UE4Editor\Debug\LuaRapidjson\Definitions.LuaRapidjson.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cstdio
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\vector
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xmemory
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\limits
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cfloat
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cwchar
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\isa_availability.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\fstream
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\istream
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\ostream
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\ios
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xlocnum
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cmath
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\iterator
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\iosfwd
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\streambuf
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xiosbase
+C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\share.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\system_error
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\__msvc_system_error_abi.hpp
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cerrno
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\stdexcept
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xstring
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xcall_once.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xerrc.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xlocale
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\memory
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xfacet
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xlocinfo
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\xlocinfo.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cctype
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\clocale
+C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\locale.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLua\Source\UnLua\Public\lua.hpp
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLua\Source\ThirdParty\Lua\lua-5.4.3\src\lua.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLua\Source\ThirdParty\Lua\lua-5.4.3\src\luaconf.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLua\Source\ThirdParty\Lua\lua-5.4.3\src\lualib.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLua\Source\ThirdParty\Lua\lua-5.4.3\src\lauxlib.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/document.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\reader.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\allocators.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\rapidjson.h
+C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\inttypes.h
+E:\VisualStudio2019\VC\Tools\MSVC\14.29.30133\INCLUDE\cassert
+C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\assert.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\encodings.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\encodedstream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\memorystream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/clzll.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/meta.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/stack.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\swap.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/strtod.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\ieee754.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\biginteger.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\diyfp.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\pow10.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\error/error.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/strfunc.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\../stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/error/en.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/istreamwrapper.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/ostreamwrapper.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/pointer.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/itoa.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\src\Userdata.hpp
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\src\luax.hpp
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\src\values.hpp
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\src\StringStream.hpp
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/schema.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stringbuffer.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/regex.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal\../stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/prettywriter.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\writer.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\internal/dtoa.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson/filewritestream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\include\rapidjson\stream.h
+E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaRapidjson\Source\src\file.hpp
