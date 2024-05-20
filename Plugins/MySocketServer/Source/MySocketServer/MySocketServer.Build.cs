@@ -42,6 +42,7 @@ public class MySocketServer : ModuleRules
 				"Slate",
 				"SlateCore",
 				"WebSocketNetworking",
+				"WebSockets",
 			}
 			);
 		

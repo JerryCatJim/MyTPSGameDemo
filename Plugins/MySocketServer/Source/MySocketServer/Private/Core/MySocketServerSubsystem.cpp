@@ -20,11 +20,16 @@ void UMySocketServerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UMySocketServerSubsystem::Deinitialize()
 {
+	StopMyWebSocketServer();
 	Super::Deinitialize();
 }
 
 void UMySocketServerSubsystem::Tick(float DeltaTime)
 {
+	if(IsWebSocketRunning())
+	{
+		MyWebSocketServer->Tick();
+	}
 }
 
 bool UMySocketServerSubsystem::IsTickable() const
