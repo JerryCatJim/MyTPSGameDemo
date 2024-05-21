@@ -132,7 +132,7 @@ void UMySocketServerSubsystem::OnWebSocketClientConnected(INetworkingWebSocket* 
 	UE_LOG(LogMySocketServer, Display, TEXT("%s"), *FString(__FUNCTION__));
 	if(InWebSocket)
 	{
-		FMyWebSocketConnection MyWebSocketConnection = FMyWebSocketConnection(InWebSocket);
+		FMyWebSocketConnection MyWebSocketConnection(InWebSocket);
 		
 		FWebSocketInfoCallBack ConnectedCallBack;
 		ConnectedCallBack.BindUObject(this, &UMySocketServerSubsystem::OnConnectedCallBack, MyWebSocketConnection.Id);
@@ -143,7 +143,7 @@ void UMySocketServerSubsystem::OnWebSocketClientConnected(INetworkingWebSocket* 
 		InWebSocket->SetErrorCallBack(ErrorCallBack);
 		
 		FWebSocketPacketReceivedCallBack ReceiveCallBack;
-		//ReceiveCallBack.BindUObject(this, &UMySocketServerSubsystem::OnReceiveCallBack);
+		ReceiveCallBack.BindUObject(this, &UMySocketServerSubsystem::OnReceiveCallBack, MyWebSocketConnection.Id);
 		InWebSocket->SetReceiveCallBack(ReceiveCallBack);
 		
 		FWebSocketInfoCallBack ClosedCallBack;
@@ -180,6 +180,9 @@ void UMySocketServerSubsystem::OnReceiveCallBack(void* Data, int32 DataSize, FGu
 		DataArrayView.GetData()),
 		DataArrayView.Num());
 	FString StrInfo = UTF8_TO_TCHAR(cstr.c_str());
+
+	//临时测试，打印客户端发送的Message
+	UE_LOG(LogMySocketServer, Warning, TEXT("%s--ClientID : %s, Message : [%s]"), *FString(__FUNCTION__), *ClientId.ToString(), *StrInfo);
 
 	//TODO: 没有实现心跳机制,接收的不是心跳信息时才应该走下面分发信息
 	ProcessAllClientInformation(ClientId, StrInfo);

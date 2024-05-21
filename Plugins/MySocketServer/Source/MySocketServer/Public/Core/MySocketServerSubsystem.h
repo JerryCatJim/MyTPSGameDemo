@@ -6,19 +6,19 @@
 #include "MySocketServerSubsystem.generated.h"
 
 #pragma region FMyWebSocketConnection Struct
-USTRUCT()
+//USTRUCT()
 struct FMyWebSocketConnection
 {
-	GENERATED_BODY()
+	//GENERATED_BODY()
 public:
-	explicit FMyWebSocketConnection(INetworkingWebSocket* InWebSocket)
+	FMyWebSocketConnection(INetworkingWebSocket* InWebSocket)
 		: WebSocket(InWebSocket)
 		,Id(FGuid::NewGuid())
 	{
 		
 	}
 
-	FMyWebSocketConnection(){}
+	//FMyWebSocketConnection(){}
 	
 	FMyWebSocketConnection(FMyWebSocketConnection&& InConnection) noexcept
 		:Id(InConnection.Id)
@@ -36,15 +36,15 @@ public:
 		}
 	}
 
-	FMyWebSocketConnection& operator=(const FMyWebSocketConnection& InConnection)
+	/*FMyWebSocketConnection& operator=(const FMyWebSocketConnection& InConnection)
 	{
 		WebSocket = InConnection.WebSocket;
 		Id = InConnection.Id;
-	}
+	}*/
 	
-	//FMyWebSocketConnection(const FMyWebSocketConnection&) = delete;
-	//FMyWebSocketConnection& operator=(const FMyWebSocketConnection&) = delete;
-	//FMyWebSocketConnection& operator=(FMyWebSocketConnection&&) = delete;
+	FMyWebSocketConnection(const FMyWebSocketConnection&) = delete;
+	FMyWebSocketConnection& operator=(const FMyWebSocketConnection&) = delete;
+	FMyWebSocketConnection& operator=(FMyWebSocketConnection&&) = delete;
 	
 	INetworkingWebSocket* WebSocket = nullptr;
 	FGuid Id;

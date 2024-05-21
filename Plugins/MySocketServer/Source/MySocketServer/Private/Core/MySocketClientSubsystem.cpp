@@ -41,7 +41,10 @@ TStatId UMySocketClientSubsystem::GetStatId() const
 
 void UMySocketClientSubsystem::CreateSocket()
 {
-	//FModuleManger::Get().LoadModuleChecked("WebSockets");
+	if (!FModuleManager::Get().IsModuleLoaded("WebSockets"))
+	{
+		FModuleManager::Get().LoadModule("WebSockets");
+	}
 
 	FString ServerURL = TEXT("ws://127.0.0.1:9093");  //127.0.0.1意思为本机IP
 	FString ServerProtocol = TEXT("");
@@ -76,15 +79,15 @@ void UMySocketClientSubsystem::OnConnectionError(const FString& Error)
 
 void UMySocketClientSubsystem::OnClosed(int32 StatusCode, const FString& Reason, bool bWasClean)
 {
-	UE_LOG(LogMySocketServer, Warning, TEXT("%s CloseReason : %s"), *FString(__FUNCTION__), *Reason);
+	UE_LOG(LogMySocketServer, Warning, TEXT("%s CloseReason : [%s]"), *FString(__FUNCTION__), *Reason);
 }
 
 void UMySocketClientSubsystem::OnMessage(const FString& Message)
 {
-	UE_LOG(LogMySocketServer, Warning, TEXT("%s"), *FString(__FUNCTION__));
+	UE_LOG(LogMySocketServer, Warning, TEXT("%s Message : [%s]"), *FString(__FUNCTION__), *Message);
 }
 
 void UMySocketClientSubsystem::OnMessageSent(const FString& MessageString)
 {
-	UE_LOG(LogMySocketServer, Warning, TEXT("%s"), *FString(__FUNCTION__));
+	UE_LOG(LogMySocketServer, Warning, TEXT("%s MessageSent : [%s]"), *FString(__FUNCTION__), *MessageString);
 }
