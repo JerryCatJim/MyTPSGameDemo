@@ -36,8 +36,7 @@ public:
 	int MyServerCurrentNumberPlayers = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HeartBeat", Meta = (ExposeOnSpawn = "true"), Meta = (ToolTip = "My server current map name"))
-		FString MyServerMapName = "Map name";
-
+	FString MyServerMapName = "Map name";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HeartBeat")
 	FString UDPPacketDelimiter = "*UE4PLMS*";
