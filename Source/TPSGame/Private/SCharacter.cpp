@@ -233,8 +233,8 @@ void ASCharacter::StopFire()
 
 void ASCharacter::SetPlayerControllerRotation_Implementation()
 {
-	bUseControllerRotationYaw = (bIsAiming || bIsFiring);
-	GetCharacterMovement()->bOrientRotationToMovement = !(bIsAiming || bIsFiring);
+	bUseControllerRotationYaw = !bDied && (bIsAiming || bIsFiring);
+	GetCharacterMovement()->bOrientRotationToMovement = !bDied && !(bIsAiming || bIsFiring);
 }
 
 void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
@@ -251,11 +251,12 @@ void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent
 		//获取胶囊体碰撞
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		//死亡后解除控制器权限，销毁控制器(生成UI时不指定Owner会报错)
-		DetachFromControllerPendingDestroy();
+		OnPlayerDead.Broadcast();
 		
-		SetLifeSpan(10.f);  //10秒后自动销毁
-		CurrentWeapon->SetLifeSpan(10.f);
+		//死亡后解除控制器权限，销毁控制器(生成UI时不指定Owner会报错)
+		//DetachFromControllerPendingDestroy();
+		//SetLifeSpan(10.f);  //10秒后自动销毁
+		//CurrentWeapon->SetLifeSpan(10.f);
 	}
 }
 

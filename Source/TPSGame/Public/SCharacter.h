@@ -13,6 +13,7 @@
 #include "SCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerDead);
 
 UCLASS()
 class TPSGAME_API ASCharacter : public ACharacter, public IMyInterfaceTest
@@ -89,7 +90,6 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
 	
-	
 public:	
 	//当前武器
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, ReplicatedUsing = OnRep_CurrentWeapon)  //Replicated : 网络复制
@@ -112,6 +112,9 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FCurrentWeaponChanged OnCurrentWeaponChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FPlayerDead OnPlayerDead;
 	
 	//是否正在开镜变焦
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Zoom)
