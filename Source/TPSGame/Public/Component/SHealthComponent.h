@@ -26,16 +26,21 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
+	//生命值恢复函数
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = HealthComponent)
-	void Heal(float HealAmount); //恢复生命值
+	void Heal(float HealAmount, class AController* InstigatedBy = nullptr, AActor* Healer = nullptr);
+	
+	//伤害处理函数
+	UFUNCTION(BlueprintCallable, Server, Reliable, Category= TakeDamage)
+	void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	//伤害处理函数
-	UFUNCTION(BlueprintCallable, Server, Reliable, Category= TakeDamage)
-	void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	//双端发送广播函数，为了能传递多个参数而没有用OnRep_Health()
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_OnHealthChangedBoardCast(float CurHealth, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* Causer);
 	
 	//每当Health变量被网络同步复制一次，就由服务器通知，在客户端触发一次OnRep_Health函数
 	UFUNCTION()  //必须用UFUNCTION标记

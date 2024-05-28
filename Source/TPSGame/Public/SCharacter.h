@@ -6,6 +6,7 @@
 #include "SWeapon.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
+#include "Component/InventoryComponent.h"
 #include "Component/SBuffComponent.h"
 #include "Component/SHealthComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -13,7 +14,7 @@
 #include "SCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayerDead);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FPlayerDead, AController*, InstigatedBy, AActor*, DamageCauser,const UDamageType*, DamageType);
 
 UCLASS()
 class TPSGAME_API ASCharacter : public ACharacter, public IMyInterfaceTest
@@ -53,8 +54,9 @@ public:
 	//重写,获取摄像机组件位置
 	virtual FVector GetPawnViewLocation() const override;
 
-	//获取Buff组件
+	USHealthComponent* GetHealthComponent();
 	USBuffComponent* GetBuffComponent();
+	UInventoryComponent* GetInventoryComponent();
 
 	bool GetIsDied();
 
@@ -82,7 +84,7 @@ protected:
 	void SetPlayerControllerRotation();
 	
 	//生命值更改函数
-	UFUNCTION()  //必须UFUNCTION才能绑定委托
+	UFUNCTION(Server, Reliable)  //必须UFUNCTION才能绑定委托
 	void OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
 	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
@@ -154,6 +156,10 @@ protected:
 	//Buff组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	USBuffComponent* BuffComponent;
+
+	//背包组件
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
+	UInventoryComponent* InventoryComponent;
 
 	//角色是否死亡
 	UPROPERTY(Replicated, BlueprintReadOnly, Category= Player)

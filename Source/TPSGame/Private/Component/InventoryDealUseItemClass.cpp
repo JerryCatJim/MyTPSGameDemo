@@ -19,7 +19,7 @@ bool InventoryDealUseItemClass::DealUseItemByItemID(int ItemID, int ItemQuantity
 	if(ItemID == 1)
 	{
 		USHealthComponent* UC = Cast<USHealthComponent>(Instigator->GetComponentByClass(USHealthComponent::StaticClass()));
-		UC->Heal(100);
+		UC->Heal(100, Instigator->GetController(), Instigator);
 		return true;
 	}
 	else

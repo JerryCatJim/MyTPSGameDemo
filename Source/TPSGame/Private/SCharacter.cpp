@@ -50,6 +50,9 @@ ASCharacter::ASCharacter()
 	//Buff组件初始化
 	BuffComponent = CreateDefaultSubobject<USBuffComponent>(TEXT("BuffComponent"));
 	
+	//背包组件初始化
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+	
 	ZoomedFOV = 65.f;
 	ZoomInterpSpeed = 20.0f;
 	
@@ -237,7 +240,7 @@ void ASCharacter::SetPlayerControllerRotation_Implementation()
 	GetCharacterMovement()->bOrientRotationToMovement = !bDied && !(bIsAiming || bIsFiring);
 }
 
-void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
+void ASCharacter::OnHealthChanged_Implementation(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
 	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
 	if(Health <= 0.f && !bDied)
@@ -251,7 +254,7 @@ void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent
 		//获取胶囊体碰撞
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		OnPlayerDead.Broadcast();
+		OnPlayerDead.Broadcast(InstigatedBy, DamageCauser, DamageType);
 		
 		//死亡后解除控制器权限，销毁控制器(生成UI时不指定Owner会报错)
 		//DetachFromControllerPendingDestroy();
@@ -265,9 +268,19 @@ void ASCharacter::OnRep_CurrentWeapon()
 	OnCurrentWeaponChanged.Broadcast();
 }
 
+USHealthComponent* ASCharacter::GetHealthComponent()
+{
+	return HealthComponent;
+}
+
 USBuffComponent* ASCharacter::GetBuffComponent()
 {
 	return BuffComponent;
+}
+
+UInventoryComponent* ASCharacter::GetInventoryComponent()
+{
+	return InventoryComponent;
 }
 
 bool ASCharacter::GetIsDied()

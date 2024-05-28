@@ -90,6 +90,7 @@ void ASWeapon::Fire()
 	if(!HasAuthority())  //没有主控权说明是客户端，则向服务器发送请求,在服务端调用开火函数，然后把结果复制到本地
 	{
 		ServerFire();
+		return;
 	}
 	
 	if(!CheckOwnerValidAndAlive())
@@ -467,7 +468,8 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	//指定网络复制哪一部分（一个变量）
-	DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_SkipOwner);  //不让发出请求的客户端 进行自身的网络同步复制，避免重复(因为自身Client开火后, 在本地就已经绘制了自身的特效)
+	//DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_SkipOwner);  //不让发出请求的客户端 进行自身的网络同步复制，避免重复(因为自身Client开火后, 在本地就已经绘制了自身的特效)
+	DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_None);  //在客户端调用ServerFire()后return了，所有操作都改到了服务器执行
 	DOREPLIFETIME_CONDITION(ASWeapon, CurrentAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, BackUpAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, bIsReloading, COND_None);

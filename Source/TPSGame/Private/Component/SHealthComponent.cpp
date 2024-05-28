@@ -55,20 +55,29 @@ void USHealthComponent::HandleTakeAnyDamage_Implementation(AActor* DamagedActor,
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 
 	//在(例如血条UI等)蓝图中绑定好事件，通过广播可以接收
-	OnHealthChanged.Broadcast(this, Health, -Damage, DamageType, InstigatedBy, DamageCauser);
+	//OnHealthChanged.Broadcast(this, Health, -Damage, DamageType, InstigatedBy, DamageCauser);
+	
+	//传入Health是因为多播时 Health还没从服务端复制到客户端
+	Multi_OnHealthChangedBoardCast(Health, -Damage, DamageType, InstigatedBy, DamageCauser);
 	
 	UE_LOG(LogTemp, Log, TEXT("Health Changed: %s"), *FString::SanitizeFloat(Health));
 }
 
+void USHealthComponent::Multi_OnHealthChangedBoardCast_Implementation(float CurHealth, float HealthDelta,
+	const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	OnHealthChanged.Broadcast(this, CurHealth, HealthDelta, DamageType, InstigatedBy, DamageCauser);
+}
+
 void USHealthComponent::OnRep_Health(float OldHealth)  //服务器通知其他客户端Client同步更新（这是客户端调用的函数）
 {
-	float Damage = Health - OldHealth;
+	//float Damage = Health - OldHealth;
 
-	OnHealthChanged.Broadcast(this, Health, Damage, nullptr, nullptr, nullptr);
+	//OnHealthChanged.Broadcast(this, Health, Damage, nullptr, nullptr, nullptr);
 }
 
 //恢复生命值
-void USHealthComponent::Heal_Implementation(float HealAmount)
+void USHealthComponent::Heal_Implementation(float HealAmount, AController* InstigatedBy, AActor* Healer)
 {
 	if(HealAmount <= 0.0f || Health <= 0.0f)
 	{
@@ -78,7 +87,8 @@ void USHealthComponent::Heal_Implementation(float HealAmount)
 	Health = FMath::Clamp(Health + HealAmount, 0.f, MaxHealth);
 	UE_LOG(LogTemp, Log, TEXT("Health Increased: %s"), *FString::SanitizeFloat(HealAmount));
 
-	OnHealthChanged.Broadcast(this, Health, HealAmount, nullptr, nullptr, nullptr);
+	//OnHealthChanged.Broadcast(this, Health, HealAmount, nullptr, nullptr, nullptr);
+	Multi_OnHealthChangedBoardCast(Health, HealAmount, nullptr, InstigatedBy, Healer);
 }
 
 
