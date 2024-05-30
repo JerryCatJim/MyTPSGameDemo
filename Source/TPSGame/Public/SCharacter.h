@@ -84,13 +84,17 @@ protected:
 	void SetPlayerControllerRotation();
 	
 	//生命值更改函数
-	UFUNCTION(Server, Reliable)  //必须UFUNCTION才能绑定委托
+	UFUNCTION()//Server, Reliable)  //必须UFUNCTION才能绑定委托
 	void OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
 	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 	//武器在服务器生成后复制到客户端有延迟，需要复制完成后再调用委托做一些初始化操作
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
+
+	//角色死亡后做的一些操作
+	UFUNCTION()
+	void OnRep_Died();
 	
 public:	
 	//当前武器
@@ -162,7 +166,7 @@ protected:
 	UInventoryComponent* InventoryComponent;
 
 	//角色是否死亡
-	UPROPERTY(Replicated, BlueprintReadOnly, Category= Player)
+	UPROPERTY(ReplicatedUsing = OnRep_Died, BlueprintReadOnly, Category= Player)
 	bool bDied;
 
 	//瞄准偏移量

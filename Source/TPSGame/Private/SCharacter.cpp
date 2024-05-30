@@ -240,32 +240,39 @@ void ASCharacter::SetPlayerControllerRotation_Implementation()
 	GetCharacterMovement()->bOrientRotationToMovement = !bDied && !(bIsAiming || bIsFiring);
 }
 
-void ASCharacter::OnHealthChanged_Implementation(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
+void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
 	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
 	if(Health <= 0.f && !bDied)
 	{
 		bDied = true;
-		
-		//角色死亡
-		GetMovementComponent()->UNavMovementComponent::StopMovementImmediately();  //无法移动  4.27以上用GetMovementComponent()->StopMovement会出错(？)
-		GetCharacterMovement()->DisableMovement();
-		
-		//获取胶囊体碰撞
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-		OnPlayerDead.Broadcast(InstigatedBy, DamageCauser, DamageType);
-		
-		//死亡后解除控制器权限，销毁控制器(生成UI时不指定Owner会报错)
-		//DetachFromControllerPendingDestroy();
-		//SetLifeSpan(10.f);  //10秒后自动销毁
-		//CurrentWeapon->SetLifeSpan(10.f);
+		if(HasAuthority())
+		{
+			OnRep_Died();
+			OnPlayerDead.Broadcast(InstigatedBy, DamageCauser, DamageType);
+		}
 	}
 }
 
 void ASCharacter::OnRep_CurrentWeapon()
 {
 	OnCurrentWeaponChanged.Broadcast();
+}
+
+void ASCharacter::OnRep_Died()
+{
+	//角色死亡
+	GetMovementComponent()->UNavMovementComponent::StopMovementImmediately();  //无法移动  4.27以上用GetMovementComponent()->StopMovement会出错(？)
+	GetCharacterMovement()->DisableMovement();
+		
+	//获取胶囊体碰撞
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	//死亡后解除控制器权限，销毁控制器(生成UI时不指定Owner会报错)
+	//DetachFromControllerPendingDestroy();
+	//SetLifeSpan(10.f);  //10秒后自动销毁
+	//CurrentWeapon->SetLifeSpan(10.f);
+	
 }
 
 USHealthComponent* ASCharacter::GetHealthComponent()
