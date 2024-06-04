@@ -2,6 +2,6 @@
 	"BuildId": "ab45c42e-5ea0-4e5c-a982-ac4793b6bee4",
 	"Modules": 
 	{
-		"LuaProtobuf": "UE4Editor-LuaProtobuf-0005-Win64-Debug.dll"
+		"LuaProtobuf": "UE4Editor-LuaProtobuf-Win64-Debug.dll"
 	}
 }
