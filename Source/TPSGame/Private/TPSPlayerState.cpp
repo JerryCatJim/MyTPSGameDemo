@@ -15,7 +15,12 @@ void ATPSPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(ATPSPlayerState, Kills);
+	DOREPLIFETIME(ATPSPlayerState, PersonalScore);
+	DOREPLIFETIME(ATPSPlayerState, RankInGame);
+	DOREPLIFETIME(ATPSPlayerState, Kills);
+	DOREPLIFETIME(ATPSPlayerState, Deaths);
+	DOREPLIFETIME(ATPSPlayerState, TeamID);
+	DOREPLIFETIME(ATPSPlayerState, ItemList);
 }
 
 void ATPSPlayerState::CopyProperties(APlayerState* PlayerState)

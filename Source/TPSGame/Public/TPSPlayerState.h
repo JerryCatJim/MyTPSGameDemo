@@ -23,14 +23,16 @@ protected:
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 
 public:
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int PersonalScore = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	int RankInGame = -1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int Kills = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int Deaths = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int TeamID = -1;*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	int TeamID = -1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	TArray<FMyItem> ItemList;
 };
