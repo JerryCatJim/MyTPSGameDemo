@@ -1,0 +1,31 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-LuaSocket-0001-Win64-Debug.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"E:\Epic Games\UnrealEngine-4.27.2-release\Engine\Intermediate\Build\Win64\UE4Editor\Debug\Engine\SharedPCH.Engine.ShadowErrors.NoUndef.h.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\LuaSocketModule.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\auxiliar.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\buffer.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\compat.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\except.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\inet.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\io.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\luasocket.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\mime.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\options.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\select.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\serial.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\tcp.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\timeout.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\udp.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\unix.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\unixdgram.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\unixstream.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\usocket.cpp.obj"
+"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\wsocket.cpp.obj"
+"E:\Epic Games\UnrealEngine-4.27.2-release\Engine\Intermediate\Build\Win64\UE4Editor\Debug\Default.rc2.res"
+/OUT:"E:\Epic Games\UE_projects\TPSGame_427source\Plugins\UnLuaExtensions\LuaSocket\Intermediate\Build\Win64\UE4Editor\Debug\LuaSocket\UE4Editor-LuaSocket-0001-Win64-Debug.lib"
