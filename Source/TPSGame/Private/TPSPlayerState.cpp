@@ -15,12 +15,79 @@ void ATPSPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ATPSPlayerState, PersonalScore);
-	DOREPLIFETIME(ATPSPlayerState, RankInGame);
-	DOREPLIFETIME(ATPSPlayerState, Kills);
-	DOREPLIFETIME(ATPSPlayerState, Deaths);
-	DOREPLIFETIME(ATPSPlayerState, TeamID);
-	DOREPLIFETIME(ATPSPlayerState, ItemList);
+	DOREPLIFETIME(ATPSPlayerState, PlayerDataInGame);
+}
+
+void ATPSPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+#pragma region GetterAndSetter
+int ATPSPlayerState::GetPersonalScore() const
+{
+	return PlayerDataInGame.PersonalScore;
+}
+
+void ATPSPlayerState::SetPersonalScore(int PersonalScore)
+{
+	PlayerDataInGame.PersonalScore = PersonalScore;
+}
+
+int ATPSPlayerState::GetRankInGame() const
+{
+	return PlayerDataInGame.RankInGame;
+}
+
+void ATPSPlayerState::SetRankInGame(int RankInGame)
+{
+	PlayerDataInGame.RankInGame = RankInGame;
+}
+
+int ATPSPlayerState::GetKills() const
+{
+	return PlayerDataInGame.Kills;
+}
+
+void ATPSPlayerState::SetKills(int Kills)
+{
+	PlayerDataInGame.Kills = Kills;
+}
+
+int ATPSPlayerState::GetDeaths() const
+{
+	return PlayerDataInGame.Deaths;
+}
+
+void ATPSPlayerState::SetDeaths(int Deaths)
+{
+	PlayerDataInGame.Deaths = Deaths;
+}
+
+int ATPSPlayerState::GetTeamID() const
+{
+	return PlayerDataInGame.TeamID;
+}
+
+void ATPSPlayerState::SetTeamID(int TeamID)
+{
+	PlayerDataInGame.TeamID = TeamID;
+}
+#pragma endregion GetterAndSetter
+
+void ATPSPlayerState::AddPersonalScore(int PersonalScore)
+{
+	PlayerDataInGame.PersonalScore += PersonalScore;
+}
+
+void ATPSPlayerState::AddKills(int Kills)
+{
+	PlayerDataInGame.Kills += Kills;
+}
+
+void ATPSPlayerState::AddDeaths(int Deaths)
+{
+	PlayerDataInGame.Deaths += Deaths;
 }
 
 void ATPSPlayerState::CopyProperties(APlayerState* PlayerState)

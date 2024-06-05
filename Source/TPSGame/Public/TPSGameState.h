@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameState.h"
+#include "TPSPlayerState.h"
 #include "TPSGameState.generated.h"
 
-class ATPSPlayerState;
 /**
  * 
  */
@@ -17,5 +17,5 @@ class TPSGAME_API ATPSGameState : public AGameState
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void SortPlayerRank_Stable(UPARAM(ref)TArray<ATPSPlayerState*>& PlayerStateArray, bool HighToLow = true);
+	void SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& PlayerDataArray, bool HighToLow = true);
 };
