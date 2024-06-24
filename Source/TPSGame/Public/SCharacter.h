@@ -43,9 +43,9 @@ public:
 	void StopFire();
 
 	//设置是否开镜
-	UFUNCTION(Server,Reliable)  //将开镜行为发送到服务器然后同步
+	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
 	void SetZoomFOV();
-	UFUNCTION(Server,Reliable)  //将开镜行为发送到服务器然后同步
+	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
 	void ResetZoomFOV();
 
 	UFUNCTION(Server,Reliable)  //将射击行为发送到服务器然后同步
