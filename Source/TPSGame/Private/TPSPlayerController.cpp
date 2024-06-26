@@ -2,3 +2,9 @@
 
 
 #include "TPSPlayerController.h"
+
+ATPSPlayerController::ATPSPlayerController()
+{
+	//背包组件初始化
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+}

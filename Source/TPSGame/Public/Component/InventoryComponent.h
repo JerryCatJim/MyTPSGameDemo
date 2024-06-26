@@ -57,6 +57,9 @@ public:
 	
 	void InitInventoryComponent();
 
+	//Controller生成时还没有ControlledPawn，需要用到时尝试获取
+	void TrySetOwnerPawn();
+	
 	int GetCurrentSize() const;
 	
 	int FindEmptyPos() const;
@@ -122,7 +125,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_ItemList)
 	TArray<FMyItem> ItemList;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)  //记录了上一次被加入或丢弃物品和其ItemIndex(ItemIndex == -1 表示加入或丢弃失败)，可用于确定刷新UI的一格还是全刷新(ItemQuantity == -1 表示全刷新)
 	FMyItem LastChangedItemSlot;
 	
@@ -146,7 +149,7 @@ public:
 	
 protected:
 	UPROPERTY()
-	APawn* MyOwner;  //Pawn可以被控制，设定只有Pawn以及其子类才能使用背包组件
+	APawn* MyOwnerPawn;  //Pawn可以被控制，设定只有Pawn以及其子类才能使用背包组件
 	UPROPERTY()
 	APlayerController* MyController;  //被玩家控制的角色才能使用背包组件，AIController不行
 	UPROPERTY()

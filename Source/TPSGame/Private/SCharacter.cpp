@@ -9,6 +9,7 @@
 #include "TPSGame/TPSGame.h"
 //#include "Component/SHealthComponent.h"
 //#include "Component/SBuffComponent.h"
+#include "TPSPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -49,9 +50,6 @@ ASCharacter::ASCharacter()
 	
 	//Buff组件初始化
 	BuffComponent = CreateDefaultSubobject<USBuffComponent>(TEXT("BuffComponent"));
-	
-	//背包组件初始化
-	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	
 	ZoomedFOV = 65.f;
 	ZoomInterpSpeed = 20.0f;
@@ -287,7 +285,14 @@ USBuffComponent* ASCharacter::GetBuffComponent()
 
 UInventoryComponent* ASCharacter::GetInventoryComponent()
 {
-	return InventoryComponent;
+	ATPSPlayerController* PC = GetController<ATPSPlayerController>();
+	if(PC)
+	{
+		UE_LOG(LogTemp, Error, TEXT("PC存在!"));
+		return PC->InventoryComponent;
+	}
+	UE_LOG(LogTemp, Error, TEXT("PC无效!"));
+	return nullptr;
 }
 
 bool ASCharacter::GetIsDied()

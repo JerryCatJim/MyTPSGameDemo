@@ -33,11 +33,7 @@ void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	MyOwner = Cast<APawn>(GetOwner());
-	if(MyOwner)
-	{
-		MyController = Cast<APlayerController>(MyOwner->GetController());
-	}
+	MyController = Cast<APlayerController>(GetOwner());
 }
 
 
@@ -57,6 +53,14 @@ void UInventoryComponent::InitInventoryComponent()
 		ItemList[i].ItemIndex = i;
 	}
 	CurrentUsedSize = 0;
+}
+
+void UInventoryComponent::TrySetOwnerPawn()
+{
+	if(MyController)
+	{
+		MyOwnerPawn = MyController->GetPawn();
+	}
 }
 
 int UInventoryComponent::GetCurrentSize() const
@@ -109,7 +113,7 @@ void UInventoryComponent::AddItem_Implementation(FMyItem ItemToAdd, bool IsPickU
 	const bool DealResult = DealAddItem(ItemToAdd, IsPickUp);
 	
 	//服务端手动触发刷新UI
-	if(DealResult && MyOwner->HasAuthority())
+	if(DealResult && MyController->HasAuthority())
 	{
 		OnRep_ItemList();
 	}
@@ -203,7 +207,7 @@ void UInventoryComponent::RemoveItem_Implementation(int ArrayIndex, int RemoveQu
 	const bool DealResult = DealRemoveItem(ArrayIndex, RemoveQuantity, IsThrow);
 
 	//服务端手动触发刷新UI
-	if(DealResult && MyOwner->HasAuthority())
+	if(DealResult && MyController->HasAuthority())
 	{
 		OnRep_ItemList();
 	}
@@ -238,16 +242,21 @@ bool UInventoryComponent::DealRemoveItem(int ArrayIndex, int RemoveQuantity, boo
 void UInventoryComponent::SpawnCurrentThrowItem_Implementation(FMyItem ItemToRemove)
 {
 	//todo 丢弃可能分为在城镇中丢弃(直接消失),或者在副本中丢弃(丢到地上可以再捡起来) 等情况
+
+	if(!MyOwnerPawn)
+	{
+		return;
+	}
 	
 	//本函数在服务器运行，本地客户端不要重复生成，等待服务端网络复制
-	const FTransform MyOwnerTransform = FTransform(MyOwner->GetActorLocation() + MyOwner->GetActorForwardVector() * ThrowForwardDistance);
-	//AActor* SpawnedActor = UGameplayStatics::BeginDeferredActorSpawnFromClass(MyOwner->GetWorld(), ItemToRemove.ItemClass, MyOwnerTransform, ESpawnActorCollisionHandlingMethod::AlwaysSpawn); //第五个参数是Owner,希望用Instigator
-	AInventoryItemBase* SpawnedActor = MyOwner->GetWorld()->SpawnActorDeferred<AInventoryItemBase>(ItemToRemove.ItemClass, MyOwnerTransform, nullptr, MyOwner, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	const FTransform PawnTransform = FTransform(MyOwnerPawn->GetActorLocation() + MyOwnerPawn->GetActorForwardVector() * ThrowForwardDistance);
+	//AActor* SpawnedActor = UGameplayStatics::BeginDeferredActorSpawnFromClass(MyOwnerPawn->GetWorld(), ItemToRemove.ItemClass, PawnTransform, ESpawnActorCollisionHandlingMethod::AlwaysSpawn); //第五个参数是Owner,希望用Instigator
+	AInventoryItemBase* SpawnedActor = MyOwnerPawn->GetWorld()->SpawnActorDeferred<AInventoryItemBase>(ItemToRemove.ItemClass, PawnTransform, nullptr, MyOwnerPawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 	if(SpawnedActor)
 	{
 		ThrownItem = Cast<AInventoryItemBase>(SpawnedActor);
 		ThrownItem->ItemSlot = ItemToRemove;
-		UGameplayStatics::FinishSpawningActor(SpawnedActor, MyOwnerTransform);
+		UGameplayStatics::FinishSpawningActor(SpawnedActor, PawnTransform);
 		OnRep_ThrownItem();
 	}
 }
@@ -282,7 +291,7 @@ void UInventoryComponent::SwapItem_Implementation(int FirstIndex, int SecondInde
 	const bool DealResult = DealSwapItem(FirstIndex, SecondIndex);
 
 	//服务端手动触发刷新UI
-	if(DealResult && MyOwner->HasAuthority())
+	if(DealResult && MyController->HasAuthority())
 	{
 		OnRep_ItemList();
 	}
@@ -315,7 +324,7 @@ void UInventoryComponent::UseItem_Implementation(int ArrayIndex, int ItemQuantit
 	const bool DealResult = DealUseItem(ArrayIndex, ItemQuantity);
 	
 	//服务端手动触发刷新UI
-	if(DealResult && MyOwner->HasAuthority())
+	if(DealResult && MyController->HasAuthority())
 	{
 		OnRep_ItemList();
 	}
@@ -332,7 +341,7 @@ bool UInventoryComponent::DealUseItem(int ArrayIndex, int ItemQuantity)
 	int RealUsedItemQuantity = 0;
 	for(int i = 0; i < ItemQuantity; ++i)
 	{
-		const bool TempRes = InventoryDealUseItemClass::DealUseItemByItemID(ItemList[ArrayIndex].ItemID, ItemQuantity, MyOwner);
+		const bool TempRes = InventoryDealUseItemClass::DealUseItemByItemID(ItemList[ArrayIndex].ItemID, ItemQuantity, MyController);
 		DealResult = DealResult == false ? TempRes : DealResult;  //只要至少成功使用过一个道具，就认为是使用成功，返回到UseItem中刷新UI
 		RealUsedItemQuantity += TempRes ? 1 : 0;
 	}
@@ -346,11 +355,17 @@ bool UInventoryComponent::DealUseItem(int ArrayIndex, int ItemQuantity)
 
 void UInventoryComponent::FocusOnPickUpItem()
 {
+	if(!MyOwnerPawn)
+	{
+		TrySetOwnerPawn();
+		return;
+	}
+	
 	FHitResult HitResult;
 	FVector EyeLocation;
 	FRotator EyeRotation;
 	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
-	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
+	MyOwnerPawn->GetActorEyesViewPoint(EyeLocation,EyeRotation);
 
 	FVector TraceDirection = EyeRotation.Vector()*TraceLength;
 	FVector TraceEnd = EyeLocation + TraceDirection;
@@ -358,7 +373,7 @@ void UInventoryComponent::FocusOnPickUpItem()
 	//碰撞查询
 	FCollisionQueryParams QueryParams;
 	//忽略武器自身和持有者的碰撞
-	QueryParams.AddIgnoredActor(MyOwner);
+	QueryParams.AddIgnoredActor(MyOwnerPawn);
 	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
 	//QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
 	
@@ -370,17 +385,17 @@ void UInventoryComponent::FocusOnPickUpItem()
 		{
 			CurrentFocusItem = TempFocusItem;
 			//别的玩家注视时也会触发广播，所以传入注视者加以区分
-			CurrentFocusItem->OnItemFocused.Broadcast(MyOwner);
+			CurrentFocusItem->OnItemFocused.Broadcast(MyController);
 		}
 		else if(CurrentFocusItem)  //物品离开注视
 		{
-			CurrentFocusItem->OnItemLeaveFocused.Broadcast(MyOwner);
+			CurrentFocusItem->OnItemLeaveFocused.Broadcast(MyController);
 			CurrentFocusItem = nullptr;
 		}
 	}
 	else if(CurrentFocusItem)  //物品离开注视
 	{
-		CurrentFocusItem->OnItemLeaveFocused.Broadcast(MyOwner);
+		CurrentFocusItem->OnItemLeaveFocused.Broadcast(MyController);
 		CurrentFocusItem = nullptr;
 	}
 }

@@ -14,13 +14,21 @@ InventoryDealUseItemClass::~InventoryDealUseItemClass()
 {
 }
 
-bool InventoryDealUseItemClass::DealUseItemByItemID(int ItemID, int ItemQuantity, APawn* Instigator)
+bool InventoryDealUseItemClass::DealUseItemByItemID(int ItemID, int ItemQuantity, APlayerController* Instigator)
 {
 	if(ItemID == 1)
 	{
-		USHealthComponent* UC = Cast<USHealthComponent>(Instigator->GetComponentByClass(USHealthComponent::StaticClass()));
-		UC->Heal(100, Instigator->GetController(), Instigator);
-		return true;
+		if(Instigator && Instigator->GetPawn())
+		{
+			USHealthComponent* UC = Cast<USHealthComponent>(Instigator->GetPawn()->GetComponentByClass(USHealthComponent::StaticClass()));
+			if(UC)
+			{
+				UC->Heal(100, Instigator, Instigator->GetPawn());
+				return true;
+			}
+			return false;
+		}
+		return false;
 	}
 	else
 	{

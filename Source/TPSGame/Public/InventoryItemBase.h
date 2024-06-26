@@ -7,8 +7,8 @@
 #include "Component/InventoryComponent.h"
 #include "InventoryItemBase.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemFocused, APawn*, FocusingPawn);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemLeaveFocused, APawn*, FocusingPawn);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemFocused, APlayerController*, FocusingPC);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemLeaveFocused, APlayerController*, FocusingPC);
 
 UCLASS()
 class TPSGAME_API AInventoryItemBase : public AActor

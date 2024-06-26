@@ -6,9 +6,9 @@
 #include "SWeapon.h"
 #include "GameFramework/Character.h"
 #include "Camera/CameraComponent.h"
-#include "Component/InventoryComponent.h"
 #include "Component/SBuffComponent.h"
 #include "Component/SHealthComponent.h"
+#include "Component/InventoryComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interface/MyInterfaceTest.h"
 #include "SCharacter.generated.h"
@@ -56,6 +56,8 @@ public:
 
 	USHealthComponent* GetHealthComponent();
 	USBuffComponent* GetBuffComponent();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UInventoryComponent* GetInventoryComponent();
 
 	bool GetIsDied();
@@ -160,10 +162,6 @@ protected:
 	//Buff组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	USBuffComponent* BuffComponent;
-
-	//背包组件
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
-	UInventoryComponent* InventoryComponent;
 
 	//角色是否死亡
 	UPROPERTY(ReplicatedUsing = OnRep_Died, BlueprintReadOnly, Category= Player)

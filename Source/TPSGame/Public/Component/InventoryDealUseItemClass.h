@@ -13,5 +13,5 @@ public:
 	InventoryDealUseItemClass();
 	~InventoryDealUseItemClass();
 
-	static bool DealUseItemByItemID(int ItemID, int ItemQuantity, APawn* Instigator);
+	static bool DealUseItemByItemID(int ItemID, int ItemQuantity, APlayerController* Instigator);
 };
