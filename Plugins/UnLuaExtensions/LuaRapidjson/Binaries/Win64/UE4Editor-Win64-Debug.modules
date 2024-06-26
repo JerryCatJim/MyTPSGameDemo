@@ -2,6 +2,6 @@
 	"BuildId": "b1f113e3-4b23-41a7-9da8-41ce183aae08",
 	"Modules": 
 	{
-		"LuaRapidjson": "UE4Editor-LuaRapidjson-0001-Win64-Debug.dll"
+		"LuaRapidjson": "UE4Editor-LuaRapidjson-Win64-Debug.dll"
 	}
 }
