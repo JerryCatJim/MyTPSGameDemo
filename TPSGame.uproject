@@ -16,16 +16,16 @@
 	"Plugins": [
 		{
 			"Name": "MultiplayerMasterServerList",
-			"Enabled": false,
+			"Enabled": true,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/185971680fb94e6d84e9c597e30445e5"
 		},
 		{
 			"Name": "MultiplayerSessions",
-			"Enabled": false
+			"Enabled": true
 		},
 		{
 			"Name": "OnlineSubsystemSteam",
-			"Enabled": false
+			"Enabled": true
 		}
 	]
 }
