@@ -181,15 +181,5 @@ public:
 	virtual bool NotEvent_NativeTest_Implementation() override;
 	
 	//virtual void IsEvent_NativeTest_Implementation() override;
-
-	int testmyfunc(int param1, int& param2);
-	void testtest();
 	
-//临时测试Unlua的区域
-public:
-	UPROPERTY(BlueprintReadWrite)
-	int Index = 0;
-
-	UFUNCTION(BlueprintCallable)
-	int GetIndex();
 };

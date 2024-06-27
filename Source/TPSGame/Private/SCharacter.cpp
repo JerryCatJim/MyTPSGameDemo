@@ -328,22 +328,3 @@ bool ASCharacter::NotEvent_NativeTest_Implementation()
 {
 	return true;
 }
-
-int ASCharacter::GetIndex()
-{
-	//return Index++;
-	UE_LOG(LogTemp, Log, TEXT("C++Index"));
-	return 0;
-}
-
-int ASCharacter::testmyfunc(int param1, int& param2)
-{
-	return param1, param2;
-}
- void ASCharacter::testtest()
- {
-	int temp  =  100;
-	int rtv1(0), rtv2;
-	rtv1, rtv2 = testmyfunc(1, temp);
-	GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("rtv1和rtv2分别等于 %d %d"), rtv1, rtv2));
- }
