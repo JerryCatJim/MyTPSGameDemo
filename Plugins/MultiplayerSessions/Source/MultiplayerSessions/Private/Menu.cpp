@@ -12,7 +12,10 @@ void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch, FStr
 	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
 	NumPublicConnections = NumberOfPublicConnections;
 	MatchType = TypeOfMatch;
-	AddToViewport();
+	if(!GetParent())
+	{
+		AddToViewport();
+	}
 	SetVisibility(ESlateVisibility::Visible);
 	bIsFocusable = true;
 
