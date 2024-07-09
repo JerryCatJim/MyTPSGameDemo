@@ -219,7 +219,10 @@ void ASWeapon::Fire()
 			DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::Red, false, 1.0f, 0,1.0f);
 		}
 
-		//播放射击动画之类的
+		//播放射击动画
+		PlayFireAnim();
+		
+		//蓝图要处理啥，留个接口出来
 		ServerFire_BP();
 	}
 }
@@ -290,6 +293,37 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 	}
 }
 
+void ASWeapon::PlayFireAnim_Implementation()
+{
+	if(!MyOwner)
+	{
+		return;
+	}
+	
+	if(MyOwner->GetIsAiming() && AimFireMontage)
+	{
+		CurrentFireMontage = AimFireMontage;
+		MyOwner->PlayAnimMontage(AimFireMontage, AimPlayRate);
+	}
+	else if(NoAimFireMontage)
+	{
+		CurrentFireMontage = NoAimFireMontage;
+		MyOwner->PlayAnimMontage(NoAimFireMontage, NoAimPlayRate);
+	}
+}
+
+void ASWeapon::StopFireAnim_Implementation()
+{
+	if(!MyOwner)
+	{
+		return;
+	}
+	if(CurrentFireMontage)
+	{
+		MyOwner->StopAnimMontage(CurrentFireMontage);
+	}
+}
+
 
 void ASWeapon::StartFire_Implementation()
 {
@@ -323,7 +357,10 @@ void ASWeapon::StopFire_Implementation()
 	{
 		Reload(true);
 	}
-
+	//停止播放射击动画
+	StopFireAnim();
+	
+	//蓝图要处理啥，留个接口出来
 	ServerStopFire_BP();
 }
 
@@ -349,7 +386,7 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 	
 	//播放装弹动画
 	bIsReloading = true;
-	float MontagePlayTime = ReloadMontage->SequenceLength;//MyOwner->PlayAnimMontage(ReloadMontage);
+	const float MontagePlayTime = ReloadMontage->SequenceLength;//MyOwner->PlayAnimMontage(ReloadMontage);
 
 	//Multi播放换弹动画，保证同步
 	Multi_PlayReloadMontage(ReloadMontage);

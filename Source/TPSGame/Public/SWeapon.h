@@ -111,6 +111,13 @@ protected:
 
 	//播放击中效果
 	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
+
+	//播放射击动画
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayFireAnim();
+	UFUNCTION(NetMulticast, Reliable)
+	//停止射击动画
+	void StopFireAnim();
 	
 public:
 	//当前子弹数
@@ -145,7 +152,7 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= "Weapon")
 	bool bIsReloading = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponMontage")
 	UAnimMontage* ReloadMontage;
 	
 protected:
@@ -179,8 +186,10 @@ protected:
 	//肉体击中效果(飙血)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	UParticleSystem* FleshImpactEffect;
+	
 	//易伤部位击中特效(例如爆头)
-
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	//UParticleSystem* HeadShotImpactEffect;
 	
 	//弹道特效
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
@@ -221,4 +230,21 @@ protected:
 
 	//装弹计时器
 	FTimerHandle ReloadTimer;
+
+	//瞄准时的开火动画
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponMontage)
+	UAnimMontage* AimFireMontage;
+
+	//腰射时(未瞄准)的开火动画
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponMontage)
+	UAnimMontage* NoAimFireMontage;
+
+	UPROPERTY()
+	UAnimMontage* CurrentFireMontage;
+	
+	//开火动画的播放速率
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= WeaponMontage)
+	float AimPlayRate = 2.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= WeaponMontage)
+	float NoAimPlayRate = 0.4f;
 };
