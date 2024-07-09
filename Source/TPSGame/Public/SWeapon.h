@@ -18,6 +18,16 @@ public:
 	//表面类型，将枚举转换为字节以正确赋值
 	UPROPERTY()
 	TEnumAsByte<EPhysicalSurface> SurfaceType;
+
+	UPROPERTY()
+	bool HitSomeTarget;
+};
+
+UENUM(BlueprintType)
+enum EWeaponType
+{
+	Gun,
+	RocketLauncher,
 };
 
 //IsEmpty用以区分当次射击是否为空射(可用于播放子弹数为空时的音效等)
@@ -53,7 +63,7 @@ public:
 	UFUNCTION()
 	void StopReload(bool IsInterrupted = false);
 
-	int GetCurrentAmmoNum(){return CurrentAmmoNum;};
+	int GetCurrentAmmoNum() const {return CurrentAmmoNum;};
 
 	UFUNCTION(BlueprintCallable)
 	bool CheckCanFire();
@@ -63,10 +73,14 @@ protected:
 	virtual void BeginPlay() override;
 
 	bool CheckOwnerValidAndAlive();
-	
-	//播放武器特效
-	void PlayFireEffects(FVector TraceEnd);
 
+	//计算武器射击扩散程度
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetBulletSpread();
+	
+	//处理射击判定的函数
+	virtual void DealFire();
+	
 	//武器射击函数
 	UFUNCTION(BlueprintCallable, Category= "Weapon")
 	void Fire();
@@ -109,6 +123,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnRep_IsBackUpAmmoInfinity();
 
+	//播放武器开火特效
+	void PlayFireEffects(FVector TraceEnd);
+	
 	//播放击中效果
 	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 
@@ -152,10 +169,13 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= "Weapon")
 	bool bIsReloading = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponMontage")
-	UAnimMontage* ReloadMontage;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	bool bIsFullAutomaticWeapon = true;
 	
 protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
+	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Gun;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Component")
 	class USkeletalMeshComponent* MeshComponent;
 
@@ -171,28 +191,28 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	FName MuzzleSocketName;
 
-	//追踪目标名称
+	//要设置长度的粒子特效的变量名称(?)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	FName TraceTargetName;
 	
 	//枪口特效
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	UParticleSystem* MuzzleEffect;
 
 	//默认击中特效
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	UParticleSystem* DefaultImpactEffect;
 
 	//肉体击中效果(飙血)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	UParticleSystem* FleshImpactEffect;
 	
 	//易伤部位击中特效(例如爆头)
-	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	//UParticleSystem* HeadShotImpactEffect;
 	
 	//弹道特效
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	UParticleSystem* TraceEffect;
 
 	//摄像机抖动子类
@@ -207,6 +227,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	float HeadShotBonus;
 
+	//武器最远射程
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon)
+	float WeaponTraceRange = 10000;
+
+	//射击命中的位置
+	FVector ShotTraceEnd;
+	//射击时命中的物理表面类型
+	EPhysicalSurface HitSurfaceType = SurfaceType_Default;
+	//本次射击时候命中了目标
+	bool bHitSomeTarget;
+	
 	//连射间隔_计时器句柄
 	FTimerHandle TimerHandle_TimerBetweenShot;
 
@@ -239,6 +270,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponMontage)
 	UAnimMontage* NoAimFireMontage;
 
+	//装弹动画
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponMontage")
+	UAnimMontage* ReloadMontage;
+	
 	UPROPERTY()
 	UAnimMontage* CurrentFireMontage;
 	

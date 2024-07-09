@@ -85,6 +85,94 @@ bool ASWeapon::CheckCanFire()
 	return CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity;
 }
 
+float ASWeapon::GetBulletSpread()
+{
+	if(CheckOwnerValidAndAlive())
+	{
+		float TempRate = 1;
+		if(!MyOwner->GetIsAiming())
+		{
+			TempRate *= 2;
+		}
+		if(MyOwner->GetVelocity().Size2D() > 0)
+		{
+			TempRate *= 2;
+		}
+		TempRate = FMath::Clamp(TempRate, 1.0f, 3.0f);
+		return BulletSpread * TempRate;
+	}
+	return BulletSpread;
+}
+
+void ASWeapon::DealFire()
+{
+	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
+	FVector EyeLocation;
+	FRotator EyeRotation;
+	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
+	
+	//伤害效果射击方位
+	FVector ShotDirection = EyeRotation.Vector();
+		
+	//Radian 弧度
+	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
+	float HalfRadian = FMath::DegreesToRadians(GetBulletSpread());
+	//轴线就是传入的ShotDirection向量
+	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
+		
+	//射程终止点
+	FVector EndPoint = EyeLocation + (ShotDirection*WeaponTraceRange);
+	//FVector TraceEnd = EyeLocation + MyOwner->GetActorForwardVector() * WeaponTraceRange
+	
+	ShotTraceEnd = EndPoint;
+	
+	//碰撞查询
+	FCollisionQueryParams QueryParams;
+	//忽略武器自身和持有者的碰撞
+	QueryParams.AddIgnoredActor(MyOwner);
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
+	QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
+	
+	//击中结果
+	FHitResult Hit;
+	//射线检测
+	bool bIsTraceHit;  //是否射线检测命中
+	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, EndPoint, Collision_Weapon, QueryParams);
+	if(bIsTraceHit)
+	{
+		//伤害处理
+
+		//击中物体
+		AActor* HitActor = Hit.GetActor();
+
+		//实际伤害
+		float ActualDamage = BaseDamage;
+			
+		//获得表面类型 PhysicalMaterial
+		EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
+		//EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
+
+		//爆头伤害加成
+		if(SurfaceType == Surface_FleshVulnerable)
+		{
+			ActualDamage *= HeadShotBonus;
+		}
+		
+		//应用伤害
+		UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, MyOwner->GetInstigatorController(), this, DamageType);
+			
+		//若击中目标则将轨迹结束点设置为击中点
+		ShotTraceEnd = Hit.ImpactPoint;
+		
+		HitSurfaceType = SurfaceType;
+		
+		PlayImpactEffects(HitSurfaceType, ShotTraceEnd);
+	}
+
+	bHitSomeTarget = bIsTraceHit;
+}
+
 void ASWeapon::Fire()
 {
 	if(!HasAuthority())  //没有主控权说明是客户端，则向服务器发送请求,在服务端调用开火函数，然后把结果复制到本地
@@ -116,98 +204,27 @@ void ASWeapon::Fire()
 		}
 
 		MyOwner->SetIsFiring(true);
-		
-		//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
-		FVector EyeLocation;
-		FRotator EyeRotation;
-		
-		//Character继承于Pawn, Pawn.cpp中 调用GetActorEyesViewPoint 会调用GetPawnViewLocation和GetViewRotation获得值
-		MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
-		
-		//伤害效果射击方位
-		FVector ShotDirection = EyeRotation.Vector();
-
-		float TempBulletSpread = BulletSpread;
-		if(!MyOwner->GetIsAiming())  //腰射扩散大
-		{
-			TempBulletSpread = BulletSpread *2;
-		}
-		//Radian 弧度
-		//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
-		float HalfRadian = FMath::DegreesToRadians(TempBulletSpread);
-		//轴线就是ShotDirection向量
-		ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
-		
-		//物理表面类型
-		EPhysicalSurface MySurfaceType = SurfaceType_Default;
-		
-		//射程终止点
-		FVector TraceEnd = EyeLocation + (ShotDirection*10000);
-		//FVector TraceEnd = EyeLocation + MyOwner->GetActorForwardVector() * 10000
-		
-		//碰撞查询
-		FCollisionQueryParams QueryParams;
-		//忽略武器自身和持有者的碰撞
-		QueryParams.AddIgnoredActor(MyOwner);
-		QueryParams.AddIgnoredActor(this);
-		QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
-		QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
-
-		//射击轨迹结束点
-		FVector TraceEndPoint = TraceEnd;
-		
-		//击中结果
-		FHitResult Hit;
 
 		//广播子弹数变化，用以更新UI等，C++服务器端不会自动调用OnRep，所以手动调用
 		CurrentAmmoNum = bIsCurrentAmmoInfinity ? CurrentAmmoNum : CurrentAmmoNum - 1;
 		OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, true);
-	
-		//射线检测
-		bool bIsTraceHit;  //是否射线检测命中
-		bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, Collision_Weapon, QueryParams);
-		if(bIsTraceHit)
-		{
-			//伤害处理
-
-			//击中物体
-			AActor* HitActor = Hit.GetActor();
-
-			//实际伤害
-			float ActualDamage = BaseDamage;
-			
-			//获得表面类型 PhysicalMaterial
-			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
-			//EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
-
-			//爆头伤害加成
-			if(SurfaceType == Surface_FleshVulnerable)
-			{
-				ActualDamage *= HeadShotBonus;
-			}
-
-			//应用伤害
-			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, MyOwner->GetInstigatorController(), this, DamageType);
-			
-			//若击中目标则将轨迹结束点设置为击中点
-			TraceEndPoint = Hit.ImpactPoint;
-
-			MySurfaceType = SurfaceType;
-
-			//播放击中特效
-			PlayImpactEffects(SurfaceType, Hit.ImpactPoint);
-		}
-
-		//武器轨迹和枪口特效
-		PlayFireEffects(TraceEndPoint);
+		
+		bHitSomeTarget = false;
+		
+		//处理射击判定和应用伤害的函数
+		DealFire();
 
 		//把局部变量存到全局变量中，进行网络复制同步
-		if(HasAuthority())  //HasAuthority为服务器
+		if(HasAuthority())
 		{
 			//轨迹终点
-			HitScanTrace.TraceTo = TraceEndPoint;
-			HitScanTrace.SurfaceType = MySurfaceType;
+			HitScanTrace.TraceTo = ShotTraceEnd;
+			HitScanTrace.SurfaceType = HitSurfaceType;
+			HitScanTrace.HitSomeTarget = bHitSomeTarget;
 		}
+
+		//播放特效
+		PlayFireEffects(ShotTraceEnd);
 		
 		//记录世界时间
 		LastFireTime = GetWorld()->TimeSeconds;
@@ -215,8 +232,12 @@ void ASWeapon::Fire()
 		//控制台控制是否显示
 		if(DebugWeaponDrawing > 0)
 		{
+			//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
+			FVector EyeLocation;
+			FRotator EyeRotation;
+			MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
 			//绘制射线
-			DrawDebugLine(GetWorld(), EyeLocation, TraceEnd, FColor::Red, false, 1.0f, 0,1.0f);
+			DrawDebugLine(GetWorld(), EyeLocation, ShotTraceEnd, FColor::Red, false, 1.0f, 0,1.0f);
 		}
 
 		//播放射击动画
@@ -238,7 +259,7 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 	//获取输入实际位置
 	const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 		
-	if(TraceEffect)
+	if(TraceEffect && WeaponType == EWeaponType::Gun)  //火箭筒不播放轨迹特效，因为轨迹特效是瞬间描绘的
 	{
 		//弹道特效
 		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
@@ -280,7 +301,7 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 		break;
 	}
 			
-	if(SelectedEffect)// && ImpactPoint.Size() > 0)
+	if(SelectedEffect && HitScanTrace.HitSomeTarget)// && ImpactPoint.Size() > 0)
 	{
 		const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 
@@ -295,7 +316,7 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 
 void ASWeapon::PlayFireAnim_Implementation()
 {
-	if(!MyOwner)
+	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
@@ -314,7 +335,7 @@ void ASWeapon::PlayFireAnim_Implementation()
 
 void ASWeapon::StopFireAnim_Implementation()
 {
-	if(!MyOwner)
+	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
@@ -335,7 +356,7 @@ void ASWeapon::StartFire_Implementation()
 	//换弹时一直按着开火，换好后isFiring状态没有更新，所以最终挪到Fire()的可开火片段中设置
 	//MyOwner->SetIsFiring(CheckCanFire());
 	
-	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, true, FirstDelay);
+	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
 }
 
 void ASWeapon::StopFire_Implementation()
