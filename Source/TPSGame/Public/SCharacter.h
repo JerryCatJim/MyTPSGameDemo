@@ -35,11 +35,11 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	//控制武器开火
-	UFUNCTION(BlueprintCallable, Category= Player)
+	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StartFire();
 
 	//停止射击
-	UFUNCTION(BlueprintCallable, Category= Player)
+	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StopFire();
 
 	//设置是否开镜
@@ -125,34 +125,34 @@ protected:
 	FPlayerDead OnPlayerDead;
 	
 	//是否正在开镜变焦
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Zoom)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
 	bool bIsAiming;
 
 	//是否正在射击
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Zoom)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
 	bool bIsFiring;
 
 	//是否正在持有武器(对应空手和拿着武器)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Zoom)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
 	bool bIsUsingWeapon;
 	
 	//开镜后的视野范围
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Zoom)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponZoom)
 	float ZoomedFOV;
 
 	//默认视野范围
 	float DefaultFOV;
 
 	//开镜速度
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Zoom, meta=(ClampMin = 0.1f, ClampMax = 100.f))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponZoom, meta=(ClampMin = 0.1f, ClampMax = 100.f))
 	float ZoomInterpSpeed;
 
 	//为玩家生成武器
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Player)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<ASWeapon> StarterWeaponClass;
 
 	//武器插槽名称
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Player)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	FName WeaponSocketName;
 
 	//生命值组件
@@ -164,14 +164,14 @@ protected:
 	USBuffComponent* BuffComponent;
 
 	//角色是否死亡
-	UPROPERTY(ReplicatedUsing = OnRep_Died, BlueprintReadOnly, Category= Player)
+	UPROPERTY(ReplicatedUsing = OnRep_Died, BlueprintReadOnly, Category= PlayerStatus)
 	bool bDied;
 
 	//瞄准偏移量
-	UPROPERTY(Replicated, BlueprintReadWrite, Category= Player)
+	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Y;
 
-	UPROPERTY(Replicated, BlueprintReadWrite, Category= Player)
+	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Z;
 
 //临时测试接口的区域
