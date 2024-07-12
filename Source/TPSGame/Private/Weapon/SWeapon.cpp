@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SWeapon.h"
+#include "Weapon/SWeapon.h"
 #include "SCharacter.h"
 #include "DrawDebugHelpers.h"  //射线检测显示颜色
 #include "Kismet/GameplayStatics.h"
