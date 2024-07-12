@@ -47,6 +47,7 @@ ASWeapon::ASWeapon()
 	OnePackageAmmoNum = 30;
 	CurrentAmmoNum = OnePackageAmmoNum;
 	BackUpAmmoNum = 300;
+	OnceReloadAmmoNum = OnePackageAmmoNum;
 	bIsReloading = false;
 
 	WeaponName = TEXT("默认步枪");
@@ -259,7 +260,7 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 	//获取输入实际位置
 	const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 		
-	if(TraceEffect && WeaponType == EWeaponType::Gun)  //火箭筒不播放轨迹特效，因为轨迹特效是瞬间描绘的
+	if(TraceEffect && WeaponType != EWeaponType::RocketLauncher)  //火箭筒不播放轨迹特效，因为轨迹特效是瞬间描绘的
 	{
 		//弹道特效
 		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
@@ -390,9 +391,10 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 	if(!HasAuthority())
 	{
 		ServerReload(isAutoReload);
+		return;
 	}
 	
-	if(!CheckOwnerValidAndAlive() || bIsReloading || MyOwner->GetIsFiring() || CurrentAmmoNum == OnePackageAmmoNum + 1 || bIsCurrentAmmoInfinity)
+	if(!CheckOwnerValidAndAlive() || bIsReloading || MyOwner->GetIsFiring() || (WeaponType!=RocketLauncher && CurrentAmmoNum == OnePackageAmmoNum + 1) || bIsCurrentAmmoInfinity)
 	{
 		return;
 	}
@@ -429,13 +431,14 @@ void ASWeapon::StopReload(bool IsInterrupted)
 
 	if(!IsInterrupted)
 	{
-		if(CurrentAmmoNum != OnePackageAmmoNum)
+		if(CurrentAmmoNum < OnePackageAmmoNum)
 		{
-			const float ReloadedNum = OnePackageAmmoNum-CurrentAmmoNum > BackUpAmmoNum ? BackUpAmmoNum : OnePackageAmmoNum-CurrentAmmoNum;
+			const float TempR = FMath::Min(OnePackageAmmoNum-CurrentAmmoNum, OnceReloadAmmoNum);
+			const float ReloadedNum = TempR > BackUpAmmoNum ? BackUpAmmoNum : TempR;
 			BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - ReloadedNum;
 			CurrentAmmoNum = CurrentAmmoNum + ReloadedNum;
 		}
-		else  //弹匣满了就只上一发子弹
+		else if(CurrentAmmoNum == OnePackageAmmoNum) //弹匣满了就只上一发子弹
 		{
 			BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - 1;
 			++CurrentAmmoNum;
@@ -531,5 +534,7 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME_CONDITION(ASWeapon, CurrentAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, BackUpAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, bIsReloading, COND_None);
+	DOREPLIFETIME(ASWeapon, bIsCurrentAmmoInfinity)
+	DOREPLIFETIME(ASWeapon, bIsBackUpAmmoInfinity)
 }
 

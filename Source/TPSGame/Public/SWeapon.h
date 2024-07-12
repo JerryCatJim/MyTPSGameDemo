@@ -26,8 +26,10 @@ public:
 UENUM(BlueprintType)
 enum EWeaponType
 {
-	Gun,
+	Rifle,
 	RocketLauncher,
+	ShotGun,
+	MachineGun,
 };
 
 //IsEmpty用以区分当次射击是否为空射(可用于播放子弹数为空时的音效等)
@@ -143,6 +145,13 @@ public:
 	//备用子弹数(不包括当前子弹数)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_BackUpAmmoNum)
 	int BackUpAmmoNum;
+	//一个弹匣的装弹量
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
+	int OnePackageAmmoNum;
+	//一次装弹的弹药量(默认为每个弹匣的容量)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
+	int OnceReloadAmmoNum;
+	
 	//是否无限当前子弹
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
 	bool bIsCurrentAmmoInfinity = false;
@@ -150,9 +159,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
 	bool bIsBackUpAmmoInfinity = false;
 
-	//一个弹匣的装弹量
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
-	int OnePackageAmmoNum;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	FName WeaponName;
@@ -174,7 +180,7 @@ public:
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
-	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Gun;
+	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Rifle;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Component")
 	class USkeletalMeshComponent* MeshComponent;
