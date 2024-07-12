@@ -76,9 +76,16 @@ protected:
 
 	bool CheckOwnerValidAndAlive();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsProjectileWeapon();
+	
 	//计算武器射击扩散程度
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetBulletSpread();
+
+	//装弹是否已满
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool CheckIsFullAmmo();
 	
 	//处理射击判定的函数
 	virtual void DealFire();
@@ -151,6 +158,9 @@ public:
 	//一次装弹的弹药量(默认为每个弹匣的容量)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	int OnceReloadAmmoNum;
+	//是否满装弹后可以再装填一发
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
+	bool CanOverloadAmmo = true;
 	
 	//是否无限当前子弹
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
@@ -175,7 +185,7 @@ public:
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= "Weapon")
 	bool bIsReloading = false;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	bool bIsFullAutomaticWeapon = true;
 	
 protected:

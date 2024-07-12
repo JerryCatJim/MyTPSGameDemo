@@ -81,6 +81,11 @@ bool ASWeapon::CheckOwnerValidAndAlive()
 	return MyOwner && !MyOwner->GetIsDied();
 }
 
+bool ASWeapon::IsProjectileWeapon()
+{
+	return WeaponType == EWeaponType::RocketLauncher;
+}
+
 bool ASWeapon::CheckCanFire()
 {
 	return CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity;
@@ -103,6 +108,12 @@ float ASWeapon::GetBulletSpread()
 		return BulletSpread * TempRate;
 	}
 	return BulletSpread;
+}
+
+bool ASWeapon::CheckIsFullAmmo()
+{
+	return (CurrentAmmoNum >= OnePackageAmmoNum && !CanOverloadAmmo)
+		|| (CurrentAmmoNum >= OnePackageAmmoNum+1 && CanOverloadAmmo);
 }
 
 void ASWeapon::DealFire()
@@ -216,7 +227,7 @@ void ASWeapon::Fire()
 		DealFire();
 
 		//把局部变量存到全局变量中，进行网络复制同步
-		if(HasAuthority())
+		if(HasAuthority() && !IsProjectileWeapon())
 		{
 			//轨迹终点
 			HitScanTrace.TraceTo = ShotTraceEnd;
@@ -257,11 +268,11 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComponent, MuzzleSocketName);
 	}
 
-	//获取输入实际位置
-	const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 		
-	if(TraceEffect && WeaponType != EWeaponType::RocketLauncher)  //火箭筒不播放轨迹特效，因为轨迹特效是瞬间描绘的
+	if(TraceEffect && !IsProjectileWeapon())  //火箭筒不播放轨迹特效，因为轨迹特效是瞬间描绘的
 	{
+		//获取输入实际位置
+		const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 		//弹道特效
 		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
 		if(TraceComponent)
@@ -394,7 +405,7 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 		return;
 	}
 	
-	if(!CheckOwnerValidAndAlive() || bIsReloading || MyOwner->GetIsFiring() || (WeaponType!=RocketLauncher && CurrentAmmoNum == OnePackageAmmoNum + 1) || bIsCurrentAmmoInfinity)
+	if(!CheckOwnerValidAndAlive() || bIsReloading || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
 	{
 		return;
 	}
@@ -438,10 +449,14 @@ void ASWeapon::StopReload(bool IsInterrupted)
 			BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - ReloadedNum;
 			CurrentAmmoNum = CurrentAmmoNum + ReloadedNum;
 		}
-		else if(CurrentAmmoNum == OnePackageAmmoNum) //弹匣满了就只上一发子弹
+		else if(CurrentAmmoNum == OnePackageAmmoNum && CanOverloadAmmo) //弹匣满了就只上一发子弹
 		{
 			BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - 1;
 			++CurrentAmmoNum;
+		}
+		else
+		{
+			return;
 		}
 		//广播Reload事件，可用于更新子弹数UI等，C++服务器端不会自动调用OnRep，所以手动调用
 		OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, false);
