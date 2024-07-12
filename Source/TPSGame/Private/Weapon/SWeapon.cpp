@@ -116,6 +116,18 @@ bool ASWeapon::CheckIsFullAmmo()
 		|| (CurrentAmmoNum >= OnePackageAmmoNum+1 && CanOverloadAmmo);
 }
 
+FVector ASWeapon::GetAimingEndPoint()
+{
+	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
+	FVector EyeLocation;
+	FRotator EyeRotation;
+	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
+	
+	//准星瞄准方向的向量
+	const FVector EndPoint = EyeLocation + (EyeRotation.Vector() * WeaponTraceRange);
+	return EndPoint;
+}
+
 void ASWeapon::DealFire()
 {
 	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
@@ -298,6 +310,12 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 //播放武器命中效果
 void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint)
 {
+	if(IsProjectileWeapon())
+	{
+		//发射器类型武器的命中是延迟的，最好在发射物子弹里写命中特效
+		return;
+	}
+	
 	//选中的击中效果
 	UParticleSystem* SelectedEffect = nullptr;
 			
@@ -538,6 +556,11 @@ void ASWeapon::ServerReload_BP_Implementation()
 	//ToDo In blueprint
 }
 
+USkeletalMeshComponent* ASWeapon::GetWeaponMesh() const
+{
+	return MeshComponent;
+}
+
 //一个模板
 void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -552,4 +575,5 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, bIsCurrentAmmoInfinity)
 	DOREPLIFETIME(ASWeapon, bIsBackUpAmmoInfinity)
 }
+
 

@@ -49,6 +49,8 @@ public:
 
 	//重写父类函数,在生命周期中进行网络复制
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	USkeletalMeshComponent* GetWeaponMesh() const;
 	
 	//开始射击函数
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
@@ -86,6 +88,9 @@ protected:
 	//装弹是否已满
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool CheckIsFullAmmo();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector GetAimingEndPoint();
 	
 	//处理射击判定的函数
 	virtual void DealFire();
