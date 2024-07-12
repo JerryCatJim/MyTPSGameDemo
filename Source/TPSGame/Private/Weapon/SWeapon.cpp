@@ -438,11 +438,19 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 	
 	//播放装弹动画
 	bIsReloading = true;
-	const float MontagePlayTime = ReloadMontage->SequenceLength;//MyOwner->PlayAnimMontage(ReloadMontage);
 
-	//Multi播放换弹动画，保证同步
-	Multi_PlayReloadMontage(ReloadMontage);
-	
+	const float MontagePlayTime = ReloadMontage ? ReloadMontage->SequenceLength : 1.0f ;
+
+	if(ReloadMontage)
+	{
+		//Multi播放换弹动画，保证同步
+		Multi_PlayReloadMontage(ReloadMontage);
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("Reload蒙太奇不存在！")));
+	}
+
 	GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
 	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){StopReload(false);}, MontagePlayTime, false);
 }
@@ -484,12 +492,11 @@ void ASWeapon::StopReload(bool IsInterrupted)
 
 void ASWeapon::Multi_PlayReloadMontage_Implementation(UAnimMontage* MontageToPlay)
 {
-	if(CheckOwnerValidAndAlive())
+	if(CheckOwnerValidAndAlive() && MontageToPlay)
 	{
 		MyOwner->PlayAnimMontage(MontageToPlay);
 	}
 }
-
 
 //每当HitScanTrace这个变量被网络复制同步(在Fire函数中执行),就触发一次该函数
 void ASWeapon::OnRep_HitScanTrace()
