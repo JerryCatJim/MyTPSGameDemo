@@ -71,6 +71,7 @@ void ASCharacter::BeginPlay()
 	
 	//胶囊体对Weapon通道忽略,防止阻挡射线对Mesh的检测
 	GetCapsuleComponent()->SetCollisionResponseToChannel(Collision_Weapon, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(Collision_Projectile, ECR_Ignore);
 	
 	//储存为初始值
 	DefaultFOV = CameraComponent->FieldOfView;

@@ -8,9 +8,11 @@
 #include "Particles/ParticleSystem.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "../TPSGame.h"    //宏定义重命名
 #include "TimerManager.h"  //定时器
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 int32 DebugWeaponDrawing = 0;
@@ -23,6 +25,8 @@ ASWeapon::ASWeapon()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	WeaponBulletType = EWeaponBulletType::HitScan;
+	
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 	RootComponent = MeshComponent;  //SetupAttachment
 
@@ -54,6 +58,7 @@ ASWeapon::ASWeapon()
 	
 	//开启网络复制，将该实体从服务器端Server复制到客户端Client
 	SetReplicates(true);
+	//SetReplicatingMovement(true);
 
 	//网络更新频率
 	NetUpdateFrequency = 66.f;
@@ -83,7 +88,7 @@ bool ASWeapon::CheckOwnerValidAndAlive()
 
 bool ASWeapon::IsProjectileWeapon()
 {
-	return WeaponType == EWeaponType::RocketLauncher;
+	return WeaponBulletType == EWeaponBulletType::Projectile;
 }
 
 bool ASWeapon::CheckCanFire()
@@ -95,16 +100,20 @@ float ASWeapon::GetBulletSpread()
 {
 	if(CheckOwnerValidAndAlive())
 	{
-		float TempRate = 1;
-		if(!MyOwner->GetIsAiming())
-		{
-			TempRate *= 2;
-		}
+		float TempRate = 3;
 		if(MyOwner->GetVelocity().Size2D() > 0)
 		{
-			TempRate *= 2;
+			TempRate *= 4;
 		}
-		TempRate = FMath::Clamp(TempRate, 1.0f, 3.0f);
+		if(MyOwner->GetIsAiming())
+		{
+			TempRate *= 0.1;
+		}
+		if(MyOwner->GetCharacterMovement() && MyOwner->GetCharacterMovement()->IsFalling())
+		{
+			TempRate *= 10;
+		}
+		TempRate = FMath::Clamp(TempRate, 1.0f, 20.0f);
 		return BulletSpread * TempRate;
 	}
 	return BulletSpread;
@@ -116,15 +125,39 @@ bool ASWeapon::CheckIsFullAmmo()
 		|| (CurrentAmmoNum >= OnePackageAmmoNum+1 && CanOverloadAmmo);
 }
 
-FVector ASWeapon::GetAimingEndPoint()
+FVector ASWeapon::GetCurrentAimingPoint()
 {
 	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
 	FVector EyeLocation;
 	FRotator EyeRotation;
 	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
 	
-	//准星瞄准方向的向量
-	const FVector EndPoint = EyeLocation + (EyeRotation.Vector() * WeaponTraceRange);
+	//伤害效果射击方位
+	FVector ShotDirection = EyeRotation.Vector();
+	//Radian 弧度
+	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
+	float HalfRadian = FMath::DegreesToRadians(GetBulletSpread());
+	//轴线就是传入的ShotDirection向量
+	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
+	
+	//射线检测的最远位置
+	const FVector EndPoint = EyeLocation + (ShotDirection * WeaponTraceRange);
+	//碰撞查询
+	FCollisionQueryParams QueryParams;
+	//忽略武器自身和持有者的碰撞
+	QueryParams.AddIgnoredActor(MyOwner);
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
+	QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
+	//击中结果
+	FHitResult Hit;
+	//射线检测
+	bool bIsTraceHit;  //是否射线检测命中
+	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, EndPoint, Collision_Weapon, QueryParams);
+	if(bIsTraceHit)
+	{
+		return Hit.ImpactPoint;
+	}
 	return EndPoint;
 }
 
@@ -191,7 +224,7 @@ void ASWeapon::DealFire()
 		
 		HitSurfaceType = SurfaceType;
 		
-		PlayImpactEffects(HitSurfaceType, ShotTraceEnd);
+		PlayImpactEffectsAndSounds(HitSurfaceType, ShotTraceEnd);
 	}
 
 	bHitSomeTarget = bIsTraceHit;
@@ -238,7 +271,7 @@ void ASWeapon::Fire()
 		//处理射击判定和应用伤害的函数
 		DealFire();
 
-		//把局部变量存到全局变量中，进行网络复制同步
+		//发射器类型的武器命中目标和地点需在其Projectile类中才能得到
 		if(HasAuthority() && !IsProjectileWeapon())
 		{
 			//轨迹终点
@@ -248,7 +281,8 @@ void ASWeapon::Fire()
 		}
 
 		//播放特效
-		PlayFireEffects(ShotTraceEnd);
+		PlayFireEffectsAndSounds();
+		PlayTraceEffect(ShotTraceEnd);
 		
 		//记录世界时间
 		LastFireTime = GetWorld()->TimeSeconds;
@@ -272,7 +306,7 @@ void ASWeapon::Fire()
 	}
 }
 
-void ASWeapon::PlayFireEffects(FVector TraceEnd)
+void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 {
 	if(MuzzleEffect)
 	{
@@ -280,17 +314,9 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComponent, MuzzleSocketName);
 	}
 
-		
-	if(TraceEffect && !IsProjectileWeapon())  //火箭筒不播放轨迹特效，因为轨迹特效是瞬间描绘的
+	if(FireSound)
 	{
-		//获取输入实际位置
-		const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
-		//弹道特效
-		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
-		if(TraceComponent)
-		{
-			TraceComponent->SetVectorParameter(TraceTargetName, TraceEnd);
-		}
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, GetActorLocation());
 	}
 
 	//获得武器持有者owner
@@ -307,8 +333,23 @@ void ASWeapon::PlayFireEffects(FVector TraceEnd)
 	}
 }
 
+void ASWeapon::PlayTraceEffect(FVector TraceEnd)
+{
+	if(TraceEffect && !IsProjectileWeapon())  //发射器类武器不播放轨迹特效，因为轨迹特效是瞬间描绘的
+	{
+		//获取输入实际位置
+		const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
+		//弹道特效
+		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
+		if(TraceComponent)
+		{
+			TraceComponent->SetVectorParameter(TraceTargetName, TraceEnd);
+		}
+	}
+}
+
 //播放武器命中效果
-void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint)
+void ASWeapon::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint)
 {
 	if(IsProjectileWeapon())
 	{
@@ -316,19 +357,21 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 		return;
 	}
 	
-	//选中的击中效果
-	UParticleSystem* SelectedEffect = nullptr;
+	UParticleSystem* SelectedEffect;
+	USoundCue* ImpactSound;
 			
 	switch(SurfaceType)
 	{
 		//project setting中的FleshDefault和FleshVulnerable
-		case Surface_FleshDefault:
-		case Surface_FleshVulnerable:
+		case Surface_FleshDefault:      //身体
+		case Surface_FleshVulnerable:   //易伤部位，例如爆头，可单独设置特效和音效
 			SelectedEffect = FleshImpactEffect;
-		break;
-	default:
-		SelectedEffect = DefaultImpactEffect;
-		break;
+			ImpactSound = FleshHitSound;
+			break;
+		default:
+			SelectedEffect = DefaultImpactEffect;
+			ImpactSound = DefaultHitSound;
+			break;
 	}
 			
 	if(SelectedEffect && HitScanTrace.HitSomeTarget)// && ImpactPoint.Size() > 0)
@@ -341,6 +384,9 @@ void ASWeapon::PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoi
 		
 		//击中特效
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint,  ShootDirection.Rotation());
+
+		//播放命中音效
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, ImpactPoint);
 	}
 }
 
@@ -501,8 +547,8 @@ void ASWeapon::Multi_PlayReloadMontage_Implementation(UAnimMontage* MontageToPla
 //每当HitScanTrace这个变量被网络复制同步(在Fire函数中执行),就触发一次该函数
 void ASWeapon::OnRep_HitScanTrace()
 {
-	PlayFireEffects(HitScanTrace.TraceTo);
-	PlayImpactEffects(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
+	PlayTraceEffect(HitScanTrace.TraceTo);
+	PlayImpactEffectsAndSounds(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
 }
 
 void ASWeapon::OnRep_CurrentAmmoNum()

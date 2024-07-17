@@ -14,17 +14,43 @@ class TPSGAME_API AProjectile : public AActor
 public:	
 	// Sets default values for this actor's properties
 	AProjectile();
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+	UFUNCTION()
+	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);
+	
+public:
+	
+protected:
 
 private:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
+
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovementComponent;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* Tracer;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystemComponent* TracerComponent;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* DefaultImpactEffect;
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* FleshImpactEffect;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* DefaultHitSound;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* FleshHitSound;
 };

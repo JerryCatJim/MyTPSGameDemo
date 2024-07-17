@@ -15,7 +15,8 @@ class TPSGAME_API AProjectileWeapon : public ASWeapon
 	GENERATED_BODY()
 
 public:
-
+	AProjectileWeapon();
+	
 protected:
 	virtual void DealFire() override;
 

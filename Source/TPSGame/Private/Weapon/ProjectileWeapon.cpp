@@ -5,6 +5,11 @@
 #include "Weapon/Projectile.h"
 #include "Engine/SkeletalMeshSocket.h"
 
+AProjectileWeapon::AProjectileWeapon()
+{
+	WeaponBulletType = EWeaponBulletType::Projectile;
+}
+
 void AProjectileWeapon::DealFire()
 {
 	//Super::DealFire();
@@ -16,7 +21,7 @@ void AProjectileWeapon::DealFire()
 	{
 		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
 		//枪口 指向 准星瞄准方向的终点 的向量
-		FVector ToTarget = GetAimingEndPoint() - SocketTransform.GetLocation();
+		FVector ToTarget = GetCurrentAimingPoint() - SocketTransform.GetLocation();
 		FRotator TargetRotation = ToTarget.Rotation();
 		if(ProjectileClass && InstigatorPawn)
 		{

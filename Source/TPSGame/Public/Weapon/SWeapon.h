@@ -24,6 +24,13 @@ public:
 };
 
 UENUM(BlueprintType)
+enum EWeaponBulletType
+{
+	HitScan,
+	Projectile,
+};
+
+UENUM(BlueprintType)
 enum EWeaponType
 {
 	Rifle,
@@ -90,7 +97,7 @@ protected:
 	bool CheckIsFullAmmo();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FVector GetAimingEndPoint();
+	FVector GetCurrentAimingPoint();
 	
 	//处理射击判定的函数
 	virtual void DealFire();
@@ -138,16 +145,19 @@ protected:
 	void OnRep_IsBackUpAmmoInfinity();
 
 	//播放武器开火特效
-	void PlayFireEffects(FVector TraceEnd);
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayFireEffectsAndSounds();
+	
+	void PlayTraceEffect(FVector TraceEnd);
 	
 	//播放击中效果
-	void PlayImpactEffects(EPhysicalSurface SurfaceType, FVector ImpactPoint);
+	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 
 	//播放射击动画
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayFireAnim();
-	UFUNCTION(NetMulticast, Reliable)
 	//停止射击动画
+	UFUNCTION(NetMulticast, Reliable)
 	void StopFireAnim();
 	
 public:
@@ -173,7 +183,6 @@ public:
 	//是否无限备用子弹
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
 	bool bIsBackUpAmmoInfinity = false;
-
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	FName WeaponName;
@@ -223,14 +232,25 @@ protected:
 	//默认击中特效
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	UParticleSystem* DefaultImpactEffect;
-
 	//肉体击中效果(飙血)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	UParticleSystem* FleshImpactEffect;
-	
 	//易伤部位击中特效(例如爆头)
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
 	//UParticleSystem* HeadShotImpactEffect;
+
+	//开火音效
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponSound)
+	class USoundCue* FireSound;
+	//默认击中音效
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponSound)
+	class USoundCue* DefaultHitSound;
+	//肉体击中音效
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponSound)
+	class USoundCue* FleshHitSound;
+	//易伤部位击中音效(例如爆头)
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponSound)
+	//class USoundCue* HeadShotHitSound;
 	
 	//弹道特效
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
@@ -303,4 +323,7 @@ protected:
 	float AimPlayRate = 2.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= WeaponMontage)
 	float NoAimPlayRate = 0.4f;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
 };
