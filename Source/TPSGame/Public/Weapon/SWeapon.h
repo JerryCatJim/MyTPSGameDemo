@@ -90,7 +90,7 @@ protected:
 	
 	//计算武器射击扩散程度
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	float GetBulletSpread();
+	float GetDynamicBulletSpread();
 
 	//装弹是否已满
 	UFUNCTION(BlueprintCallable, BlueprintPure)

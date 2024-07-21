@@ -96,7 +96,7 @@ bool ASWeapon::CheckCanFire()
 	return CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity;
 }
 
-float ASWeapon::GetBulletSpread()
+float ASWeapon::GetDynamicBulletSpread()
 {
 	if(CheckOwnerValidAndAlive())
 	{
@@ -136,7 +136,7 @@ FVector ASWeapon::GetCurrentAimingPoint()
 	FVector ShotDirection = EyeRotation.Vector();
 	//Radian 弧度
 	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
-	float HalfRadian = FMath::DegreesToRadians(GetBulletSpread());
+	float HalfRadian = FMath::DegreesToRadians(GetDynamicBulletSpread());
 	//轴线就是传入的ShotDirection向量
 	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 	
@@ -173,7 +173,7 @@ void ASWeapon::DealFire()
 		
 	//Radian 弧度
 	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
-	float HalfRadian = FMath::DegreesToRadians(GetBulletSpread());
+	float HalfRadian = FMath::DegreesToRadians(GetDynamicBulletSpread());
 	//轴线就是传入的ShotDirection向量
 	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 		
