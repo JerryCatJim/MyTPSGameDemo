@@ -125,7 +125,7 @@ bool ASWeapon::CheckIsFullAmmo()
 		|| (CurrentAmmoNum >= OnePackageAmmoNum+1 && CanOverloadAmmo);
 }
 
-FVector ASWeapon::GetCurrentAimingPoint()
+FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 {
 	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
 	FVector EyeLocation;
@@ -135,8 +135,8 @@ FVector ASWeapon::GetCurrentAimingPoint()
 	//伤害效果射击方位
 	FVector ShotDirection = EyeRotation.Vector();
 	//Radian 弧度
-	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
-	float HalfRadian = FMath::DegreesToRadians(GetDynamicBulletSpread());
+	//矫正武器枪口指向位置时不想应用散布导致偏移
+	float HalfRadian = bUseSpread ? FMath::DegreesToRadians(GetDynamicBulletSpread()) : 0;
 	//轴线就是传入的ShotDirection向量
 	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 	

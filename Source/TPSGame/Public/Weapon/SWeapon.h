@@ -97,7 +97,7 @@ protected:
 	bool CheckIsFullAmmo();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FVector GetCurrentAimingPoint();
+	FVector GetCurrentAimingPoint(bool bUseSpread = true);
 	
 	//处理射击判定的函数
 	virtual void DealFire();
