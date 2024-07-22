@@ -31,7 +31,7 @@ ASWeapon::ASWeapon()
 	RootComponent = MeshComponent;  //SetupAttachment
 
 	//枪口插槽名称
-	MuzzleSocketName = "MuzzleSocket";
+	MuzzleSocketName = "MuzzleFlash";
 
 	//追踪目标名称
 	TraceTargetName = "Target";

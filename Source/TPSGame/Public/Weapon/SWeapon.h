@@ -218,7 +218,7 @@ protected:
 	class TSubclassOf<UDamageType> DamageType; //空值，传入后会选择默认类型
 
 	//枪口插槽名称
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	FName MuzzleSocketName;
 
 	//要设置长度的粒子特效的变量名称(?)
