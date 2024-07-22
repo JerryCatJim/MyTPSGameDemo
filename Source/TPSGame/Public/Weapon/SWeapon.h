@@ -39,6 +39,43 @@ enum EWeaponType
 	MachineGun,
 };
 
+USTRUCT(BlueprintType)
+struct FWeaponPickUpInfo
+{
+	GENERATED_BODY()
+	
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class ASCharacter* Owner;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* WeaponMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ASWeapon> WeaponClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int CurrentAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int BackUpAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName WeaponName;
+
+	FWeaponPickUpInfo(){};
+	
+	FWeaponPickUpInfo(ASCharacter* NewOwner, USkeletalMesh* NewWeaponMesh, TSubclassOf<ASWeapon> NewWeaponClass, int NewCurrentAmmo, int NewBackUpAmmo, FName NewWeaponName)
+	{
+		Owner = NewOwner;
+		WeaponMesh = NewWeaponMesh;
+		WeaponClass = NewWeaponClass;
+		CurrentAmmo = NewCurrentAmmo;
+		BackUpAmmo = NewBackUpAmmo;
+		WeaponName = NewWeaponName;
+	};
+};
+
 //IsEmpty用以区分当次射击是否为空射(可用于播放子弹数为空时的音效等)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCurrentAmmoChangedDelegate, int, CurrentAmmoNum, bool, bPlayEffect);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBackUpAmmoChangedDelegate, int, BackUpAmmoNum, bool, bPlayEffect);
@@ -57,7 +94,7 @@ public:
 	//重写父类函数,在生命周期中进行网络复制
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	USkeletalMeshComponent* GetWeaponMesh() const;
+	USkeletalMeshComponent* GetWeaponMeshComp() const;
 	
 	//开始射击函数
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
@@ -78,6 +115,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	bool CheckCanFire();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
+	FWeaponPickUpInfo GetWeaponPickUpInfo();
+	
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void RefreshWeaponInfo(FWeaponPickUpInfo WeaponInfo);
 	
 protected:
 	// Called when the game starts or when spawned
@@ -125,6 +168,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void ServerReload_BP();
 
+	UFUNCTION(Server, Reliable) //服务器，可靠链接，进行验证 （RPC函数）
+	void ServerStopReload(bool IsInterrupted = false);
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayReloadMontage(UAnimMontage* MontageToPlay);
 	
@@ -144,6 +190,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnRep_IsBackUpAmmoInfinity();
 
+	UFUNCTION(BlueprintCallable)
+	void OnRep_WeaponPickUpInfo();
+
 	//播放武器开火特效
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayFireEffectsAndSounds();
@@ -158,7 +207,10 @@ protected:
 	void PlayFireAnim();
 	//停止射击动画
 	UFUNCTION(NetMulticast, Reliable)
-	void StopFireAnim();
+	void StopFireAnimAndTimer();
+	//停止装弹动画和计时器
+	UFUNCTION(NetMulticast, Reliable)
+	void StopReloadAnimAndTimer();
 	
 public:
 	//当前子弹数
@@ -184,7 +236,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
 	bool bIsBackUpAmmoInfinity = false;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", Replicated)
 	FName WeaponName;
 
 	//当前子弹数变化的委托
@@ -326,4 +378,8 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
+
+private:
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_WeaponPickUpInfo)
+	FWeaponPickUpInfo WeaponPickUpInfo;
 };

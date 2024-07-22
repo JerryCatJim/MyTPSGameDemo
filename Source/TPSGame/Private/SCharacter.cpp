@@ -11,6 +11,7 @@
 //#include "Component/SBuffComponent.h"
 #include "TPSPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -90,7 +91,7 @@ void ASCharacter::BeginPlay()
 		SpawnParams.Owner = this;
 	
 		//生成默认武器
-		CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(StarterWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(CurrentWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
 		if(CurrentWeapon)
 		{
 			//CurrentWeapon->SetOwner(this);
@@ -157,6 +158,15 @@ void ASCharacter::EndCrouch()
 	UnCrouch();
 }
 
+void ASCharacter::InteractKeyPressed_Implementation()
+{
+	OnInteractKeyDown.Broadcast();
+}
+
+void ASCharacter::InteractKeyReleased_Implementation()
+{
+	
+}
 
 // Called to bind functionality to input
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -175,6 +185,10 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	
 	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::SetZoomFOV);
 	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::ResetZoomFOV);
+
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASCharacter::InteractKeyPressed);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASCharacter::InteractKeyReleased);
+	
 	//绑定轴映射输入
 	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("Turn", this, &ASCharacter::AddControllerYawInput);
@@ -195,7 +209,6 @@ FVector ASCharacter::GetPawnViewLocation() const
 	return Super::GetPawnViewLocation();
 }
 
-
 //将开镜行为发送到服务器然后同步
 void ASCharacter::SetZoomFOV_Implementation()
 {
@@ -214,6 +227,36 @@ void ASCharacter::SetIsFiring_Implementation(bool IsFiring)
 	bIsFiring = IsFiring;
 }
 
+void ASCharacter::PickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
+{
+	const FWeaponPickUpInfo LastWeaponInfo = GetWeaponPickUpInfo();
+	StopReload();
+	StopFire();
+	
+	//把旧武器信息广播出去，可用于和地上可拾取武器的信息互换
+	OnPickUpWeapon.Broadcast(LastWeaponInfo);
+	
+	CurrentWeaponClass = WeaponInfo.WeaponClass;
+	
+	CurrentWeapon->Destroy(true);
+
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CurrentWeapon = GetWorld()->SpawnActor<ASWeapon>(
+		CurrentWeaponClass,
+		FTransform(),
+		SpawnParameters
+		);
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+		CurrentWeapon->RefreshWeaponInfo(WeaponInfo);
+		//C++中的服务器不会自动调用OnRep函数，需要手动调用
+		OnRep_CurrentWeapon();
+	}
+}
+
 void ASCharacter::StartFire()
 {
 	if(CurrentWeapon)
@@ -230,6 +273,14 @@ void ASCharacter::StopFire()
 	{
 		//SetIsFiring(false);    //挪到Sweapon.cpp的StopFire()中了
 		CurrentWeapon->StopFire();
+	}
+}
+
+void ASCharacter::StopReload()
+{
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->StopReload(true);
 	}
 }
 
@@ -309,6 +360,15 @@ bool ASCharacter::GetIsAiming()
 bool ASCharacter::GetIsFiring()
 {
 	return bIsFiring;
+}
+
+FWeaponPickUpInfo ASCharacter::GetWeaponPickUpInfo()
+{
+	if(CurrentWeapon)
+	{
+		return CurrentWeapon->GetWeaponPickUpInfo();
+	}
+	return FWeaponPickUpInfo();
 }
 
 //一个模板

@@ -73,6 +73,13 @@ void ASWeapon::BeginPlay()
 	TimeBetweenShots = 60/RateOfShoot;
 	//Owner在构造函数里拿不到，在BeginPlay里就拿到了(?)
 	MyOwner = Cast<ASCharacter>(GetOwner());
+
+	WeaponPickUpInfo.Owner = MyOwner;
+	WeaponPickUpInfo.WeaponClass = GetClass();
+	WeaponPickUpInfo.WeaponMesh = GetWeaponMeshComp()->SkeletalMesh;
+	WeaponPickUpInfo.CurrentAmmo = CurrentAmmoNum;
+	WeaponPickUpInfo.BackUpAmmo = BackUpAmmoNum;
+	WeaponPickUpInfo.WeaponName = WeaponName;
 }
 
 /*// Called every frame
@@ -94,6 +101,24 @@ bool ASWeapon::IsProjectileWeapon()
 bool ASWeapon::CheckCanFire()
 {
 	return CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity;
+}
+
+//不想每次子弹变化都更新Info,因为要网络同步,所以在Get时才更新
+FWeaponPickUpInfo ASWeapon::GetWeaponPickUpInfo()
+{
+	WeaponPickUpInfo.CurrentAmmo = CurrentAmmoNum;
+	WeaponPickUpInfo.BackUpAmmo = BackUpAmmoNum;
+	return WeaponPickUpInfo;
+}
+
+void ASWeapon::RefreshWeaponInfo_Implementation(FWeaponPickUpInfo WeaponInfo)
+{
+	WeaponPickUpInfo = WeaponInfo;
+	
+	WeaponName = WeaponInfo.WeaponName;
+	GetWeaponMeshComp()->SetSkeletalMesh(WeaponInfo.WeaponMesh);
+	CurrentAmmoNum = WeaponInfo.CurrentAmmo;
+	BackUpAmmoNum = WeaponInfo.BackUpAmmo;
 }
 
 float ASWeapon::GetDynamicBulletSpread()
@@ -409,18 +434,22 @@ void ASWeapon::PlayFireAnim_Implementation()
 	}
 }
 
-void ASWeapon::StopFireAnim_Implementation()
+void ASWeapon::StopFireAnimAndTimer_Implementation()
 {
 	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
-	if(CurrentFireMontage)
-	{
-		MyOwner->StopAnimMontage(CurrentFireMontage);
-	}
+	
+	MyOwner->StopAnimMontage(CurrentFireMontage);
+	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
 }
 
+void ASWeapon::StopReloadAnimAndTimer_Implementation()
+{
+	GetWorldTimerManager().ClearTimer(ReloadTimer);
+	MyOwner->StopAnimMontage(ReloadMontage);
+}
 
 void ASWeapon::StartFire_Implementation()
 {
@@ -440,6 +469,7 @@ void ASWeapon::StopFire_Implementation()
 	if(!HasAuthority())
 	{
 		ServerStopFire();
+		return;
 	}
 
 	if(!CheckOwnerValidAndAlive())
@@ -449,13 +479,12 @@ void ASWeapon::StopFire_Implementation()
 	
 	MyOwner->SetIsFiring(false);
 	
-	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
 	if(CurrentAmmoNum == 0)
 	{
 		Reload(true);
 	}
 	//停止播放射击动画
-	StopFireAnim();
+	StopFireAnimAndTimer();
 	
 	//蓝图要处理啥，留个接口出来
 	ServerStopFire_BP();
@@ -503,15 +532,20 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 
 void ASWeapon::StopReload(bool IsInterrupted)
 {
+	if(!HasAuthority())
+	{
+		ServerStopReload(IsInterrupted);
+		return;
+	}
+	
 	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
 	
-	GetWorldTimerManager().ClearTimer(ReloadTimer);
-	bIsReloading = false;
-	MyOwner->StopAnimMontage(ReloadMontage);
-
+	bIsReloading = false; //有网络复制
+	StopReloadAnimAndTimer();
+	
 	if(!IsInterrupted)
 	{
 		if(CurrentAmmoNum < OnePackageAmmoNum)
@@ -544,6 +578,11 @@ void ASWeapon::Multi_PlayReloadMontage_Implementation(UAnimMontage* MontageToPla
 	}
 }
 
+void ASWeapon::ServerStopReload_Implementation(bool IsInterrupted)
+{
+	StopReload(IsInterrupted);
+}
+
 //每当HitScanTrace这个变量被网络复制同步(在Fire函数中执行),就触发一次该函数
 void ASWeapon::OnRep_HitScanTrace()
 {
@@ -571,6 +610,12 @@ void ASWeapon::OnRep_IsCurrentAmmoInfinity()
 void ASWeapon::OnRep_IsBackUpAmmoInfinity()
 {
 	OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum, false);
+}
+
+void ASWeapon::OnRep_WeaponPickUpInfo()
+{
+	//服务端在生成新武器时就执行了RefreshWeaponInfo，此时客户端还未完成复制，所以复制完成后手动刷新下武器Mesh
+	GetWeaponMeshComp()->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
 }
 
 //服务器开火函数(客户端发送开火请求，服务器调用真正的开火逻辑)
@@ -609,7 +654,7 @@ void ASWeapon::ServerReload_BP_Implementation()
 	//ToDo In blueprint
 }
 
-USkeletalMeshComponent* ASWeapon::GetWeaponMesh() const
+USkeletalMeshComponent* ASWeapon::GetWeaponMeshComp() const
 {
 	return MeshComponent;
 }
@@ -625,8 +670,10 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME_CONDITION(ASWeapon, CurrentAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, BackUpAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, bIsReloading, COND_None);
-	DOREPLIFETIME(ASWeapon, bIsCurrentAmmoInfinity)
-	DOREPLIFETIME(ASWeapon, bIsBackUpAmmoInfinity)
+	DOREPLIFETIME(ASWeapon, bIsCurrentAmmoInfinity);
+	DOREPLIFETIME(ASWeapon, bIsBackUpAmmoInfinity);
+	DOREPLIFETIME(ASWeapon, WeaponName);
+	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 }
 
 

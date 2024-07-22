@@ -16,10 +16,10 @@ void AProjectileWeapon::DealFire()
 	//与射线检测的即时命中武器不同，发射器武器完全重写发射逻辑
 
 	APawn* InstigatorPawn = Cast<APawn>(GetOwner());
-	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMesh()->GetSocketByName(MuzzleSocketName);
+	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMeshComp()->GetSocketByName(MuzzleSocketName);
 	if(MuzzleSocket)
 	{
-		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMesh());
+		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMeshComp());
 		//枪口 指向 准星瞄准方向的终点 的向量
 		FVector ToTarget = GetCurrentAimingPoint() - SocketTransform.GetLocation();
 		FRotator TargetRotation = ToTarget.Rotation();

@@ -14,7 +14,9 @@
 #include "SCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FPlayerDead, AController*, InstigatedBy, AActor*, DamageCauser,const UDamageType*, DamageType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickUpWeapon, FWeaponPickUpInfo, OldWeaponInfo);
 
 UCLASS()
 class TPSGAME_API ASCharacter : public ACharacter, public IMyInterfaceTest
@@ -33,14 +35,19 @@ public:
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
+	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 	
 	//控制武器开火
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StartFire();
-
 	//停止射击
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StopFire();
+	//停止装填子弹
+	UFUNCTION(BlueprintCallable, Category= WeaponFire)
+	void StopReload();
 
 	//设置是否开镜
 	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
@@ -48,6 +55,12 @@ public:
 	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
 	void ResetZoomFOV();
 
+	//当交互键(E)被按下时
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void InteractKeyPressed();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void InteractKeyReleased();
+	
 	UFUNCTION(Server,Reliable)  //将射击行为发送到服务器然后同步
 	void SetIsFiring(bool IsFiring);
 	
@@ -65,6 +78,10 @@ public:
 	bool GetIsAiming();
 
 	bool GetIsFiring();
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
+	FWeaponPickUpInfo GetWeaponPickUpInfo();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -123,6 +140,12 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FPlayerDead OnPlayerDead;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPickUpWeapon OnPickUpWeapon;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnInteractKeyDown OnInteractKeyDown;
 	
 	//是否正在开镜变焦
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
@@ -149,7 +172,7 @@ protected:
 
 	//为玩家生成武器
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<ASWeapon> StarterWeaponClass;
+	TSubclassOf<ASWeapon> CurrentWeaponClass;
 
 	//武器插槽名称
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
@@ -173,7 +196,7 @@ protected:
 
 	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Z;
-
+	
 //临时测试接口的区域
 public:
 	//UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = TestInterface)
