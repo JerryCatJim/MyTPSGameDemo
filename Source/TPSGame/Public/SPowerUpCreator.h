@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "SPickUpActor.generated.h"
+#include "SPowerUpCreator.generated.h"
 
 class USphereComponent;
 class UDecalComponent;
@@ -13,13 +13,13 @@ class ASPowerUpActor;
 //这是道具刷新点
 
 UCLASS()
-class TPSGAME_API ASPickUpActor : public AActor
+class TPSGAME_API ASPowerUpCreator : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ASPickUpActor();
+	ASPowerUpCreator();
 
 protected:
 	// Called when the game starts or when spawned
@@ -49,6 +49,7 @@ protected:
 	TSubclassOf<ASPowerUpActor> PowerUpClass;
 
 	//道具实例
+	UPROPERTY()
 	ASPowerUpActor* PowerUpInstance;
 
 	//计时器句柄

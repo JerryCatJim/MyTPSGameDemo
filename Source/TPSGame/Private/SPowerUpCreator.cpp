@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "SPickUpActor.h"
+#include "SPowerUpCreator.h"
 
 #include "SCharacter.h"
 #include "SPowerUpActor.h"
@@ -11,7 +11,7 @@
 
 
 // Sets default values
-ASPickUpActor::ASPickUpActor()
+ASPowerUpCreator::ASPowerUpCreator()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -38,7 +38,7 @@ ASPickUpActor::ASPickUpActor()
 }
 
 // Called when the game starts or when spawned
-void ASPickUpActor::BeginPlay()
+void ASPowerUpCreator::BeginPlay()
 {
 	Super::BeginPlay();
 	
@@ -50,13 +50,13 @@ void ASPickUpActor::BeginPlay()
 }
 
 // Called every frame
-void ASPickUpActor::Tick(float DeltaTime)
+void ASPowerUpCreator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-void ASPickUpActor::NotifyActorBeginOverlap(AActor* OtherActor)
+void ASPowerUpCreator::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
 	
@@ -79,13 +79,13 @@ void ASPickUpActor::NotifyActorBeginOverlap(AActor* OtherActor)
 		if(RespawnInterval > 0) //道具生成点重新生成道具
 		{
 			//设置定时器用于重新生成道具
-			GetWorldTimerManager().SetTimer(TimerHandle_Respawn, this, &ASPickUpActor::Respawn, RespawnInterval, false, RespawnInterval);
+			GetWorldTimerManager().SetTimer(TimerHandle_Respawn, this, &ASPowerUpCreator::Respawn, RespawnInterval, false, RespawnInterval);
 		}
 	}
 }
 
 //重新生成道具
-void ASPickUpActor::Respawn()
+void ASPowerUpCreator::Respawn()
 {
 	if(PowerUpClass == nullptr)  //如果没指定生成何种道具则不生成
 	{
