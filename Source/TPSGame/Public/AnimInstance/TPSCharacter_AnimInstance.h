@@ -55,4 +55,16 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, Category=Movement, meta = (AllowPrivateAccess = "true"))
 	FTransform RightHandTransToMoveToLeftHand;
+
+	UPROPERTY(BlueprintReadOnly, Category=Movement, meta = (AllowPrivateAccess = "true"))
+	FTransform LeftHandTransOfPistol_NoAim;
+
+	UPROPERTY(BlueprintReadOnly, Category=Movement, meta = (AllowPrivateAccess = "true"))
+	bool bUseCommonLeftHandIK;
+
+	UPROPERTY(BlueprintReadOnly, Category=Movement, meta = (AllowPrivateAccess = "true"))
+	bool bUsePistolLeftHandIK_NoAim;
+	
+	UPROPERTY(BlueprintReadOnly, Category=Movement, meta = (AllowPrivateAccess = "true"))
+	bool bUsePistolRightHandIK;
 };

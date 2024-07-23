@@ -78,6 +78,9 @@ public:
 	bool GetIsAiming();
 
 	bool GetIsFiring();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsReloading();
 	
 	float GetAimOffset_Y();
 	float GetAimOffset_Z();

@@ -379,6 +379,15 @@ bool ASCharacter::GetIsFiring()
 	return bIsFiring;
 }
 
+bool ASCharacter::GetIsReloading()
+{
+	if(!IsValid(CurrentWeapon))
+	{
+		return false;
+	}
+	return CurrentWeapon->bIsReloading;
+}
+
 float ASCharacter::GetAimOffset_Y()
 {
 	return AimOffset_Y;
