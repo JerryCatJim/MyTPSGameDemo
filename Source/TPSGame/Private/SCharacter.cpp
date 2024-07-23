@@ -393,12 +393,15 @@ void ASCharacter::SyncAimOffset_Implementation()
 {
 	FRotator TargetRotator = GetControlRotation()-GetActorRotation();
 	TargetRotator.Normalize();
+	
 	AimOffset_Y = FMath::RInterpTo(
 		FRotator(AimOffset_Y,AimOffset_Z, 0),
 		TargetRotator,
 		GetWorld()->GetDeltaSeconds(),
 		5
 		).Pitch;
+	
+	AimOffset_Y = TargetRotator.Pitch;
 	AimOffset_Z = 0;
 }
 

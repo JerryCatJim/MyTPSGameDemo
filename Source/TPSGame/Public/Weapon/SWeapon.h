@@ -34,6 +34,7 @@ UENUM(BlueprintType)
 enum EWeaponType
 {
 	Rifle,
+	Pistol,
 	RocketLauncher,
 	ShotGun,
 	MachineGun,
@@ -113,6 +114,8 @@ public:
 
 	int GetCurrentAmmoNum() const {return CurrentAmmoNum;};
 
+	EWeaponType GetWeaponType() const {return WeaponType;};
+	
 	UFUNCTION(BlueprintCallable)
 	bool CheckCanFire();
 
