@@ -206,7 +206,7 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayFireAnim();
 	//停止射击动画
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION()//NetMulticast, Reliable)
 	void StopFireAnimAndTimer();
 	//停止装弹动画和计时器
 	UFUNCTION(NetMulticast, Reliable)

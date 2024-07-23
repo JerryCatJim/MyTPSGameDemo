@@ -123,6 +123,23 @@ void ASCharacter::Tick(float DeltaTime)
 	SetPlayerControllerRotation();
 }
 
+void ASCharacter::LookUp(float Value)
+{
+	AddControllerPitchInput(Value);
+
+	//动了才更新AimOffset
+	if( !FMath::IsNearlyEqual(Value, 0) )
+	{
+		SyncAimOffset();
+	}
+}
+
+void ASCharacter::Turn(float Value)
+{
+	AddControllerYawInput(Value);
+}
+
+
 void ASCharacter::MoveForward(float Value)
 {
 	FVector ForwardV = FRotationMatrix(FRotator(0,GetControlRotation().Yaw,0)).GetScaledAxis(EAxis::X);
@@ -190,8 +207,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASCharacter::InteractKeyReleased);
 	
 	//绑定轴映射输入
-	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("Turn", this, &ASCharacter::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &ASCharacter::LookUp);
+	PlayerInputComponent->BindAxis("Turn", this, &ASCharacter::Turn);
 	
 	PlayerInputComponent->BindAxis("MoveForward", this, &ASCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASCharacter::MoveRight);
@@ -291,7 +308,7 @@ void ASCharacter::SetPlayerControllerRotation_Implementation()
 }
 
 void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
-	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+                                  const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
 	if(Health <= 0.f && !bDied)
 	{
@@ -360,6 +377,29 @@ bool ASCharacter::GetIsAiming()
 bool ASCharacter::GetIsFiring()
 {
 	return bIsFiring;
+}
+
+float ASCharacter::GetAimOffset_Y()
+{
+	return AimOffset_Y;
+}
+
+float ASCharacter::GetAimOffset_Z()
+{
+	return AimOffset_Z;
+}
+
+void ASCharacter::SyncAimOffset_Implementation()
+{
+	FRotator TargetRotator = GetControlRotation()-GetActorRotation();
+	TargetRotator.Normalize();
+	AimOffset_Y = FMath::RInterpTo(
+		FRotator(AimOffset_Y,AimOffset_Z, 0),
+		TargetRotator,
+		GetWorld()->GetDeltaSeconds(),
+		5
+		).Pitch;
+	AimOffset_Z = 0;
 }
 
 FWeaponPickUpInfo ASCharacter::GetWeaponPickUpInfo()

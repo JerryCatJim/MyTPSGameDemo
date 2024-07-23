@@ -434,19 +434,26 @@ void ASWeapon::PlayFireAnim_Implementation()
 	}
 }
 
-void ASWeapon::StopFireAnimAndTimer_Implementation()
+void ASWeapon::StopFireAnimAndTimer()//_Implementation()
 {
 	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
 	
-	MyOwner->StopAnimMontage(CurrentFireMontage);
+	MyOwner->SetIsFiring(false);
+	
 	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+	MyOwner->StopAnimMontage(CurrentFireMontage);
 }
 
 void ASWeapon::StopReloadAnimAndTimer_Implementation()
 {
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
 	GetWorldTimerManager().ClearTimer(ReloadTimer);
 	MyOwner->StopAnimMontage(ReloadMontage);
 }
@@ -466,25 +473,29 @@ void ASWeapon::StartFire_Implementation()
 
 void ASWeapon::StopFire_Implementation()
 {
+	//停止播放射击动画
+	//SetIsFiring(false)若放在Server端设置，
+	//假设连射两发，打了一发多一点时间时停火，此时Client向Server发出停火指令，Server立刻停火，但是Multi函数有延迟，
+	//可能会导致Timer因为延迟没有被立刻停止，使得Client多打了一发子弹并且IsFiring状态因此被设为true出现错误
+	//所以收到StopFire()请求时，把SetIsFiring(false)和StopTimer放在一起执行防止延迟，并且Client和Server都立刻执行而不是Server通过Multi函数通知Client
+	
+	StopFireAnimAndTimer();
+	
 	if(!HasAuthority())
 	{
 		ServerStopFire();
 		return;
 	}
-
+	
 	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
 	
-	MyOwner->SetIsFiring(false);
-	
 	if(CurrentAmmoNum == 0)
 	{
 		Reload(true);
 	}
-	//停止播放射击动画
-	StopFireAnimAndTimer();
 	
 	//蓝图要处理啥，留个接口出来
 	ServerStopFire_BP();

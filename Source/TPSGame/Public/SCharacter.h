@@ -79,6 +79,9 @@ public:
 
 	bool GetIsFiring();
 	
+	float GetAimOffset_Y();
+	float GetAimOffset_Z();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
 	FWeaponPickUpInfo GetWeaponPickUpInfo();
 	
@@ -86,21 +89,24 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void LookUp(float Value);
+	void Turn(float Value);
+	
 	void MoveForward(float Value);
-
 	void MoveRight(float Value);
 
 	void BeginJump();
-
 	void EndJump();
 	
 	void BeginCrouch();
-
 	void EndCrouch();
 	
 	//根据是否开镜设置人物的移动类型
 	UFUNCTION(BlueprintNativeEvent)
 	void SetPlayerControllerRotation();
+
+	UFUNCTION(Server, Unreliable, BlueprintCallable)
+	void SyncAimOffset();  //放在了LookUp()中调用
 	
 	//生命值更改函数
 	UFUNCTION()//Server, Reliable)  //必须UFUNCTION才能绑定委托
