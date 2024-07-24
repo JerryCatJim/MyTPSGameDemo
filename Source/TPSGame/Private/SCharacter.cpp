@@ -121,6 +121,36 @@ void ASCharacter::Tick(float DeltaTime)
 
 	//根据是否开镜设置人物的移动类型
 	SetPlayerControllerRotation();
+
+	HideCharacterIfCameraClose();
+}
+
+void ASCharacter::HideCharacterIfCameraClose()
+{
+	//只在本地运行
+	if(!IsLocallyControlled())
+	{
+		return;
+	}
+	
+	if((CameraComponent->GetComponentLocation() - GetActorLocation()).Size() < DistanceToHideCharacter)
+	{
+		GetMesh()->SetVisibility(false);
+		if(IsValid(CurrentWeapon))
+		{
+			CurrentWeapon->GetWeaponMeshComp()->bOwnerNoSee = true;
+			CurrentWeapon->bShowMuzzleFlash = false;
+		}
+	}
+	else
+	{
+		GetMesh()->SetVisibility(true);
+		if(IsValid(CurrentWeapon))
+		{
+			CurrentWeapon->GetWeaponMeshComp()->bOwnerNoSee = false;
+			CurrentWeapon->bShowMuzzleFlash = true;
+		}
+	}
 }
 
 void ASCharacter::LookUp(float Value)

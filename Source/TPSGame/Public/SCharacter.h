@@ -126,7 +126,9 @@ protected:
 	//角色死亡后做的一些操作
 	UFUNCTION()
 	void OnRep_Died();
-	
+
+private:
+	void HideCharacterIfCameraClose();
 public:	
 	//当前武器
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, ReplicatedUsing = OnRep_CurrentWeapon)  //Replicated : 网络复制
@@ -139,6 +141,9 @@ public:
 	//武器2
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
 	class ASWeapon* SecondWeapon;
+
+	UPROPERTY(EditAnywhere)
+	float DistanceToHideCharacter = 100;
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)

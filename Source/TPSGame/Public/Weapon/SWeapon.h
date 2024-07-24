@@ -259,6 +259,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	bool bIsFullAutomaticWeapon = true;
+
+	//SCharacter中因人物与摄像机过近时而隐藏人物和武器时，开枪也不显示枪口火焰特效
+	bool bShowMuzzleFlash = true;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)

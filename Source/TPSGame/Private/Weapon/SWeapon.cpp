@@ -343,7 +343,7 @@ void ASWeapon::Fire()
 
 void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 {
-	if(MuzzleEffect)
+	if(MuzzleEffect && bShowMuzzleFlash)
 	{
 		//武器开火特效
 		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComponent, MuzzleSocketName);
