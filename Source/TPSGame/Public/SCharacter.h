@@ -56,9 +56,9 @@ public:
 	void ResetZoomFOV();
 
 	//当交互键(E)被按下时
-	UFUNCTION(BlueprintCallable, Server, Reliable)
+	UFUNCTION(BlueprintCallable)//, Server, Reliable)
 	void InteractKeyPressed();
-	UFUNCTION(BlueprintCallable, Server, Reliable)
+	UFUNCTION(BlueprintCallable)//, Server, Reliable)
 	void InteractKeyReleased();
 	
 	UFUNCTION(Server,Reliable)  //将射击行为发送到服务器然后同步

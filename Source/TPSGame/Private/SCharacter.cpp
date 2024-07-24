@@ -175,12 +175,13 @@ void ASCharacter::EndCrouch()
 	UnCrouch();
 }
 
-void ASCharacter::InteractKeyPressed_Implementation()
+void ASCharacter::InteractKeyPressed()//_Implementation()
 {
+	//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
 	OnInteractKeyDown.Broadcast();
 }
 
-void ASCharacter::InteractKeyReleased_Implementation()
+void ASCharacter::InteractKeyReleased()//_Implementation()
 {
 	
 }
