@@ -222,7 +222,7 @@ FVector ASCharacter::GetPawnViewLocation() const
 	//判断摄像机组件是否为空，然后返回该组件
 	if(CameraComponent)
 	{
-		return CameraComponent->GetComponentLocation();
+		return CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector();
 	}
 	return Super::GetPawnViewLocation();
 }
@@ -397,6 +397,11 @@ float ASCharacter::GetAimOffset_Y()
 float ASCharacter::GetAimOffset_Z()
 {
 	return AimOffset_Z;
+}
+
+float ASCharacter::GetSpringArmLength()
+{
+	return SpringArmComponent ? SpringArmComponent->TargetArmLength : 0 ;
 }
 
 void ASCharacter::SyncAimOffset_Implementation()

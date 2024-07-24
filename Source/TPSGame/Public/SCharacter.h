@@ -84,6 +84,9 @@ public:
 	
 	float GetAimOffset_Y();
 	float GetAimOffset_Z();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetSpringArmLength();
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
 	FWeaponPickUpInfo GetWeaponPickUpInfo();

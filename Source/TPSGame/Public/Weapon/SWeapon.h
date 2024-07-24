@@ -115,6 +115,9 @@ public:
 	int GetCurrentAmmoNum() const {return CurrentAmmoNum;};
 
 	EWeaponType GetWeaponType() const {return WeaponType;};
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector GetCurrentAimingPoint(bool bUseSpread = true);
 	
 	UFUNCTION(BlueprintCallable)
 	bool CheckCanFire();
@@ -141,9 +144,6 @@ protected:
 	//装弹是否已满
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool CheckIsFullAmmo();
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FVector GetCurrentAimingPoint(bool bUseSpread = true);
 	
 	//处理射击判定的函数
 	virtual void DealFire();
@@ -214,6 +214,9 @@ protected:
 	//停止装弹动画和计时器
 	UFUNCTION(NetMulticast, Reliable)
 	void StopReloadAnimAndTimer();
+
+private:
+	FVector GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRotation);
 	
 public:
 	//当前子弹数

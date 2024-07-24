@@ -12,6 +12,7 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "../TPSGame.h"    //宏定义重命名
 #include "TimerManager.h"  //定时器
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -150,6 +151,13 @@ bool ASWeapon::CheckIsFullAmmo()
 		|| (CurrentAmmoNum >= OnePackageAmmoNum+1 && CanOverloadAmmo);
 }
 
+FVector ASWeapon::GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRotation)
+{
+	//将开枪的射线检测起始点从摄像机前移，防止敌人在自己后面但在摄像机前面时也被射中
+	float DistanceFromCamera = IsValid(MyOwner) ? MyOwner->GetSpringArmLength() + MyOwner->GetCapsuleComponent()->GetScaledCapsuleRadius() : 0 ;
+	return EyeLocation + FTransform(FQuat(EyeRotation),EyeLocation).GetUnitAxis(EAxis::X) * DistanceFromCamera;
+}
+
 FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 {
 	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
@@ -178,7 +186,8 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	FHitResult Hit;
 	//射线检测
 	bool bIsTraceHit;  //是否射线检测命中
-	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, EndPoint, Collision_Weapon, QueryParams);
+	FVector StartPoint = GetWeaponShootStartPoint(EyeLocation, EyeRotation);
+	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
 	if(bIsTraceHit)
 	{
 		return Hit.ImpactPoint;
@@ -220,7 +229,8 @@ void ASWeapon::DealFire()
 	FHitResult Hit;
 	//射线检测
 	bool bIsTraceHit;  //是否射线检测命中
-	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, EndPoint, Collision_Weapon, QueryParams);
+	FVector StartPoint = GetWeaponShootStartPoint(EyeLocation, EyeRotation);
+	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
 	if(bIsTraceHit)
 	{
 		//伤害处理

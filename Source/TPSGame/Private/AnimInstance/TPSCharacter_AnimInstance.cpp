@@ -44,6 +44,7 @@ void UTPSCharacter_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	
 	if(bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMeshComp() && PlayerCharacter->GetMesh())
 	{
+#pragma region HandIK
 		//武器开火或者瞄准时会调用hand_r旋转朝向瞄准位置，左手可能错位，所以IK贴合(Reload时调用动画，暂停左手IK)
 		if(bUseCommonLeftHandIK)
 		{
@@ -101,7 +102,6 @@ void UTPSCharacter_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			RightHandTransToMoveToLeftHand.SetLocation(ROutLocation);
 			RightHandTransToMoveToLeftHand.SetRotation(FQuat(ROutRotation));
 		}
+#pragma endregion
 	}
-	//GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Blue, FString::Printf(TEXT("%hhd"), bUseLeftHandIK));
-	//GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red, FString::Printf(TEXT("%hhd"), bUsePistolRightHandIK));
 }
