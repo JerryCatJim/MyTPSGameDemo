@@ -340,7 +340,7 @@ void ASCharacter::DropWeapon_Implementation()
 	if(World)
 	{
 		APickUpWeapon* PickUpWeapon = World->SpawnActorDeferred<APickUpWeapon>(
-			APickUpWeapon::StaticClass(),
+			PickUpWeaponClass,
 			FTransform(GetActorLocation())
 			);
 		if(PickUpWeapon)

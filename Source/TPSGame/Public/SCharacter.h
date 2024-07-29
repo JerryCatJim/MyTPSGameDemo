@@ -208,6 +208,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<ASWeapon> CurrentWeaponClass;
 
+	//玩家死亡时掉落的可拾取武器类
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	TSubclassOf<class APickUpWeapon> PickUpWeaponClass;
+
 	//武器插槽名称
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	FName WeaponSocketName;
