@@ -327,7 +327,7 @@ void ASCharacter::StartFire()
 
 void ASCharacter::StopFire()
 {
-	if(bDisableGamePlayInput) return;
+	//if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
 		//SetIsFiring(false);    //挪到Sweapon.cpp的StopFire()中了
@@ -346,7 +346,7 @@ void ASCharacter::StartReload()
 
 void ASCharacter::StopReload()
 {
-	if(bDisableGamePlayInput) return;
+	//if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
 		CurrentWeapon->StopReload(true);
