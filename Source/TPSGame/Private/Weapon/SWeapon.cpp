@@ -12,6 +12,7 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "../TPSGame.h"    //宏定义重命名
 #include "TimerManager.h"  //定时器
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -29,7 +30,9 @@ ASWeapon::ASWeapon()
 	WeaponBulletType = EWeaponBulletType::HitScan;
 	
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
-	RootComponent = MeshComponent;  //SetupAttachment
+	SetRootComponent(MeshComponent);
+	FireSoundAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("FireSoundAudio"));
+	FireSoundAudio->bAutoActivate = false;
 
 	//枪口插槽名称
 	MuzzleSocketName = "MuzzleFlash";
@@ -352,7 +355,9 @@ void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 
 	if(FireSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, GetActorLocation());
+		//UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, GetActorLocation());
+		FireSoundAudio->SetSound(FireSound);
+		FireSoundAudio->Play();
 	}
 
 	//获得武器持有者owner

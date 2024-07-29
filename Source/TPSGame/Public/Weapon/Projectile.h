@@ -26,6 +26,8 @@ protected:
 	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);
 	
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Damage = 20.f;
 	
 protected:
 

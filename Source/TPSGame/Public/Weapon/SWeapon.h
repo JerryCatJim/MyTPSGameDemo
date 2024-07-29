@@ -270,6 +270,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Component")
 	class USkeletalMeshComponent* MeshComponent;
 
+	UPROPERTY(VisibleAnywhere, Category=Component)
+	UAudioComponent* FireSoundAudio;
+	
 	//武器的持有者
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	class ASCharacter* MyOwner;
