@@ -355,7 +355,6 @@ void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 
 	if(FireSound)
 	{
-		//UGameplayStatics::PlaySoundAtLocation(GetWorld(), FireSound, GetActorLocation());
 		FireSoundAudio->SetSound(FireSound);
 		FireSoundAudio->Play();
 	}
@@ -381,7 +380,7 @@ void ASWeapon::PlayTraceEffect(FVector TraceEnd)
 		//获取输入实际位置
 		const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 		//弹道特效
-		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
+		UParticleSystemComponent* TraceComponent = UGameplayStatics::SpawnEmitterAtLocation(this, TraceEffect, MuzzleLocation);
 		if(TraceComponent)
 		{
 			TraceComponent->SetVectorParameter(TraceTargetName, TraceEnd);
@@ -424,10 +423,10 @@ void ASWeapon::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector 
 		ShootDirection.Normalize();  //等同于Hit.ImpactNormal
 		
 		//击中特效
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint,  ShootDirection.Rotation());
+		UGameplayStatics::SpawnEmitterAtLocation(this, SelectedEffect, ImpactPoint,  ShootDirection.Rotation());
 
 		//播放命中音效
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, ImpactPoint);
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, ImpactPoint);
 	}
 }
 
