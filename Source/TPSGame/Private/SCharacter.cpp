@@ -252,6 +252,16 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASCharacter::MoveRight);
 }
 
+void ASCharacter::Destroyed()
+{
+	Super::Destroyed();
+
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->Destroy();
+	}
+}
+
 //SWeapon.cpp中 Fire函数会让Owner(即该文件)调用GetActorEyesViewPoint,下面函数重写了方法，使眼部位置变为摄像机位置
 //Character继承于Pawn, Pawn.cpp中 调用GetActorEyesViewPoint 会调用GetPawnViewLocation和GetViewRotation获得值
 FVector ASCharacter::GetPawnViewLocation() const

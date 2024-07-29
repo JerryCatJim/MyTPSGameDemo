@@ -15,10 +15,10 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 	if(PlayerPawn)
 	{
 		PlayerPawn->Destroy();
-		if(PlayerPawn->CurrentWeapon)
+		/*if(PlayerPawn->CurrentWeapon)  //SCharacter中的Destroyed()调用了销毁武器
 		{
 			PlayerPawn->CurrentWeapon->Destroy();
-		}
+		}*/
 	}
 	RestartPlayer(PlayerController);
 }

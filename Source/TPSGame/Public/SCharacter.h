@@ -36,6 +36,9 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	//角色被销毁时调用
+	virtual void Destroyed() override;
+	
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
 	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 	
@@ -97,7 +100,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	
 	void LookUp(float Value);
 	void Turn(float Value);
 	
