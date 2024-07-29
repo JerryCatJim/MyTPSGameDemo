@@ -547,7 +547,7 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("Reload蒙太奇不存在！")));
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
+	//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
 	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){StopReload(false);}, MontagePlayTime, false);
 }
 

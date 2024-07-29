@@ -13,4 +13,8 @@ UCLASS()
 class TPSGAME_API ATPSGameMode : public AGameMode
 {
 	GENERATED_BODY()
+
+public:
+	//GameMode存在于服务器，不用加Server关键字
+	void RespawnPlayer(APlayerController* PlayerController);
 };

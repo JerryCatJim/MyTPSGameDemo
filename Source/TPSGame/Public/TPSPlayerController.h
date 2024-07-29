@@ -28,6 +28,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetServerTime();
 	
+	UFUNCTION(Server, Reliable)
+	void RequestRespawn();
+	
 protected:
 	//同步服务器和客户端的时间(不是直接同步WorldTime，而是记录两者的差值，让客户端自己加)
 	UFUNCTION(Server, Reliable)
@@ -38,6 +41,7 @@ protected:
 	void ClientReportServerTime(float TimeOfClientRequest, float TimeServerReceivedClientRequest);
 
 	void CheckTimeSync(float DeltaTime);
+
 public:
 	//背包组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)

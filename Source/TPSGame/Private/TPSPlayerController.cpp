@@ -3,6 +3,9 @@
 
 #include "TPSPlayerController.h"
 
+#include "TPSGameMode.h"
+#include "Kismet/GameplayStatics.h"
+
 ATPSPlayerController::ATPSPlayerController()
 {
 	//背包组件初始化
@@ -22,6 +25,15 @@ void ATPSPlayerController::ReceivedPlayer()
 	if(IsLocalController())  //若在服务器调用，服务器有多个Controller，需找到自己的那个
 	{
 		ServerRequestServerTime(GetWorld()->GetDeltaSeconds());
+	}
+}
+
+void ATPSPlayerController::RequestRespawn_Implementation()
+{
+	ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	if(GM)
+	{
+		GM->RespawnPlayer(this);
 	}
 }
 

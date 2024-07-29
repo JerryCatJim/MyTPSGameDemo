@@ -45,7 +45,10 @@ public:
 	//停止射击
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StopFire();
-	//停止装填子弹
+
+	//武器重新装弹
+	UFUNCTION(BlueprintCallable, Category= WeaponFire)
+	void StartReload();
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StopReload();
 
@@ -144,6 +147,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float DistanceToHideCharacter = 100;
+
+	//禁止除了旋转镜头以外的游戏操作(例如移动，开火等)输入
+	UPROPERTY(Replicated)
+	bool bDisableGamePlayInput = false;
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
@@ -213,6 +220,14 @@ protected:
 
 	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Z;
+
+	//角色死亡后重生的计时器句柄
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
+	FTimerHandle FPlayerRespawnTimerHandle;
+
+	//角色重生倒计时
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerTimer)
+	float RespawnCount = 5;
 	
 //临时测试接口的区域
 public:

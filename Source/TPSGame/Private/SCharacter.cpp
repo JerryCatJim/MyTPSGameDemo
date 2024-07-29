@@ -172,6 +172,7 @@ void ASCharacter::Turn(float Value)
 
 void ASCharacter::MoveForward(float Value)
 {
+	if(bDisableGamePlayInput) return;
 	FVector ForwardV = FRotationMatrix(FRotator(0,GetControlRotation().Yaw,0)).GetScaledAxis(EAxis::X);
 	AddMovementInput(ForwardV, Value);
 	//AddMovementInput(FRotator(0,GetControlRotation().Yaw,0).Vector(), Value);
@@ -180,6 +181,7 @@ void ASCharacter::MoveForward(float Value)
 
 void ASCharacter::MoveRight(float Value)
 {
+	if(bDisableGamePlayInput) return;
 	FVector RightV = FRotationMatrix(FRotator(0,GetControlRotation().Yaw,0)).GetScaledAxis(EAxis::Y);
 	AddMovementInput(RightV, Value);
 	//AddMovementInput(GetActorRightVector() * Value);  //bUseControllerRotationYaw为false且GetCharacterMovement()->bOrientRotationToMovement时，会导致原地打转
@@ -187,33 +189,38 @@ void ASCharacter::MoveRight(float Value)
 
 void ASCharacter::BeginJump()
 {
+	if(bDisableGamePlayInput) return;
 	Jump();
 }
 
 void ASCharacter::EndJump()
 {
+	if(bDisableGamePlayInput) return;
 	StopJumping();
 }
 
 void ASCharacter::BeginCrouch()
 {
+	if(bDisableGamePlayInput) return;
 	Crouch();
 }
 
 void ASCharacter::EndCrouch()
 {
+	if(bDisableGamePlayInput) return;
 	UnCrouch();
 }
 
 void ASCharacter::InteractKeyPressed()//_Implementation()
 {
+	if(bDisableGamePlayInput) return;
 	//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
 	OnInteractKeyDown.Broadcast();
 }
 
 void ASCharacter::InteractKeyReleased()//_Implementation()
 {
-	
+	if(bDisableGamePlayInput) return;
 }
 
 // Called to bind functionality to input
@@ -260,12 +267,14 @@ FVector ASCharacter::GetPawnViewLocation() const
 //将开镜行为发送到服务器然后同步
 void ASCharacter::SetZoomFOV_Implementation()
 {
+	if(bDisableGamePlayInput) return;
 	//空手时不能开镜
 	bIsAiming = bIsUsingWeapon;
 }
 
 void ASCharacter::ResetZoomFOV_Implementation()
 {
+	if(bDisableGamePlayInput) return;
 	bIsAiming = false;
 }
 
@@ -307,6 +316,7 @@ void ASCharacter::PickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 
 void ASCharacter::StartFire()
 {
+	if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
 		//有子弹或者无限子弹才设置为开火状态，防止一按开火人物就瞬间面对正前方
@@ -317,6 +327,7 @@ void ASCharacter::StartFire()
 
 void ASCharacter::StopFire()
 {
+	if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
 		//SetIsFiring(false);    //挪到Sweapon.cpp的StopFire()中了
@@ -324,8 +335,18 @@ void ASCharacter::StopFire()
 	}
 }
 
+void ASCharacter::StartReload()
+{
+	if(bDisableGamePlayInput) return;
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->Reload(false);
+	}
+}
+
 void ASCharacter::StopReload()
 {
+	if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
 		CurrentWeapon->StopReload(true);
@@ -362,14 +383,23 @@ void ASCharacter::OnRep_Died()
 	//角色死亡
 	GetMovementComponent()->UNavMovementComponent::StopMovementImmediately();  //无法移动  4.27以上用GetMovementComponent()->StopMovement会出错(？)
 	GetCharacterMovement()->DisableMovement();
+	bDisableGamePlayInput = true;
+	StopFire();
 		
 	//获取胶囊体碰撞
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
-	//死亡后解除控制器权限，销毁控制器(生成UI时不指定Owner会报错)
-	//DetachFromControllerPendingDestroy();
-	//SetLifeSpan(10.f);  //10秒后自动销毁
-	//CurrentWeapon->SetLifeSpan(10.f);
+	GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
+		[this]()->void
+		{
+			ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+			if(MyController)
+			{
+				MyController->RequestRespawn();
+			}
+		},
+		RespawnCount,
+		false);
 	
 }
 
@@ -471,6 +501,7 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ASCharacter, bIsFiring);
 	DOREPLIFETIME(ASCharacter, AimOffset_Y);
 	DOREPLIFETIME(ASCharacter, AimOffset_Z);
+	DOREPLIFETIME(ASCharacter, bDisableGamePlayInput);
 }
 
 bool ASCharacter::NotEvent_NativeTest_Implementation()
