@@ -275,7 +275,8 @@ void ASWeapon::Fire()
 	
 	if(!CheckOwnerValidAndAlive())
 	{
-		MyOwner->SetIsFiring(false);
+		//MyOwner->SetIsFiring(false);
+		StopFire();  //不调用StopFire()会一直尝试射击，所以停掉Timer
 		return;
 	}
 	
