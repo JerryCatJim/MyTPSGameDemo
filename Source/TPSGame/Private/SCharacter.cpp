@@ -13,6 +13,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "Weapon/PickUpWeapon.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -324,6 +325,44 @@ void ASCharacter::PickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 	}
 }
 
+void ASCharacter::DropWeapon_Implementation()
+{
+	if(!HasAuthority())  //客户端不要生成武器，等待服务端生成后复制
+	{
+		return;
+	}
+	if(!CurrentWeapon)
+	{
+		return;  //没有武器也不生成
+	}
+	
+	UWorld* World = GetWorld();
+	if(World)
+	{
+		APickUpWeapon* PickUpWeapon = World->SpawnActorDeferred<APickUpWeapon>(
+			APickUpWeapon::StaticClass(),
+			FTransform(GetActorLocation())
+			);
+		if(PickUpWeapon)
+		{
+			PickUpWeapon->WeaponPickUpInfo = FWeaponPickUpInfo(
+				this,
+				CurrentWeapon->GetWeaponMeshComp()->SkeletalMesh,
+				CurrentWeaponClass,
+				CurrentWeapon->CurrentAmmoNum,
+				CurrentWeapon->BackUpAmmoNum,
+				CurrentWeapon->WeaponName
+				);
+			//从C++中获取蓝图类
+			const FString WidgetClassLoadPath = FString(TEXT("/Game/UI/WBP_ItemPickUpTip.WBP_ItemPickUpTip_C"));//蓝图一定要加_C这个后缀名
+			UClass* Widget = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
+			PickUpWeapon->WidgetComponent->SetWidgetClass(Widget);
+			
+			PickUpWeapon->FinishSpawning(FTransform(GetActorLocation()));
+		}
+	}
+}
+
 void ASCharacter::StartFire()
 {
 	if(bDisableGamePlayInput) return;
@@ -395,6 +434,15 @@ void ASCharacter::OnRep_Died()
 	GetCharacterMovement()->DisableMovement();
 	bDisableGamePlayInput = true;
 	StopFire();
+
+	if(HasAuthority())
+	{
+		DropWeapon();  //死亡后掉落武器,然后隐藏手中武器
+	}
+	if(CurrentWeapon && CurrentWeapon->GetWeaponMeshComp())
+	{
+		CurrentWeapon->GetWeaponMeshComp()->SetVisibility(false);
+	}
 		
 	//获取胶囊体碰撞
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);

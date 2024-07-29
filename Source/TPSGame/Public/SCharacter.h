@@ -41,6 +41,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
 	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);
+
+	//死亡时掉落武器
+	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
+	void DropWeapon();
 	
 	//控制武器开火
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
@@ -154,13 +158,6 @@ public:
 	//禁止除了旋转镜头以外的游戏操作(例如移动，开火等)输入
 	UPROPERTY(Replicated)
 	bool bDisableGamePlayInput = false;
-	
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
-	UCameraComponent* CameraComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
-	USpringArmComponent* SpringArmComponent;
 
 	UPROPERTY(BlueprintAssignable)
 	FCurrentWeaponChanged OnCurrentWeaponChanged;
@@ -173,6 +170,16 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractKeyDown OnInteractKeyDown;
+
+	//防止同时与多个可拾取武器发生重叠时间
+	bool bHasBeenOverlappedWithPickUpWeapon = false;
+	
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
+	UCameraComponent* CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
+	USpringArmComponent* SpringArmComponent;
 	
 	//是否正在开镜变焦
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
