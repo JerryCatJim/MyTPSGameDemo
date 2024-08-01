@@ -8,7 +8,7 @@ public class TPSGame : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PhysicsCore", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PhysicsCore", "UMG", "Niagara" });
 		
 		PublicDependencyModuleNames.AddRange(new string[] { "OnlineSubsystemSteam", "OnlineSubsystem" });
 		
