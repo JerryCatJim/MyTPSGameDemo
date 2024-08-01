@@ -21,23 +21,51 @@ protected:
 
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	
+	//UFUNCTION(NetMulticast, Reliable)
+	void Multi_PostOnHit();
+	
+	//命中后的处理函数
+	virtual void PostOnHit();  //将具体内容从Multi中剥离，防止如果想继承修改Multi函数导致多次调用
+	
+	//UFUNCTION(NetMulticast, Reliable)
+	void Multi_PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);
+	
+	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);  //将具体内容从Multi中剥离，防止如果想继承修改Multi函数导致多次调用
 
-	UFUNCTION(NetMulticast, Reliable)
-	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);
+	//UFUNCTION(Server, Reliable)  OnHit中调用应用伤害时检测是否有服务器权限
+	virtual void ApplyProjectileDamage(AActor* DamagedActor);
+
+	class UBoxComponent* GetCollisionBox() const { return CollisionBox; }
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Damage = 20.f;
 	
 protected:
+	UPROPERTY()
+	class ASWeapon* OwnerWeapon;
+
+	UPROPERTY()
+	TSubclassOf<UDamageType> DamageTypeClass;
+	
+	//是否在命中时直接销毁自身
+	UPROPERTY(EditAnywhere)
+	bool bDestroyOnHit = true;
+
+	UPROPERTY(EditAnywhere)
+	bool bIsAoeDamage = false;
 
 private:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
-
+	
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovementComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* MeshComponent;
+	
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* Tracer;
 

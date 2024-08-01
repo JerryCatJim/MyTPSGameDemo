@@ -26,7 +26,7 @@ void AProjectileWeapon::DealFire()
 		if(ProjectileClass && InstigatorPawn)
 		{
 			FActorSpawnParameters SpawnParameters;
-			SpawnParameters.Owner = GetOwner();
+			SpawnParameters.Owner = this;
 			SpawnParameters.Instigator = InstigatorPawn;
 			UWorld* World = GetWorld();
 			if(World)

@@ -31,6 +31,10 @@ AProjectile::AProjectile()
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+	
+	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	MeshComponent->SetupAttachment(RootComponent);
+	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 // Called when the game starts or when spawned
@@ -38,6 +42,9 @@ void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
+	OwnerWeapon = Cast<ASWeapon>(GetOwner());
+	DamageTypeClass = OwnerWeapon ? OwnerWeapon->GetWeaponDamageType() : UDamageType::StaticClass();
+	
 	if(Tracer)
 	{
 		TracerComponent = UGameplayStatics::SpawnEmitterAttached(
@@ -51,44 +58,88 @@ void AProjectile::BeginPlay()
 	}
 
 	//在构造函数中绑定可能有些问题
-	if(HasAuthority())
-	{
+	//if(HasAuthority())
+	//{
+		//改为双端绑定OnHit,方便双端同步一些效果
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
-	}
+	//}
 }
 
-void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse, const FHitResult& Hit)
+void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	//获得表面类型 PhysicalMaterial
 	//EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
 	EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 	FVector HitLocation = GetActorLocation();
-	
-	if(Cast<ASCharacter>(OtherActor))
+
+	ASCharacter* DamagedActor = Cast<ASCharacter>(OtherActor);
+	bool CanApplyDamage = (!bIsAoeDamage && DamagedActor) || bIsAoeDamage;
+	if(CanApplyDamage && HasAuthority()) //应用伤害效果只能在服务器
 	{
-		//PlayerCharacter的Hit碰撞检测有些问题，没法精确碰撞，所以命中后再做一下射线检测获取命中区域的材质
-		//碰撞查询
-		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(this);
-		QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
-		QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
-		//击中结果
-		FHitResult NewHit;
-		//射线检测
-		bool bIsTraceHit;  //是否射线检测命中
-		bIsTraceHit = GetWorld()->LineTraceSingleByChannel(NewHit, GetActorLocation(), GetActorLocation() + GetActorForwardVector()*100, Collision_Weapon, QueryParams);
-		if(bIsTraceHit)
+		if(!bIsAoeDamage)  //火箭筒是Aoe伤害，不用做单点射线检测
 		{
-			SurfaceType = UGameplayStatics::GetSurfaceType(NewHit);
-			HitLocation = Hit.ImpactPoint;
+			//PlayerCharacter的Hit碰撞检测有些问题，没法精确碰撞，所以命中后再做一下射线检测获取命中区域的材质
+			//碰撞查询
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+			QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
+			QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
+			//击中结果
+			FHitResult NewHit;
+			//射线检测
+			bool bIsTraceHit;  //是否射线检测命中
+		
+			bIsTraceHit = GetWorld()->LineTraceSingleByChannel(NewHit, GetActorLocation(), GetActorLocation() + GetActorForwardVector()*100, Collision_Weapon, QueryParams);
+			
+			if(bIsTraceHit)
+			{
+				SurfaceType = UGameplayStatics::GetSurfaceType(NewHit);
+				HitLocation = Hit.ImpactPoint;
+			}
 		}
+		ApplyProjectileDamage(DamagedActor);
 	}
-	PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
-	Destroy();
+	Multi_PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
+	Multi_PostOnHit();
 }
 
-void AProjectile::PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface SurfaceType, FVector HitLocation)
+void AProjectile::Multi_PostOnHit()//_Implementation()
+{
+	PostOnHit();
+}
+
+void AProjectile::PostOnHit()
+{
+	//子类RocketProjectile期望命中后延迟销毁来创造浓雾，所以在其类中设为false
+	if(bDestroyOnHit)
+	{
+		Destroy();
+	}
+	
+	//命中后隐藏Mesh
+	if(MeshComponent)
+	{
+		MeshComponent->SetVisibility(false);
+	}
+	if(CollisionBox)
+	{
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+
+void AProjectile::Multi_PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation)//_Implementation(EPhysicalSurface SurfaceType, FVector HitLocation)
+{
+	PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
+}
+
+void AProjectile::ApplyProjectileDamage(AActor* DamagedActor)
+{
+	AController* InstigatorController = GetInstigator() ? GetInstigator()->GetController() : nullptr ;
+	//应用伤害
+	UGameplayStatics::ApplyDamage(DamagedActor, Damage, InstigatorController, OwnerWeapon, DamageTypeClass);
+}
+
+void AProjectile::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation)
 {
 	UParticleSystem* SelectedEffect;
 	USoundCue* ImpactSound;

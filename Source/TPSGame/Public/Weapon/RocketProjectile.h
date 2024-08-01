@@ -23,13 +23,39 @@ public:
 	UPROPERTY(EditAnywhere)  //应用衰减伤害的外部半径
 	float OuterRadius = 500.f;
 
+protected:
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* TrailSystem;
+
+	UPROPERTY()
+	class UNiagaraComponent* TrailSystemComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ProjectileLoop;
+
+	UPROPERTY()
+	UAudioComponent* ProjectileLoopComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundAttenuation* LoopingSoundAttenuation;
+	
 private:
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* MeshComponent;
+	FTimerHandle DestroyTimerHandle;
+
+	UPROPERTY(EditAnywhere)
+	float DestroyTime = 3.f;
 	
 public:
 	ARocketProjectile();
 	
 protected:
+	virtual void BeginPlay() override;
+
+	virtual void ApplyProjectileDamage(AActor* DamagedActor) override;
+	
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+
+	virtual void PostOnHit() override;
+	
+	void DestroyTimerFinished();
 };

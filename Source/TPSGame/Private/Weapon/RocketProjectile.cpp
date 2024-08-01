@@ -2,26 +2,68 @@
 
 
 #include "Weapon/RocketProjectile.h"
-
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+#include "Components/AudioComponent.h"
+#include "Weapon/SWeapon.h"
 
 ARocketProjectile::ARocketProjectile()
 {
-	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	MeshComponent->SetupAttachment(RootComponent);
-	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Damage = 120.f;
+	
+	//禁止Super::OnHit()中的Destroy(),手动管理销毁时机
+	bDestroyOnHit = false;
+	bIsAoeDamage = true;
 }
 
-void ARocketProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-                              FVector NormalImpulse, const FHitResult& Hit)
+void ARocketProjectile::BeginPlay()
 {
-	const APawn* FiringPawn = GetInstigator();
-	if(FiringPawn)
+	Super::BeginPlay();
+	
+	//在RocketProjectile子类中手动指定TrailSystem
+	if(TrailSystem)
 	{
-		AController* FiringController = FiringPawn->GetController();
-		if(FiringController)
-		{
-			UGameplayStatics::ApplyRadialDamageWithFalloff(
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false  //手动销毁，创造出火箭弹命中后有一阵浓烟未散去的效果
+			);
+	}
+	if(ProjectileLoop && LoopingSoundAttenuation)
+	{
+		ProjectileLoopComponent = UGameplayStatics::SpawnSoundAttached(
+			ProjectileLoop,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false,
+			1,
+			1,
+			0,
+			LoopingSoundAttenuation,
+			(USoundConcurrency*) nullptr,
+			false
+			);
+	}
+}
+
+void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor)
+{
+	//Super::ApplyProjectileDamage(DamagedActor, BaseDamage, EventInstigator, DamageCauser, DamageTypeClass);
+	
+	AController* FiringController = GetInstigator() ? GetInstigator()->GetController() : nullptr;
+	TArray<AActor*> IgnoreList;
+	IgnoreList.Emplace(this);  //不无视火箭弹自己会无法造成伤害(?),看源码没看懂
+	
+	UGameplayStatics::ApplyRadialDamageWithFalloff(
 				this,
 				Damage,
 				MinDamage,
@@ -29,14 +71,35 @@ void ARocketProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 				InnerRadius,
 				OuterRadius,
 				1.f,
-				UDamageType::StaticClass(),
-				TArray<AActor*>(),  //不无视发射者自己，意味着可以炸到自己
-				this,
+				DamageTypeClass,
+				IgnoreList,  //不无视发射者自己，意味着可以炸到自己
+				OwnerWeapon, //此函数会将DamageCauser自动无视
 				FiringController
 				);
-		}
-	}
+}
 
-	//在命中前计算出伤害衰减
+void ARocketProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+
+	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &ARocketProjectile::DestroyTimerFinished, DestroyTime, false);
+}
+
+void ARocketProjectile::PostOnHit()
+{
+	Super::PostOnHit();
+
+	if(TrailSystemComponent && TrailSystemComponent->GetSystemInstance())
+	{
+		TrailSystemComponent->GetSystemInstance()->Deactivate();
+	}
+	if(ProjectileLoopComponent && ProjectileLoopComponent->IsPlaying())
+	{
+		ProjectileLoopComponent->Stop();
+	}
+}
+
+void ARocketProjectile::DestroyTimerFinished()
+{
+	Destroy();
 }

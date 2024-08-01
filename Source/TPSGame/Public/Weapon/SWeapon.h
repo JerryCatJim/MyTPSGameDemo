@@ -112,9 +112,11 @@ public:
 	UFUNCTION()
 	void StopReload(bool IsInterrupted = false);
 
-	int GetCurrentAmmoNum() const {return CurrentAmmoNum;};
+	int GetCurrentAmmoNum() const { return CurrentAmmoNum; }
 
-	EWeaponType GetWeaponType() const {return WeaponType;};
+	TSubclassOf<UDamageType> GetWeaponDamageType() const { return DamageType; }
+
+	EWeaponType GetWeaponType() const { return WeaponType; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetCurrentAimingPoint(bool bUseSpread = true);
