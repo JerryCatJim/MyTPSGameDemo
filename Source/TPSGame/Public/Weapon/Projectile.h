@@ -22,18 +22,18 @@ protected:
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
-	//UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PostOnHit();
 	
 	//命中后的处理函数
 	virtual void PostOnHit();  //将具体内容从Multi中剥离，防止如果想继承修改Multi函数导致多次调用
 	
-	//UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);
 	
 	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);  //将具体内容从Multi中剥离，防止如果想继承修改Multi函数导致多次调用
 
-	//UFUNCTION(Server, Reliable)  OnHit中调用应用伤害时检测是否有服务器权限
+	//UFUNCTION(Server, Reliable)  //OnHit中调用应用伤害时检测是否有服务器权限
 	virtual void ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage);
 	
 public:

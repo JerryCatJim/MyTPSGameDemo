@@ -57,11 +57,11 @@ void AProjectile::BeginPlay()
 	}
 
 	//在构造函数中绑定可能有些问题
-	//if(HasAuthority())
-	//{
-		//改为双端绑定OnHit,方便双端同步一些效果
+	if(HasAuthority())
+	{
+		//Bullet型Projectile的OnHit()在击中离人物很近的位置时，只有服务器响应了OnHit，客户端没响应(?)，击中远一点的地方时都响应(?)，所以还是改回Multicast同步特效等
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
-	//}
+	}
 }
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -70,12 +70,11 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	//EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
 	EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 	FVector HitLocation = GetActorLocation();
-	float ActualDamage = Damage;
-
 	ASCharacter* DamagedActor = Cast<ASCharacter>(OtherActor);
 	bool CanApplyDamage = (!bIsAoeDamage && DamagedActor) || bIsAoeDamage;
 	if(CanApplyDamage && HasAuthority()) //应用伤害效果只能在服务器
 	{
+		float ActualDamage = Damage;
 		if(!bIsAoeDamage)  //火箭筒是Aoe伤害，不用做单点射线检测
 		{
 			//PlayerCharacter的Hit碰撞检测有些问题，没法精确碰撞，所以命中后再做一下射线检测获取命中区域的材质
@@ -88,9 +87,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 			FHitResult NewHit;
 			//射线检测
 			bool bIsTraceHit;  //是否射线检测命中
-		
 			bIsTraceHit = GetWorld()->LineTraceSingleByChannel(NewHit, GetActorLocation(), GetActorLocation() + GetActorForwardVector()*100, Collision_Weapon, QueryParams);
-			
 			if(bIsTraceHit)
 			{
 				SurfaceType = UGameplayStatics::GetSurfaceType(NewHit);
@@ -109,7 +106,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	Multi_PostOnHit();
 }
 
-void AProjectile::Multi_PostOnHit()//_Implementation()
+void AProjectile::Multi_PostOnHit_Implementation()
 {
 	PostOnHit();
 }
@@ -133,7 +130,7 @@ void AProjectile::PostOnHit()
 	}
 }
 
-void AProjectile::Multi_PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation)//_Implementation(EPhysicalSurface SurfaceType, FVector HitLocation)
+void AProjectile::Multi_PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface SurfaceType, FVector HitLocation)
 {
 	PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
 }
