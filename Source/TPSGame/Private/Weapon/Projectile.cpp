@@ -5,7 +5,6 @@
 
 #include "SCharacter.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "TPSGame/TPSGame.h"
@@ -29,8 +28,8 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_WorldDynamic,ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_Pawn,ECR_Block);
 
-	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+	//重设碰撞盒大小，先改为(2,1,1)
+	CollisionBox->InitBoxExtent(FVector(2,1,1));
 	
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	MeshComponent->SetupAttachment(RootComponent);

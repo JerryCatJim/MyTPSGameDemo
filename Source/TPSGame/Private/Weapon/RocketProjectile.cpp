@@ -2,20 +2,31 @@
 
 
 #include "Weapon/RocketProjectile.h"
+#include "Components/BoxComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
+#include "Weapon/Component/RocketMovementComponent.h"
 #include "Weapon/SWeapon.h"
 
 ARocketProjectile::ARocketProjectile()
 {
 	Damage = 120.f;
+	CollisionBox->InitBoxExtent(FVector(15,3,3));
 	
 	//禁止Super::OnHit()中的Destroy(),手动管理销毁时机
 	bDestroyOnHit = false;
 	bIsAoeDamage = true;
+
+	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
+	RocketMovementComponent->bRotationFollowsVelocity = true;
+	RocketMovementComponent->SetIsReplicated(true);
+	RocketMovementComponent->ProjectileGravityScale = 0.f;
+
+	RocketMovementComponent->InitialSpeed = 1500.f;
+	RocketMovementComponent->MaxSpeed = 1500.f;
 }
 
 void ARocketProjectile::BeginPlay()
@@ -80,6 +91,13 @@ void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor)
 
 void ARocketProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	//有较低概率会发射火箭筒时直接炸到自己，配合RocketMovementComponent在炸到自己时让火箭弹继续飞行而不是停在空中
+	if(OtherActor == GetInstigator())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Rocket Hit Self."));
+		return;
+	}
+	
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
 
 	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &ARocketProjectile::DestroyTimerFinished, DestroyTime, false);

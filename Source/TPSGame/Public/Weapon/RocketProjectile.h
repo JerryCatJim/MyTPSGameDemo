@@ -24,6 +24,9 @@ public:
 	float OuterRadius = 500.f;
 
 protected:
+	UPROPERTY(VisibleAnywhere)
+	class URocketMovementComponent* RocketMovementComponent;
+	
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* TrailSystem;
 

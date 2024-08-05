@@ -35,14 +35,15 @@ protected:
 
 	//UFUNCTION(Server, Reliable)  OnHit中调用应用伤害时检测是否有服务器权限
 	virtual void ApplyProjectileDamage(AActor* DamagedActor);
-
-	class UBoxComponent* GetCollisionBox() const { return CollisionBox; }
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Damage = 20.f;
 	
 protected:
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
+	
 	UPROPERTY()
 	class ASWeapon* OwnerWeapon;
 
@@ -57,12 +58,6 @@ protected:
 	bool bIsAoeDamage = false;
 
 private:
-	UPROPERTY(EditAnywhere)
-	class UBoxComponent* CollisionBox;
-	
-	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* ProjectileMovementComponent;
-
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComponent;
 	

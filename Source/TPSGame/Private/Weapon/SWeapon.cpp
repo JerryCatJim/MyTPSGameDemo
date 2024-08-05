@@ -62,7 +62,7 @@ ASWeapon::ASWeapon()
 	
 	//开启网络复制，将该实体从服务器端Server复制到客户端Client
 	SetReplicates(true);
-	//SetReplicatingMovement(true);
+	SetReplicatingMovement(true);
 
 	//网络更新频率
 	NetUpdateFrequency = 66.f;
