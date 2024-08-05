@@ -66,7 +66,7 @@ void ARocketProjectile::BeginPlay()
 	}
 }
 
-void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor)
+void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage)
 {
 	//Super::ApplyProjectileDamage(DamagedActor, BaseDamage, EventInstigator, DamageCauser, DamageTypeClass);
 	

@@ -129,6 +129,8 @@ public:
 	
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void RefreshWeaponInfo(FWeaponPickUpInfo WeaponInfo);
+
+	float GetHeadShotBonus() const { return HeadShotBonus; }
 	
 protected:
 	// Called when the game starts or when spawned

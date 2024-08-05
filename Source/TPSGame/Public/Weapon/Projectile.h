@@ -34,7 +34,7 @@ protected:
 	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation);  //将具体内容从Multi中剥离，防止如果想继承修改Multi函数导致多次调用
 
 	//UFUNCTION(Server, Reliable)  OnHit中调用应用伤害时检测是否有服务器权限
-	virtual void ApplyProjectileDamage(AActor* DamagedActor);
+	virtual void ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage);
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

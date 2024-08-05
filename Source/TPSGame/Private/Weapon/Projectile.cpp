@@ -70,6 +70,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	//EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
 	EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 	FVector HitLocation = GetActorLocation();
+	float ActualDamage = Damage;
 
 	ASCharacter* DamagedActor = Cast<ASCharacter>(OtherActor);
 	bool CanApplyDamage = (!bIsAoeDamage && DamagedActor) || bIsAoeDamage;
@@ -94,9 +95,15 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 			{
 				SurfaceType = UGameplayStatics::GetSurfaceType(NewHit);
 				HitLocation = Hit.ImpactPoint;
+				
+				//爆头伤害加成
+				if(SurfaceType == Surface_FleshVulnerable)
+				{
+					ActualDamage *= OwnerWeapon ? OwnerWeapon->GetHeadShotBonus() : 1;
+				}
 			}
 		}
-		ApplyProjectileDamage(DamagedActor);
+		ApplyProjectileDamage(DamagedActor, ActualDamage);
 	}
 	Multi_PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
 	Multi_PostOnHit();
@@ -131,11 +138,11 @@ void AProjectile::Multi_PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType,
 	PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
 }
 
-void AProjectile::ApplyProjectileDamage(AActor* DamagedActor)
+void AProjectile::ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage)
 {
 	AController* InstigatorController = GetInstigator() ? GetInstigator()->GetController() : nullptr ;
 	//应用伤害
-	UGameplayStatics::ApplyDamage(DamagedActor, Damage, InstigatorController, OwnerWeapon, DamageTypeClass);
+	UGameplayStatics::ApplyDamage(DamagedActor, ActualDamage, InstigatorController, OwnerWeapon, DamageTypeClass);
 }
 
 void AProjectile::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector HitLocation)
