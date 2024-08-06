@@ -66,6 +66,9 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	ASCharacter* LastOverlapPlayer;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)  //武器是否可以掉落在地面(拖进场景时默认悬浮，人物死亡后掉落时落到地上)
+	bool bCanMeshDropOnTheGround = false;
+
 private:
 	//同一时间只能有一个可拾取武器发生重叠时间，记录那个是不是自己
 	bool bIsThisTheOverlapOne = false;

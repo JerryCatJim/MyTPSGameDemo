@@ -357,6 +357,7 @@ void ASCharacter::DropWeapon_Implementation()
 			const FString WidgetClassLoadPath = FString(TEXT("/Game/UI/WBP_ItemPickUpTip.WBP_ItemPickUpTip_C"));//蓝图一定要加_C这个后缀名
 			UClass* Widget = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
 			PickUpWeapon->WidgetComponent->SetWidgetClass(Widget);
+			PickUpWeapon->bCanMeshDropOnTheGround = true;
 			
 			PickUpWeapon->FinishSpawning(FTransform(GetActorLocation()));
 		}
@@ -413,9 +414,9 @@ void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent
 {
 	if(Health <= 0.f && !bDied)
 	{
-		bDied = true;
 		if(HasAuthority())
 		{
+			bDied = true;
 			OnRep_Died();
 			OnPlayerDead.Broadcast(InstigatedBy, DamageCauser, DamageType);
 		}
@@ -458,7 +459,6 @@ void ASCharacter::OnRep_Died()
 		},
 		RespawnCount,
 		false);
-	
 }
 
 USHealthComponent* ASCharacter::GetHealthComponent()

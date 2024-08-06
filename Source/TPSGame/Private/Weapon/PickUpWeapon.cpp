@@ -29,6 +29,12 @@ APickUpWeapon::APickUpWeapon()
 	CapsuleComponent->SetCapsuleHalfHeight(88);
 
 	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+
+	//防止武器被踢走撞走等情况
+	MeshComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	MeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	MeshComponent->SetCollisionObjectType(ECC_WorldStatic);
+	MeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 }
 
 // Called when the game starts or when spawned
@@ -46,10 +52,15 @@ void APickUpWeapon::BeginPlay()
 
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APickUpWeapon::OnCapsuleComponentBeginOverlap);
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APickUpWeapon::OnCapsuleComponentEndOverlap);
-	
+
 	if(IsValid(WeaponPickUpInfo.WeaponMesh))
 	{
 		MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+		if(MeshComponent->SkeletalMesh)
+		{
+			//让武器模拟物理，达到可以落在地上的效果
+			MeshComponent->SetSimulatePhysics(bCanMeshDropOnTheGround);
+		}
 	}
 	
 	ShowTipWidget(false);
@@ -195,4 +206,5 @@ void APickUpWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APickUpWeapon, WeaponPickUpInfo);
+	DOREPLIFETIME(APickUpWeapon, bCanMeshDropOnTheGround);
 }
