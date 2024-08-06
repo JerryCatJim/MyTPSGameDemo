@@ -52,6 +52,9 @@ protected:
 	void FixAllCrossHairPos();
 	
 public:
+	UPROPERTY(EditAnywhere, Category = CrossHair)  //准星是否可以扩散(对应有的武器不扩散准星)
+	bool bCanCrossHairSpread = true;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CrossHair)
 	float DefaultPosValue = 0.f;
 
