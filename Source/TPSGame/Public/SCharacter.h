@@ -38,6 +38,9 @@ public:
 
 	//角色被销毁时调用
 	virtual void Destroyed() override;
+
+	//通常只在服务端触发, 刚进游戏时服务端先OnPossess然后BeginPlay，RestartPlayer后服务端先BeginPlay然后OnPossess
+	virtual void PossessedBy(AController* NewController) override;
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
 	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);

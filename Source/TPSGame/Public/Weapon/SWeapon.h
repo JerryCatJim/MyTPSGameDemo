@@ -143,7 +143,7 @@ protected:
 	
 	//计算武器射击扩散程度
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	float GetDynamicBulletSpread();
+	virtual float GetDynamicBulletSpread();
 
 	//装弹是否已满
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -267,6 +267,10 @@ public:
 	//SCharacter中因人物与摄像机过近时而隐藏人物和武器时，开枪也不显示枪口火焰特效
 	bool bShowMuzzleFlash = true;
 	
+	//武器的准星类型
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
+	TSubclassOf<class UTPSCrossHair> CrossHairClass;
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Rifle;
@@ -283,8 +287,8 @@ protected:
 	
 	//伤害类型子类
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
-	class TSubclassOf<UDamageType> DamageType; //空值，传入后会选择默认类型
-
+	TSubclassOf<UDamageType> DamageType; //空值，传入后会选择默认类型
+	
 	//枪口插槽名称
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	FName MuzzleSocketName;

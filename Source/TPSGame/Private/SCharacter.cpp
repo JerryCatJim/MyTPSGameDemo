@@ -263,6 +263,20 @@ void ASCharacter::Destroyed()
 	}
 }
 
+void ASCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if(IsLocallyControlled())
+	{
+		ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+		if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置准星
+		{
+			MyController->ResetCrossHair();
+		}
+	}
+}
+
 //SWeapon.cpp中 Fire函数会让Owner(即该文件)调用GetActorEyesViewPoint,下面函数重写了方法，使眼部位置变为摄像机位置
 //Character继承于Pawn, Pawn.cpp中 调用GetActorEyesViewPoint 会调用GetPawnViewLocation和GetViewRotation获得值
 FVector ASCharacter::GetPawnViewLocation() const
@@ -425,6 +439,12 @@ void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent
 
 void ASCharacter::OnRep_CurrentWeapon()
 {
+	ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+	if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置准星
+	{
+		MyController->ResetCrossHair();
+	}
+	
 	OnCurrentWeaponChanged.Broadcast();
 }
 
@@ -443,6 +463,11 @@ void ASCharacter::OnRep_Died()
 	if(CurrentWeapon && CurrentWeapon->GetWeaponMeshComp())
 	{
 		CurrentWeapon->GetWeaponMeshComp()->SetVisibility(false);
+	}
+	ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+	if(MyController)
+	{
+		MyController->RemoveCrossHair();
 	}
 		
 	//获取胶囊体碰撞

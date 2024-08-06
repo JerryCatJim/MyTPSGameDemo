@@ -4,6 +4,7 @@
 #include "TPSPlayerController.h"
 
 #include "TPSGameMode.h"
+#include "HUD/TPSHUD.h"
 #include "Kismet/GameplayStatics.h"
 
 ATPSPlayerController::ATPSPlayerController()
@@ -34,6 +35,24 @@ void ATPSPlayerController::RequestRespawn_Implementation()
 	if(GM)
 	{
 		GM->RespawnPlayer(this);
+	}
+}
+
+void ATPSPlayerController::ResetCrossHair()
+{
+	ATPSHUD* CurHUD = Cast<ATPSHUD>(GetHUD());
+	if(CurHUD)
+	{
+		CurHUD->ResetCrossHairWidget(this);
+	}
+}
+
+void ATPSPlayerController::RemoveCrossHair()
+{
+	ATPSHUD* CurHUD = Cast<ATPSHUD>(GetHUD());
+	if(CurHUD)
+	{
+		CurHUD->RemoveCrossHairWidget();
 	}
 }
 
