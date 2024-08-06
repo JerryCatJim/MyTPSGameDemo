@@ -532,7 +532,7 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 	if(BackUpAmmoNum == 0)
 	{
 		//0备弹也广播，可能用于UI的备弹量数字颜色改变等小需求，C++服务器端不会自动调用OnRep，所以手动调用
-		//如果当前子弹和备用子弹都空了，按开火后也会走到这里，不希望此时触发备用子弹的文字动画
+		//如果当前子弹和备用子弹都空了，按开火后也会走到这里，调用了Reload(true)，不希望此时触发备用子弹的文字动画
 		OnBackUpAmmoChanged.Broadcast(0, !isAutoReload);
 		return;
 	}
@@ -593,6 +593,12 @@ void ASWeapon::StopReload(bool IsInterrupted)
 		//广播Reload事件，可用于更新子弹数UI等，C++服务器端不会自动调用OnRep，所以手动调用
 		OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, false);
 		OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum, false);
+
+		//完成一次装弹后如果还没满且有弹药可装，则继续自动装弹(例如喷子一次上一两发，一直连续上弹)
+		if(CurrentAmmoNum < OnePackageAmmoNum && BackUpAmmoNum > 0)
+		{
+			Reload(true);
+		}
 	}
 }
 

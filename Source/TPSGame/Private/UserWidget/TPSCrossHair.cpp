@@ -23,8 +23,8 @@ void UTPSCrossHair::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	DrawCrossHairSpread();
-	GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red, FString::Printf(TEXT("%f"), LastSpreadValue));
-	GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Blue, FString::Printf(TEXT("%f"), GetCrossHairPos(C_Left)));
+	//GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red, FString::Printf(TEXT("%f"), LastSpreadValue));
+	//GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Blue, FString::Printf(TEXT("%f"), GetCrossHairPos(C_Left)));
 }
 
 void UTPSCrossHair::RebindMyOwner()
