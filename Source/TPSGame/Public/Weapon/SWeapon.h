@@ -6,23 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "SWeapon.generated.h"
 
-USTRUCT()
-struct FHitScanTrace
-{
-	GENERATED_BODY()
-	
-public:
-	UPROPERTY()
-	FVector_NetQuantize TraceTo;
-
-	//表面类型，将枚举转换为字节以正确赋值
-	UPROPERTY()
-	TEnumAsByte<EPhysicalSurface> SurfaceType;
-
-	UPROPERTY()
-	bool HitSomeTarget;
-};
-
 UENUM(BlueprintType)
 enum EWeaponBulletType
 {
@@ -179,11 +162,7 @@ protected:
 	void ServerStopReload(bool IsInterrupted = false);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayReloadMontage(UAnimMontage* MontageToPlay);
-	
-	//每当HitScanTrace这个变量被网络复制同步(在Fire函数中执行),就触发一次该函数
-	UFUNCTION()  //绑定到委托的函数必须为void，且用UFUNCTION()进行标记
-	void OnRep_HitScanTrace();
+	void Multi_PlayReloadMontageAndSound();
 
 	UFUNCTION(BlueprintCallable)
 	void OnRep_CurrentAmmoNum();
@@ -201,13 +180,13 @@ protected:
 	void OnRep_WeaponPickUpInfo();
 
 	//播放武器开火特效
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void PlayFireEffectsAndSounds();
-	
-	void PlayTraceEffect(FVector TraceEnd);
-	
-	//播放击中效果
-	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	virtual void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
+	UFUNCTION(NetMulticast, Unreliable)
+	virtual void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);  //命中特效和声音
 
 	//播放射击动画
 	UFUNCTION(NetMulticast, Reliable)
@@ -219,7 +198,7 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void StopReloadAnimAndTimer();
 
-private:
+	//获取开枪起始位置
 	FVector GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRotation);
 	
 public:
@@ -279,7 +258,7 @@ protected:
 	class USkeletalMeshComponent* MeshComponent;
 
 	UPROPERTY(VisibleAnywhere, Category=Component)
-	UAudioComponent* FireSoundAudio;
+	UAudioComponent* WeaponSoundAudio;
 	
 	//武器的持有者
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
@@ -323,6 +302,9 @@ protected:
 	//易伤部位击中音效(例如爆头)
 	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponSound)
 	//class USoundCue* HeadShotHitSound;
+	//换弹音效
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponSound)
+	class USoundCue* ReloadSound;
 	
 	//弹道特效
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponEffect)
@@ -348,8 +330,6 @@ protected:
 	FVector ShotTraceEnd;
 	//射击时命中的物理表面类型
 	EPhysicalSurface HitSurfaceType = SurfaceType_Default;
-	//本次射击时候命中了目标
-	bool bHitSomeTarget;
 	
 	//连射间隔_计时器句柄
 	FTimerHandle TimerHandle_TimerBetweenShot;
@@ -368,12 +348,10 @@ protected:
 	//射击间隔(60除以射击速度)
 	float TimeBetweenShots;
 
-	//每次使用了该结构体进行网络复制，都会触发名为OnRep_HitScanTrace的函数
-	UPROPERTY(ReplicatedUsing= OnRep_HitScanTrace)
-	FHitScanTrace HitScanTrace;
-
 	//装弹计时器
 	FTimerHandle ReloadTimer;
+	//播放装弹声音计时器
+	FTimerHandle ReloadSoundTimer;
 
 	//瞄准时的开火动画
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponMontage)
@@ -395,11 +373,13 @@ protected:
 	float AimPlayRate = 2.0f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= WeaponMontage)
 	float NoAimPlayRate = 0.4f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= WeaponMontage)
+	float ReloadPlayRate = 1.f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
 
 private:
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_WeaponPickUpInfo)
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;
 };

@@ -31,8 +31,9 @@ ASWeapon::ASWeapon()
 	
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 	SetRootComponent(MeshComponent);
-	FireSoundAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("FireSoundAudio"));
-	FireSoundAudio->bAutoActivate = false;
+	WeaponSoundAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponSoundAudio"));
+	WeaponSoundAudio->SetupAttachment(RootComponent);
+	WeaponSoundAudio->bAutoActivate = false;
 
 	//枪口插槽名称
 	MuzzleSocketName = "MuzzleFlash";
@@ -259,13 +260,10 @@ void ASWeapon::DealFire()
 			
 		//若击中目标则将轨迹结束点设置为击中点
 		ShotTraceEnd = Hit.ImpactPoint;
-		
 		HitSurfaceType = SurfaceType;
 		
 		PlayImpactEffectsAndSounds(HitSurfaceType, ShotTraceEnd);
 	}
-
-	bHitSomeTarget = bIsTraceHit;
 }
 
 void ASWeapon::Fire()
@@ -305,23 +303,16 @@ void ASWeapon::Fire()
 		CurrentAmmoNum = bIsCurrentAmmoInfinity ? CurrentAmmoNum : CurrentAmmoNum - 1;
 		OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, true);
 		
-		bHitSomeTarget = false;
-		
 		//处理射击判定和应用伤害的函数
 		DealFire();
-
-		//发射器类型的武器命中目标和地点需在其Projectile类中才能得到
-		if(HasAuthority() && !IsProjectileWeapon())
-		{
-			//轨迹终点
-			HitScanTrace.TraceTo = ShotTraceEnd;
-			HitScanTrace.SurfaceType = HitSurfaceType;
-			HitScanTrace.HitSomeTarget = bHitSomeTarget;
-		}
-
+		
 		//播放特效
 		PlayFireEffectsAndSounds();
-		PlayTraceEffect(ShotTraceEnd);
+		if(WeaponType != EWeaponType::ShotGun)
+		{
+			//霰弹枪一次可以射出多发弹丸，在其重写的DealFire()中描绘轨迹，独头霰弹枪也是
+			PlayTraceEffect(ShotTraceEnd);
+		}
 		
 		//记录世界时间
 		LastFireTime = GetWorld()->TimeSeconds;
@@ -355,8 +346,8 @@ void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 
 	if(FireSound)
 	{
-		FireSoundAudio->SetSound(FireSound);
-		FireSoundAudio->Play();
+		WeaponSoundAudio->SetSound(FireSound);
+		WeaponSoundAudio->Play();
 	}
 
 	//获得武器持有者owner
@@ -373,7 +364,7 @@ void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 	}
 }
 
-void ASWeapon::PlayTraceEffect(FVector TraceEnd)
+void ASWeapon::PlayTraceEffect_Implementation(FVector TraceEnd)
 {
 	if(TraceEffect && !IsProjectileWeapon())  //发射器类武器不播放轨迹特效，因为轨迹特效是瞬间描绘的
 	{
@@ -389,7 +380,7 @@ void ASWeapon::PlayTraceEffect(FVector TraceEnd)
 }
 
 //播放武器命中效果
-void ASWeapon::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint)
+void ASWeapon::PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface SurfaceType, FVector ImpactPoint)
 {
 	if(IsProjectileWeapon())
 	{
@@ -414,7 +405,7 @@ void ASWeapon::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector 
 			break;
 	}
 			
-	if(SelectedEffect && HitScanTrace.HitSomeTarget)// && ImpactPoint.Size() > 0)
+	if(SelectedEffect)// && ImpactPoint.Size() > 0)
 	{
 		const FVector MuzzleLocation = MeshComponent->GetSocketLocation(MuzzleSocketName);
 
@@ -470,6 +461,7 @@ void ASWeapon::StopReloadAnimAndTimer_Implementation()
 	}
 	
 	GetWorldTimerManager().ClearTimer(ReloadTimer);
+	GetWorldTimerManager().ClearTimer(ReloadSoundTimer);
 	MyOwner->StopAnimMontage(ReloadMontage);
 }
 
@@ -540,12 +532,12 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 	//播放装弹动画
 	bIsReloading = true;
 
-	const float MontagePlayTime = ReloadMontage ? ReloadMontage->SequenceLength : 1.0f ;
+	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
 
 	if(ReloadMontage)
 	{
 		//Multi播放换弹动画，保证同步
-		Multi_PlayReloadMontage(ReloadMontage);
+		Multi_PlayReloadMontageAndSound();
 	}
 	else
 	{
@@ -602,24 +594,31 @@ void ASWeapon::StopReload(bool IsInterrupted)
 	}
 }
 
-void ASWeapon::Multi_PlayReloadMontage_Implementation(UAnimMontage* MontageToPlay)
+void ASWeapon::Multi_PlayReloadMontageAndSound_Implementation()
 {
-	if(CheckOwnerValidAndAlive() && MontageToPlay)
+	if(CheckOwnerValidAndAlive() && ReloadMontage)
 	{
-		MyOwner->PlayAnimMontage(MontageToPlay);
+		MyOwner->PlayAnimMontage(ReloadMontage, ReloadPlayRate);
+		
+		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
+		GetWorldTimerManager().SetTimer(ReloadSoundTimer,
+		[this]()->void
+		{
+			if(ReloadSound)
+			{
+				WeaponSoundAudio->SetSound(ReloadSound);
+				WeaponSoundAudio->Play();
+			}
+		},
+		MontagePlayTime * 0.8f,
+		false
+			);
 	}
 }
 
 void ASWeapon::ServerStopReload_Implementation(bool IsInterrupted)
 {
 	StopReload(IsInterrupted);
-}
-
-//每当HitScanTrace这个变量被网络复制同步(在Fire函数中执行),就触发一次该函数
-void ASWeapon::OnRep_HitScanTrace()
-{
-	PlayTraceEffect(HitScanTrace.TraceTo);
-	PlayImpactEffectsAndSounds(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
 }
 
 void ASWeapon::OnRep_CurrentAmmoNum()
@@ -697,8 +696,6 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	//指定网络复制哪一部分（一个变量）
-	//DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_SkipOwner);  //不让发出请求的客户端 进行自身的网络同步复制，避免重复(因为自身Client开火后, 在本地就已经绘制了自身的特效)
-	DOREPLIFETIME_CONDITION(ASWeapon, HitScanTrace, COND_None);  //在客户端调用ServerFire()后return了，所有操作都改到了服务器执行
 	DOREPLIFETIME_CONDITION(ASWeapon, CurrentAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, BackUpAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, bIsReloading, COND_None);
