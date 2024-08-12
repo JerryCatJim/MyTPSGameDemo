@@ -227,7 +227,14 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", Replicated)
 	FName WeaponName;
-
+	
+	//开镜后的视野范围
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponZoom)
+	float ZoomedFOV;
+	//开镜速度
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponZoom, meta=(ClampMin = 0.1f, ClampMax = 100.f))
+	float ZoomInterpSpeed;
+	
 	//当前子弹数变化的委托
 	UPROPERTY(BlueprintAssignable)
 	FCurrentAmmoChangedDelegate OnCurrentAmmoChanged;

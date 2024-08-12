@@ -196,16 +196,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
 	bool bIsUsingWeapon;
 	
-	//开镜后的视野范围
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponZoom)
-	float ZoomedFOV;
-
 	//默认视野范围
 	float DefaultFOV;
-
-	//开镜速度
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= WeaponZoom, meta=(ClampMin = 0.1f, ClampMax = 100.f))
-	float ZoomInterpSpeed;
 
 	//为玩家生成武器
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)

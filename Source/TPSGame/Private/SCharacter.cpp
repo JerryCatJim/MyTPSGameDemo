@@ -43,6 +43,11 @@ ASCharacter::ASCharacter()
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	CameraComponent->SetRelativeLocation(FVector(0,50,60));
 
+	//调整聚焦景深，让摄像机放大画面时看远处更清晰
+	CameraComponent->PostProcessSettings.DepthOfFieldFocalDistance = 10000.f;  //DepthOfFieldFocalDistance就是蓝图中CameraComponent的PostProcess/Lens/DepthOfField/FocalDistance
+	//调整光圈(?)，让摄像机放大画面时看近处更清晰
+	CameraComponent->PostProcessSettings.DepthOfFieldFstop = 32.f;  //DepthOfFieldFstop就是蓝图中CameraComponent的PostProcess/Lens/Camera/Aperture(F-Stop)
+	
 	//设置Mesh的Transform
 	GetMesh()->SetRelativeLocation(FVector(0,0,-87));
 	GetMesh()->SetRelativeRotation(FRotator(0,-90,0));
@@ -52,9 +57,6 @@ ASCharacter::ASCharacter()
 	
 	//Buff组件初始化
 	BuffComponent = CreateDefaultSubobject<USBuffComponent>(TEXT("BuffComponent"));
-	
-	ZoomedFOV = 65.f;
-	ZoomInterpSpeed = 20.0f;
 	
 	WeaponSocketName = "WeaponSocket";
 
@@ -110,12 +112,13 @@ void ASCharacter::BeginPlay()
 void ASCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	//当前视野范围
-	const float TargetFOV = bIsAiming ? ZoomedFOV : DefaultFOV;
-
+	
 	//平滑插值
-	const float NewFOV = FMath::FInterpTo(CameraComponent->FieldOfView, TargetFOV, DeltaTime, ZoomInterpSpeed);
+	const float NewFOV = FMath::FInterpTo(
+		CameraComponent->FieldOfView,
+		bIsAiming && CurrentWeapon ? CurrentWeapon->ZoomedFOV : DefaultFOV,
+		DeltaTime,
+		CurrentWeapon ? CurrentWeapon->ZoomInterpSpeed : 20.f);
 	
 	//设置开镜变焦效果
 	CameraComponent->SetFieldOfView(NewFOV);

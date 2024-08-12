@@ -61,6 +61,9 @@ ASWeapon::ASWeapon()
 
 	WeaponName = TEXT("默认步枪");
 	
+	ZoomedFOV = 45.f;
+	ZoomInterpSpeed = 20.0f;
+	
 	//开启网络复制，将该实体从服务器端Server复制到客户端Client
 	SetReplicates(true);
 	SetReplicatingMovement(true);
