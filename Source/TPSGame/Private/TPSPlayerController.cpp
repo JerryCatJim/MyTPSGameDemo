@@ -56,6 +56,15 @@ void ATPSPlayerController::RemoveCrossHair()
 	}
 }
 
+void ATPSPlayerController::SetCrossHairVisibility(bool IsVisible)
+{
+	ATPSHUD* CurHUD = Cast<ATPSHUD>(GetHUD());
+	if(CurHUD)
+	{
+		CurHUD->SetCrossHairVisibility(IsVisible);
+	}
+}
+
 float ATPSPlayerController::GetServerTime()
 {
 	if(HasAuthority())

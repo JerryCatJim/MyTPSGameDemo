@@ -10,6 +10,7 @@
 #include "Component/SHealthComponent.h"
 #include "Component/InventoryComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "TPSPlayerController.h"
 #include "Interface/MyInterfaceTest.h"
 #include "SCharacter.generated.h"
 
@@ -63,10 +64,10 @@ public:
 	void StopReload();
 
 	//设置是否开镜
-	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
-	void SetZoomFOV();
-	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
-	void ResetZoomFOV();
+	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
+	void SetWeaponZoom();
+	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
+	void ResetWeaponZoom();
 
 	//当交互键(E)被按下时
 	UFUNCTION(BlueprintCallable)//, Server, Reliable)
@@ -80,26 +81,29 @@ public:
 	//重写,获取摄像机组件位置
 	virtual FVector GetPawnViewLocation() const override;
 
-	USHealthComponent* GetHealthComponent();
-	USBuffComponent* GetBuffComponent();
-
+	UCameraComponent* GetCameraComponent()  const { return CameraComponent; }
+	
+	USHealthComponent* GetHealthComponent() const { return HealthComponent; }
+	USBuffComponent* GetBuffComponent()     const { return BuffComponent; }
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UInventoryComponent* GetInventoryComponent();
+	
+	bool GetIsDied()   const { return bDied; }
 
-	bool GetIsDied();
+	bool GetIsAiming() const { return bIsAiming; }
+	void SetIsAiming(const bool& IsAiming){ bIsAiming = IsAiming; }
 
-	bool GetIsAiming();
-
-	bool GetIsFiring();
+	bool GetIsFiring() const { return bIsFiring; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetIsReloading();
 	
-	float GetAimOffset_Y();
-	float GetAimOffset_Z();
+	float GetAimOffset_Y() const { return AimOffset_Y; }
+	float GetAimOffset_Z() const { return AimOffset_Z; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	float GetSpringArmLength();
+	float GetSpringArmLength(){ return SpringArmComponent ? SpringArmComponent->TargetArmLength : 0 ; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
 	FWeaponPickUpInfo GetWeaponPickUpInfo();
@@ -191,10 +195,6 @@ protected:
 	//是否正在射击
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
 	bool bIsFiring;
-
-	//是否正在持有武器(对应空手和拿着武器)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
-	bool bIsUsingWeapon;
 	
 	//默认视野范围
 	float DefaultFOV;

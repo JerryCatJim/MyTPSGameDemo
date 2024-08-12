@@ -9,7 +9,6 @@
 #include "TPSGame/TPSGame.h"
 //#include "Component/SHealthComponent.h"
 //#include "Component/SBuffComponent.h"
-#include "TPSPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -65,7 +64,6 @@ ASCharacter::ASCharacter()
 	AimOffset_Z = 0;
 	bIsAiming = false;
 	bIsFiring = false;
-	bIsUsingWeapon = true;
 }
 
 // Called when the game starts or when spawned
@@ -242,8 +240,8 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASCharacter::StartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ASCharacter::StopFire);
 	
-	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::SetZoomFOV);
-	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::ResetZoomFOV);
+	PlayerInputComponent->BindAction("Zoom", IE_Pressed, this, &ASCharacter::SetWeaponZoom);
+	PlayerInputComponent->BindAction("Zoom", IE_Released, this, &ASCharacter::ResetWeaponZoom);
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ASCharacter::InteractKeyPressed);
 	PlayerInputComponent->BindAction("Interact", IE_Released, this, &ASCharacter::InteractKeyReleased);
@@ -293,17 +291,25 @@ FVector ASCharacter::GetPawnViewLocation() const
 }
 
 //将开镜行为发送到服务器然后同步
-void ASCharacter::SetZoomFOV_Implementation()
+void ASCharacter::SetWeaponZoom()
 {
 	if(bDisableGamePlayInput) return;
-	//空手时不能开镜
-	bIsAiming = bIsUsingWeapon;
+
+	//空手不能开镜
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->SetWeaponZoom();
+	}
 }
 
-void ASCharacter::ResetZoomFOV_Implementation()
+void ASCharacter::ResetWeaponZoom()
 {
 	if(bDisableGamePlayInput) return;
-	bIsAiming = false;
+
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->ResetWeaponZoom();
+	}
 }
 
 //将射击行为发送到服务器然后同步
@@ -489,16 +495,6 @@ void ASCharacter::OnRep_Died()
 		false);
 }
 
-USHealthComponent* ASCharacter::GetHealthComponent()
-{
-	return HealthComponent;
-}
-
-USBuffComponent* ASCharacter::GetBuffComponent()
-{
-	return BuffComponent;
-}
-
 UInventoryComponent* ASCharacter::GetInventoryComponent()
 {
 	ATPSPlayerController* PC = GetController<ATPSPlayerController>();
@@ -511,20 +507,6 @@ UInventoryComponent* ASCharacter::GetInventoryComponent()
 	return nullptr;
 }
 
-bool ASCharacter::GetIsDied()
-{
-	return bDied;
-}
-
-bool ASCharacter::GetIsAiming()
-{
-	return bIsAiming;
-}
-
-bool ASCharacter::GetIsFiring()
-{
-	return bIsFiring;
-}
 
 bool ASCharacter::GetIsReloading()
 {
@@ -533,21 +515,6 @@ bool ASCharacter::GetIsReloading()
 		return false;
 	}
 	return CurrentWeapon->bIsReloading;
-}
-
-float ASCharacter::GetAimOffset_Y()
-{
-	return AimOffset_Y;
-}
-
-float ASCharacter::GetAimOffset_Z()
-{
-	return AimOffset_Z;
-}
-
-float ASCharacter::GetSpringArmLength()
-{
-	return SpringArmComponent ? SpringArmComponent->TargetArmLength : 0 ;
 }
 
 void ASCharacter::SyncAimOffset_Implementation()

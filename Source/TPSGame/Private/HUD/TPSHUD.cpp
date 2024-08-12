@@ -33,6 +33,19 @@ void ATPSHUD::RemoveCrossHairWidget()
 	}
 }
 
+void ATPSHUD::SetCrossHairVisibility(bool IsVisible)
+{
+	if(!IsValid(CrossHairView)) return;
+	if(IsVisible)
+	{
+		CrossHairView->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		CrossHairView->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
 void ATPSHUD::AddToWidgetList(UUserWidget* WidgetToRecord)
 {
 	WidgetsList.Emplace(WidgetToRecord);

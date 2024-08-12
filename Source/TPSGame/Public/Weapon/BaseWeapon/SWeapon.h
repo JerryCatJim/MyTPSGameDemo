@@ -21,6 +21,7 @@ enum EWeaponType
 	RocketLauncher,
 	ShotGun,
 	MachineGun,
+	SniperRifle,
 };
 
 USTRUCT(BlueprintType)
@@ -81,20 +82,26 @@ public:
 	USkeletalMeshComponent* GetWeaponMeshComp() const;
 	
 	//开始射击函数
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	UFUNCTION(BlueprintCallable)
 	void StartFire();
 	
 	//停止射击函数
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	UFUNCTION(BlueprintCallable)
 	void StopFire();
 
 	//重新装填子弹函数
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	UFUNCTION(BlueprintCallable)
 	void Reload(bool isAutoReload = false);
 
 	UFUNCTION()
 	void StopReload(bool IsInterrupted = false);
 
+	//设置武器是否开镜
+	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
+	void SetWeaponZoom();
+	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
+	void ResetWeaponZoom();
+	
 	int GetCurrentAmmoNum() const { return CurrentAmmoNum; }
 
 	TSubclassOf<UDamageType> GetWeaponDamageType() const { return DamageType; }
@@ -143,23 +150,26 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation) //服务器，可靠链接，进行验证 （RPC函数）
 	void ServerFire();
 
-	UFUNCTION(BlueprintNativeEvent)
-	void ServerFire_BP();
-
 	UFUNCTION(Server, Reliable) //服务器，可靠链接
 	void ServerStopFire();
-
-	UFUNCTION(BlueprintNativeEvent)
-	void ServerStopFire_BP();
-
+	
 	UFUNCTION(Server, Reliable) //服务器，可靠链接，进行验证 （RPC函数）
 	void ServerReload(bool isAutoReload);
 
-	UFUNCTION(BlueprintNativeEvent)
-	void ServerReload_BP();
-
 	UFUNCTION(Server, Reliable) //服务器，可靠链接，进行验证 （RPC函数）
 	void ServerStopReload(bool IsInterrupted = false);
+	
+	UFUNCTION(BlueprintCallable)
+	virtual void PostFire();
+	UFUNCTION(BlueprintCallable)
+	virtual void PostStopFire();
+	UFUNCTION(BlueprintCallable)
+	virtual void PostReload();
+	UFUNCTION(BlueprintCallable)
+	virtual void PostStopReload();
+
+	virtual void DealWeaponZoom();
+	virtual void DealWeaponResetZoom();
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayReloadMontageAndSound();
@@ -184,10 +194,12 @@ protected:
 	void PlayFireEffectsAndSounds();
 
 	UFUNCTION(NetMulticast, Unreliable)
-	virtual void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
+	void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
 	UFUNCTION(NetMulticast, Unreliable)
-	virtual void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);  //命中特效和声音
-
+	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);  //命中特效和声音
+	virtual void DealPlayTraceEffect(FVector TraceEnd);  //不要重写Multi函数，会导致客户端多次触发，把要重写的部分抽象出来单做一个函数
+	virtual void DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);
+	
 	//播放射击动画
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayFireAnim();

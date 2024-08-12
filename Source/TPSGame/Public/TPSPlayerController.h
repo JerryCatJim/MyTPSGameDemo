@@ -36,6 +36,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void RemoveCrossHair();
+
+	UFUNCTION(BlueprintCallable)
+	void SetCrossHairVisibility(bool IsVisible);
 	
 protected:
 	//同步服务器和客户端的时间(不是直接同步WorldTime，而是记录两者的差值，让客户端自己加)

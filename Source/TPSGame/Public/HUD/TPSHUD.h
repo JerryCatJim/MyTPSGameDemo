@@ -20,6 +20,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void RemoveCrossHairWidget();
+
+	UFUNCTION(BlueprintCallable)
+	void SetCrossHairVisibility(bool IsVisible);
 	
 	UFUNCTION(BlueprintCallable)
 	void AddToWidgetList(UUserWidget* WidgetToRecord);

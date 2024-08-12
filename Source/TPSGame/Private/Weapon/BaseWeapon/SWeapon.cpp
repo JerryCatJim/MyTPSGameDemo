@@ -272,8 +272,8 @@ void ASWeapon::Fire()
 		//播放射击动画
 		PlayFireAnim();
 		
-		//蓝图要处理啥，留个接口出来
-		ServerFire_BP();
+		//要处理啥，留个接口出来
+		PostFire();
 	}
 }
 
@@ -307,6 +307,17 @@ void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 
 void ASWeapon::PlayTraceEffect_Implementation(FVector TraceEnd)
 {
+	DealPlayTraceEffect(TraceEnd);
+}
+
+//播放武器命中效果
+void ASWeapon::PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface SurfaceType, FVector ImpactPoint)
+{
+	DealPlayImpactEffectsAndSounds(SurfaceType, ImpactPoint);
+}
+
+void ASWeapon::DealPlayTraceEffect(FVector TraceEnd)
+{
 	if(TraceEffect && !IsProjectileWeapon())  //发射器类武器不播放轨迹特效，因为轨迹特效是瞬间描绘的
 	{
 		//获取输入实际位置
@@ -320,8 +331,7 @@ void ASWeapon::PlayTraceEffect_Implementation(FVector TraceEnd)
 	}
 }
 
-//播放武器命中效果
-void ASWeapon::PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface SurfaceType, FVector ImpactPoint)
+void ASWeapon::DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint)
 {
 	if(IsProjectileWeapon())
 	{
@@ -338,12 +348,12 @@ void ASWeapon::PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface Surfac
 		case Surface_FleshDefault:      //身体
 		case Surface_FleshVulnerable:   //易伤部位，例如爆头，可单独设置特效和音效
 			SelectedEffect = FleshImpactEffect;
-			ImpactSound = FleshHitSound;
-			break;
-		default:
-			SelectedEffect = DefaultImpactEffect;
-			ImpactSound = DefaultHitSound;
-			break;
+		ImpactSound = FleshHitSound;
+		break;
+	default:
+		SelectedEffect = DefaultImpactEffect;
+		ImpactSound = DefaultHitSound;
+		break;
 	}
 			
 	if(SelectedEffect)// && ImpactPoint.Size() > 0)
@@ -406,7 +416,7 @@ void ASWeapon::StopReloadAnimAndTimer_Implementation()
 	MyOwner->StopAnimMontage(ReloadMontage);
 }
 
-void ASWeapon::StartFire_Implementation()
+void ASWeapon::StartFire()
 {
 	//第一次延迟时间
 	float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
@@ -419,7 +429,7 @@ void ASWeapon::StartFire_Implementation()
 	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
 }
 
-void ASWeapon::StopFire_Implementation()
+void ASWeapon::StopFire()
 {
 	//停止播放射击动画
 	//SetIsFiring(false)若放在Server端设置，
@@ -445,11 +455,11 @@ void ASWeapon::StopFire_Implementation()
 		Reload(true);
 	}
 	
-	//蓝图要处理啥，留个接口出来
-	ServerStopFire_BP();
+	//要处理啥，留个接口出来
+	PostStopFire();
 }
 
-void ASWeapon::Reload_Implementation(bool isAutoReload)
+void ASWeapon::Reload(bool isAutoReload)
 {
 	if(!HasAuthority())
 	{
@@ -487,6 +497,9 @@ void ASWeapon::Reload_Implementation(bool isAutoReload)
 
 	//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
 	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){StopReload(false);}, MontagePlayTime, false);
+
+	//要处理啥，留个接口出来
+	PostReload();
 }
 
 void ASWeapon::StopReload(bool IsInterrupted)
@@ -533,6 +546,31 @@ void ASWeapon::StopReload(bool IsInterrupted)
 			Reload(true);
 		}
 	}
+
+	//要处理啥，留个接口出来
+	PostStopReload();
+}
+
+void ASWeapon::SetWeaponZoom_Implementation()
+{
+	if(CheckOwnerValidAndAlive())
+	{
+		if(!MyOwner->GetIsAiming()) //防止多次触发
+		{
+			DealWeaponZoom();
+		}
+	}
+}
+
+void ASWeapon::ResetWeaponZoom_Implementation()
+{
+	if(CheckOwnerValidAndAlive())
+	{
+		if(MyOwner->GetIsAiming()) //防止多次触发
+		{
+			DealWeaponResetZoom();
+		}
+	}
 }
 
 void ASWeapon::Multi_PlayReloadMontageAndSound_Implementation()
@@ -560,6 +598,16 @@ void ASWeapon::Multi_PlayReloadMontageAndSound_Implementation()
 void ASWeapon::ServerStopReload_Implementation(bool IsInterrupted)
 {
 	StopReload(IsInterrupted);
+}
+
+void ASWeapon::DealWeaponZoom()
+{
+	MyOwner->SetIsAiming(true);
+}
+
+void ASWeapon::DealWeaponResetZoom()
+{
+	MyOwner->SetIsAiming(false);
 }
 
 void ASWeapon::OnRep_CurrentAmmoNum()
@@ -611,19 +659,24 @@ void ASWeapon::ServerReload_Implementation(bool isAutoReload)
 	Reload(isAutoReload);
 }
 
-void ASWeapon::ServerFire_BP_Implementation()
+void ASWeapon::PostFire()
 {
-	//ToDo In blueprint
+	//Do Something
 }
 
-void ASWeapon::ServerStopFire_BP_Implementation()
+void ASWeapon::PostStopFire()
 {
-	//ToDo In blueprint
+	//Do Something
 }
 
-void ASWeapon::ServerReload_BP_Implementation()
+void ASWeapon::PostReload()
 {
-	//ToDo In blueprint
+	//Do Something
+}
+
+void ASWeapon::PostStopReload()
+{
+	//Do Something
 }
 
 USkeletalMeshComponent* ASWeapon::GetWeaponMeshComp() const
