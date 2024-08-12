@@ -146,7 +146,7 @@ float ASWeapon::GetDynamicBulletSpread()
 		{
 			TempRate *= 10;
 		}
-		TempRate = FMath::Clamp(TempRate, 1.0f, 20.0f);
+		TempRate = FMath::Clamp(TempRate, 0.5f, 15.0f);
 		return BulletSpread * TempRate;
 	}
 	return BulletSpread;
