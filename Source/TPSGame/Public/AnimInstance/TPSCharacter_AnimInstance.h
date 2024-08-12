@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "Weapon/SWeapon.h"
+#include "Weapon/BaseWeapon/SWeapon.h"
 #include "TPSCharacter_AnimInstance.generated.h"
 
 /**
