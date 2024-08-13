@@ -4,6 +4,7 @@
 #include "TPSPlayerController.h"
 
 #include "TPSGameMode.h"
+#include "GameFramework/PlayerState.h"
 #include "HUD/TPSHUD.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -18,6 +19,11 @@ void ATPSPlayerController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	CheckTimeSync(DeltaSeconds);
+	
+	if(IsLocalController())
+	{
+		CheckLag();
+	}
 }
 
 void ATPSPlayerController::ReceivedPlayer()
@@ -84,6 +90,53 @@ void ATPSPlayerController::CheckTimeSync(float DeltaTime)
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 		TimeSyncRunningTime = 0.f;
+	}
+}
+
+void ATPSPlayerController::CheckLag()  //在Tick()中每帧执行
+{
+	if(IsLocalController() && PlayerState)
+	{
+		//Ping是uint8类型数据且被UE除以了4，所以乘以4才是真实延迟
+		if(PlayerState->GetPing() * 4 >= HighPingThreshold)
+		{
+			if(!GetWorldTimerManager().IsTimerActive(FShowLagIconHandle))
+			{
+				GetWorldTimerManager().SetTimer(
+					FShowLagIconHandle,
+					[this]()->void
+					{
+						OnLagDetected.Broadcast();
+					},
+					HighPingLoopDuration,
+					true);
+			}
+		}
+		else
+		{
+			if(GetWorldTimerManager().IsTimerActive(FShowLagIconHandle))
+			{
+				GetWorldTimerManager().ClearTimer(FShowLagIconHandle);
+				OnLagEnded.Broadcast();
+			}
+		}
+	}
+}
+
+void ATPSPlayerController::AskForLagSituation()
+{
+	if(IsLocalController() && PlayerState && PlayerState->GetPing() * 4 >= HighPingThreshold)
+	{
+		GetWorldTimerManager().ClearTimer(FShowLagIconHandle);
+		GetWorldTimerManager().SetTimer(
+			FShowLagIconHandle,
+			[this]()->void
+			{
+				OnLagDetected.Broadcast();
+			},
+			HighPingLoopDuration,
+			true,
+			0);
 	}
 }
 

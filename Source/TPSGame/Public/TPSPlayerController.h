@@ -9,6 +9,8 @@
 
 #include "TPSPlayerController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagDetected);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagEnded);
 /**
  * 
  */
@@ -51,6 +53,12 @@ protected:
 
 	void CheckTimeSync(float DeltaTime);
 
+	void CheckLag();
+
+	//OnLagDetected和OnLagEnd委托在蓝图WBP_TPSGameMainView中绑定，此时OnLagDetected可能已经广播过，所以绑定完成后重设一次计时器并发送广播
+	UFUNCTION(BlueprintCallable)
+	void AskForLagSituation();
+	
 public:
 	//背包组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
@@ -63,4 +71,17 @@ protected:
 	float TimeSyncFrequency = 5.f;
 
 	float TimeSyncRunningTime = 0.f;  //距离上次与服务器同步时间过去了多久
+
+	FTimerHandle FShowLagIconHandle;
+
+	UPROPERTY(EditAnywhere, Category=NetworkDelayCheck)  //延迟超过多少时判定为卡顿
+	float HighPingThreshold = 150.f;
+
+	UPROPERTY(EditAnywhere, Category=NetworkDelayCheck)  //延迟过高时，每隔多少秒显示一次Wifi闪烁动画以提醒卡顿
+	float HighPingLoopDuration = 10.f;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnLagDetected OnLagDetected;
+	UPROPERTY(BlueprintAssignable)
+	FOnLagDetected OnLagEnded;
 };
