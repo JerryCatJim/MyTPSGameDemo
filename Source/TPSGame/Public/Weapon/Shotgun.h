@@ -23,6 +23,10 @@ protected:
 	
 	virtual void DealFire() override;
 
+	//不循环N次调用父类的PlayTraceEffect,新写一个函数每次开枪只调用一次，一次性绘制全部轨迹
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayTraceEffectForShotgun(const TArray<FVector>& TracePointArray);
+	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Weapon_ShotGun)
 	int NumberOfPellets = 10;

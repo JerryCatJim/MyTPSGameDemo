@@ -299,6 +299,11 @@ void ASCharacter::SetWeaponZoom()
 	if(CurrentWeapon)
 	{
 		CurrentWeapon->SetWeaponZoom();
+		if(IsLocallyControlled())
+		{
+			bIsAiming = true;
+			bIsAimingLocally = true;
+		}
 	}
 }
 
@@ -309,6 +314,11 @@ void ASCharacter::ResetWeaponZoom()
 	if(CurrentWeapon)
 	{
 		CurrentWeapon->ResetWeaponZoom();
+		if(IsLocallyControlled())
+		{
+			bIsAiming = false;
+			bIsAimingLocally = false;
+		}
 	}
 }
 
@@ -507,16 +517,6 @@ UInventoryComponent* ASCharacter::GetInventoryComponent()
 	return nullptr;
 }
 
-
-bool ASCharacter::GetIsReloading()
-{
-	if(!IsValid(CurrentWeapon))
-	{
-		return false;
-	}
-	return CurrentWeapon->bIsReloading;
-}
-
 void ASCharacter::SyncAimOffset_Implementation()
 {
 	FRotator TargetRotator = GetControlRotation()-GetActorRotation();
@@ -552,6 +552,7 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ASCharacter, bDied);
 	DOREPLIFETIME(ASCharacter, bIsAiming);
 	DOREPLIFETIME(ASCharacter, bIsFiring);
+	DOREPLIFETIME(ASCharacter, bIsReloading);
 	DOREPLIFETIME(ASCharacter, AimOffset_Y);
 	DOREPLIFETIME(ASCharacter, AimOffset_Z);
 	DOREPLIFETIME(ASCharacter, bDisableGamePlayInput);

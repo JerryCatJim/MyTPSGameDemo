@@ -95,9 +95,9 @@ public:
 	void SetIsAiming(const bool& IsAiming){ bIsAiming = IsAiming; }
 
 	bool GetIsFiring() const { return bIsFiring; }
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool GetIsReloading();
+	
+	bool GetIsReloading()  const { return bIsReloading; }
+	void SetIsReloading(const bool& IsReloading){ bIsReloading = IsReloading; }
 	
 	float GetAimOffset_Y() const { return AimOffset_Y; }
 	float GetAimOffset_Z() const { return AimOffset_Z; }
@@ -144,6 +144,9 @@ protected:
 	UFUNCTION()
 	void OnRep_Died();
 
+	UFUNCTION()//延迟较高时快速瞄准又退出时，本地会被服务器覆盖了旧时间的状态，将其改为本地最新状态
+	void OnRep_IsAiming(){ if(IsLocallyControlled()) bIsAiming = bIsAimingLocally; }
+
 private:
 	void HideCharacterIfCameraClose();
 public:	
@@ -189,12 +192,18 @@ protected:
 	USpringArmComponent* SpringArmComponent;
 	
 	//是否正在开镜变焦
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_IsAiming, Category= Weapon)
 	bool bIsAiming;
+	//记录客户端本地的瞄准状态，以修正延迟较高时快速瞄准又退出时被服务器覆盖了旧时间的状态
+	bool bIsAimingLocally;
 
 	//是否正在射击
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
 	bool bIsFiring;
+	
+	//当前武器是否正在重新装填子弹
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= Weapon)
+	bool bIsReloading = false;
 	
 	//默认视野范围
 	float DefaultFOV;

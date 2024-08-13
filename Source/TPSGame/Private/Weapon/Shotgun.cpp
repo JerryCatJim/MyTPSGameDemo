@@ -54,6 +54,7 @@ void AShotgun::DealFire()
 	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
 	QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
 
+	TArray<FVector> TracePointArray;
 	//基本就是把单发射击武器的DealFire逻辑，复制粘贴成次数循环的
 	for(int i=0; i<NumberOfPellets; ++i)
 	{
@@ -105,6 +106,16 @@ void AShotgun::DealFire()
 			
 			PlayImpactEffectsAndSounds(HitSurfaceType, ShotTraceEnd);
 		}
-		PlayTraceEffect(ShotTraceEnd);  //霰弹枪的每个弹丸都描绘一次轨迹
+		TracePointArray.Emplace(ShotTraceEnd);
+		//PlayTraceEffect(ShotTraceEnd);  //换个写法，最好别一瞬间执行多次RPC调用，尤其还是Reliable函数
+	}
+	PlayTraceEffectForShotgun(TracePointArray);
+}
+
+void AShotgun::PlayTraceEffectForShotgun_Implementation(const TArray<FVector>& TracePointArray)
+{
+	for(const FVector& TracePoint : TracePointArray)
+	{
+		DealPlayTraceEffect(TracePoint);
 	}
 }

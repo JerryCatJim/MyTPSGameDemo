@@ -172,7 +172,7 @@ protected:
 	virtual void DealWeaponResetZoom();
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayReloadMontageAndSound();
+	void Multi_PlayReloadAnimAndSound();
 
 	UFUNCTION(BlueprintCallable)
 	void OnRep_CurrentAmmoNum();
@@ -190,12 +190,12 @@ protected:
 	void OnRep_WeaponPickUpInfo();
 
 	//播放武器开火特效
-	UFUNCTION(NetMulticast, Unreliable)
+	//UFUNCTION(NetMulticast, Unreliable)
 	void PlayFireEffectsAndSounds();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);  //命中特效和声音
 	virtual void DealPlayTraceEffect(FVector TraceEnd);  //不要重写Multi函数，会导致客户端多次触发，把要重写的部分抽象出来单做一个函数
 	virtual void DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);
@@ -254,10 +254,6 @@ public:
 	//备用子弹数变化的委托
 	UPROPERTY(BlueprintAssignable)
 	FBackUpAmmoChangedDelegate OnBackUpAmmoChanged;
-
-	//当前武器是否正在重新装填子弹
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= "Weapon")
-	bool bIsReloading = false;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	bool bIsFullAutomaticWeapon = true;

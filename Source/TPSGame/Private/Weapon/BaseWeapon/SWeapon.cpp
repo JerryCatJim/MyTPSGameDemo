@@ -57,7 +57,6 @@ ASWeapon::ASWeapon()
 	CurrentAmmoNum = OnePackageAmmoNum;
 	BackUpAmmoNum = 300;
 	OnceReloadAmmoNum = OnePackageAmmoNum;
-	bIsReloading = false;
 
 	WeaponName = TEXT("默认步枪");
 	
@@ -212,12 +211,13 @@ void ASWeapon::Fire()
 	if(!HasAuthority())  //没有主控权说明是客户端，则向服务器发送请求,在服务端调用开火函数，然后把结果复制到本地
 	{
 		ServerFire();
+		//把不影响同步的一些效果函数从Multi改成普通函数，并在本地客户端也执行，增强高延迟下的客户端体验
+		PlayFireEffectsAndSounds();
 		return;
 	}
 	
 	if(!CheckOwnerValidAndAlive())
 	{
-		//MyOwner->SetIsFiring(false);
 		StopFire();  //不调用StopFire()会一直尝试射击，所以停掉Timer
 		return;
 	}
@@ -233,7 +233,7 @@ void ASWeapon::Fire()
 	if(CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity)
 	{
 		//正在装弹时触发了无限子弹BUFF时在换弹，再射击时打断换弹
-		if(bIsReloading && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
+		if(MyOwner->GetIsReloading() && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
 		{
 			StopReload(true);
 		}
@@ -277,8 +277,11 @@ void ASWeapon::Fire()
 	}
 }
 
-void ASWeapon::PlayFireEffectsAndSounds_Implementation()
+void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
 {
+	//函数从Multi改成了普通函数，并提取到了前面执行，所以加上子弹限制
+	if(CurrentAmmoNum == 0 && !bIsCurrentAmmoInfinity) return;
+	
 	if(MuzzleEffect && bShowMuzzleFlash)
 	{
 		//武器开火特效
@@ -293,7 +296,7 @@ void ASWeapon::PlayFireEffectsAndSounds_Implementation()
 
 	//获得武器持有者owner
 	//APawn* MyOwner = Cast<APawn>(GetOwner());
-	if(MyOwner)
+	if(MyOwner && MyOwner->IsLocallyControlled())
 	{
 		//获得玩家控制器
 		APlayerController* PC = Cast<APlayerController>(MyOwner->GetController());
@@ -467,7 +470,7 @@ void ASWeapon::Reload(bool isAutoReload)
 		return;
 	}
 	
-	if(!CheckOwnerValidAndAlive() || bIsReloading || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
+	if(!CheckOwnerValidAndAlive() || MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
 	{
 		return;
 	}
@@ -480,15 +483,14 @@ void ASWeapon::Reload(bool isAutoReload)
 		return;
 	}
 	
-	//播放装弹动画
-	bIsReloading = true;
+	MyOwner->SetIsReloading(true);
 
 	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
 
 	if(ReloadMontage)
 	{
 		//Multi播放换弹动画，保证同步
-		Multi_PlayReloadMontageAndSound();
+		Multi_PlayReloadAnimAndSound();
 	}
 	else
 	{
@@ -515,7 +517,7 @@ void ASWeapon::StopReload(bool IsInterrupted)
 		return;
 	}
 	
-	bIsReloading = false; //有网络复制
+	MyOwner->SetIsReloading(false);
 	StopReloadAnimAndTimer();
 	
 	if(!IsInterrupted)
@@ -573,7 +575,7 @@ void ASWeapon::ResetWeaponZoom_Implementation()
 	}
 }
 
-void ASWeapon::Multi_PlayReloadMontageAndSound_Implementation()
+void ASWeapon::Multi_PlayReloadAnimAndSound_Implementation()
 {
 	if(CheckOwnerValidAndAlive() && ReloadMontage)
 	{
@@ -692,7 +694,6 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	//指定网络复制哪一部分（一个变量）
 	DOREPLIFETIME_CONDITION(ASWeapon, CurrentAmmoNum, COND_None);
 	DOREPLIFETIME_CONDITION(ASWeapon, BackUpAmmoNum, COND_None);
-	DOREPLIFETIME_CONDITION(ASWeapon, bIsReloading, COND_None);
 	DOREPLIFETIME(ASWeapon, bIsCurrentAmmoInfinity);
 	DOREPLIFETIME(ASWeapon, bIsBackUpAmmoInfinity);
 	DOREPLIFETIME(ASWeapon, WeaponName);
