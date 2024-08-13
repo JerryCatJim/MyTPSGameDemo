@@ -145,6 +145,7 @@ protected:
 	//武器射击函数
 	UFUNCTION(BlueprintCallable, Category= "Weapon")
 	void Fire();
+	void LocalFire();
 
 	//Server服务器端开火函数(客户端client发出请求到服务器执行)
 	UFUNCTION(Server, Reliable, WithValidation) //服务器，可靠链接，进行验证 （RPC函数）
@@ -173,9 +174,13 @@ protected:
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_PlayReloadAnimAndSound();
-
+	
+	UFUNCTION(BlueprintCallable, Client, Reliable)
+	void ClientSyncCurrentAmmoOnFiring(int ServerAmmo);
+	UFUNCTION(BlueprintCallable, Client, Reliable)
+	void SetClientCurrentAmmoNum(int ServerAmmo);
 	UFUNCTION(BlueprintCallable)
-	void OnRep_CurrentAmmoNum();
+	void UpdateCurrentAmmoChange(bool PlayEffect){ OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, PlayEffect); }
 	
 	UFUNCTION(BlueprintCallable)
 	void OnRep_BackUpAmmoNum();
@@ -215,8 +220,10 @@ protected:
 	
 public:
 	//当前子弹数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_CurrentAmmoNum)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	int CurrentAmmoNum;
+	int AmmoSequence = 0;  //射击次数权威仍在服务端，但是本地端预测了开火特效和枪声，延迟过大时可能出现开枪声音次数大于实际次数的问题，用此变量来记录因延迟未被同步的子弹数差值
+	
 	//备用子弹数(不包括当前子弹数)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_BackUpAmmoNum)
 	int BackUpAmmoNum;
