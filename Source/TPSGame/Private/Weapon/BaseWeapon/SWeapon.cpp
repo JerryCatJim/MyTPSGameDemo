@@ -562,7 +562,7 @@ void ASWeapon::StopReload(bool IsInterrupted)
 		if(HasAuthority())
 		{
 			//广播Reload事件，可用于更新子弹数UI等，C++服务器端手动调用一下子弹数更新委托
-			OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, true);
+			UpdateCurrentAmmoChange(true);
 			OnRep_BackUpAmmoNum();
 		}
 
@@ -647,8 +647,11 @@ void ASWeapon::DealWeaponResetZoom()
 
 void ASWeapon::SetClientCurrentAmmoNum_Implementation(int ServerAmmo)
 {
-	OnCurrentAmmoChanged.Broadcast(ServerAmmo, ServerAmmo != CurrentAmmoNum);
-	CurrentAmmoNum = ServerAmmo;
+	if(!HasAuthority()) //ListenServer既是Server也是Client,需要加以限制(虽然不影响)
+	{
+		OnCurrentAmmoChanged.Broadcast(ServerAmmo, ServerAmmo != CurrentAmmoNum);
+		CurrentAmmoNum = ServerAmmo;
+	}
 }
 
 void ASWeapon::OnRep_BackUpAmmoNum()
