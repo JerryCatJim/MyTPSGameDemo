@@ -146,6 +146,8 @@ protected:
 
 	UFUNCTION()//延迟较高时快速瞄准又退出时，本地会被服务器覆盖了旧时间的状态，将其改为本地最新状态
 	void OnRep_IsAiming(){ if(IsLocallyControlled()) bIsAiming = bIsAimingLocally; }
+	UFUNCTION()//原理同上
+	void OnRep_IsFiring(){ if(IsLocallyControlled()) bIsFiring = bIsFiringLocally; }
 
 private:
 	void HideCharacterIfCameraClose();
@@ -198,8 +200,10 @@ protected:
 	bool bIsAimingLocally;
 
 	//是否正在射击
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Replicated, Category= Weapon)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_IsFiring, Category= Weapon)
 	bool bIsFiring;
+	//记录客户端本地的射击状态，以修正延迟较高时快速瞄准又退出时被服务器覆盖了旧时间的状态
+	bool bIsFiringLocally;
 	
 	//当前武器是否正在重新装填子弹
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= Weapon)

@@ -403,8 +403,12 @@ void ASCharacter::StartFire()
 	if(CurrentWeapon)
 	{
 		//有子弹或者无限子弹才设置为开火状态，防止一按开火人物就瞬间面对正前方
-		//SetIsFiring(CurrentWeapon->CheckCanFire());    //挪到Sweapon.cpp的StartFire()中了
 		CurrentWeapon->StartFire();
+		if(IsLocallyControlled())
+		{
+			bIsFiring = true;
+			bIsFiringLocally = true;
+		}
 	}
 }
 
@@ -413,8 +417,12 @@ void ASCharacter::StopFire()
 	//if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
-		//SetIsFiring(false);    //挪到Sweapon.cpp的StopFire()中了
 		CurrentWeapon->StopFire();
+		if(IsLocallyControlled())
+		{
+			bIsFiring = false;
+			bIsFiringLocally = false;
+		}
 	}
 }
 

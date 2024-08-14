@@ -208,7 +208,7 @@ void ASWeapon::DealFire()
 
 void ASWeapon::Fire()
 {
-	if(!HasAuthority())  //没有主控权说明是客户端，则向服务器发送请求,在服务端调用开火函数，然后把结果复制到本地
+	if(!HasAuthority())  //本地只处理一些表现效果，权威端在服务器
 	{
 		ServerFire();
 		LocalFire();
@@ -239,8 +239,11 @@ void ASWeapon::Fire()
 
 		MyOwner->SetIsFiring(true);
 
-		CurrentAmmoNum = bIsCurrentAmmoInfinity ? CurrentAmmoNum : CurrentAmmoNum - 1;
-		ClientSyncCurrentAmmoOnFiring(CurrentAmmoNum);
+		if(!bIsCurrentAmmoInfinity)  //无限子弹时射击不用向客户端同步子弹数
+		{
+			CurrentAmmoNum = CurrentAmmoNum - 1;
+			ClientSyncCurrentAmmoOnFiring(CurrentAmmoNum);
+		}
 		//广播Reload事件，可用于更新子弹数UI等，C++服务器端手动调用一下子弹数更新委托
 		UpdateCurrentAmmoChange(true);
 		
@@ -279,15 +282,19 @@ void ASWeapon::Fire()
 
 void ASWeapon::LocalFire()
 {
-	//把不影响同步的一些效果函数从Multi改成普通函数，并在本地客户端也执行，增强高延迟下的客户端体验
-	PlayFireEffectsAndSounds();
-
-	//子弹预测机制，取消CurrentAmmo的Replicated，改为手动记录因延迟而产生的未同步的差值
-	if(CurrentAmmoNum > 0)
+	if(CheckCanFire())
 	{
-		--CurrentAmmoNum;
-		OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, true);
-		++AmmoSequence;
+		//把不影响同步的一些效果函数从Multi改成普通函数，并在本地客户端也执行，增强高延迟下的客户端体验
+		PlayFireEffectsAndSounds();
+		PlayFireAnim();
+
+		//子弹预测机制，取消CurrentAmmo的Replicated，改为手动记录因延迟而产生的未同步的差值
+		if(!bIsCurrentAmmoInfinity)
+		{
+			--CurrentAmmoNum;
+			++AmmoSequence;
+			OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, true);
+		}
 	}
 }
 
@@ -296,7 +303,7 @@ void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
 	if(!HasAuthority())
 	{
 		//本地预测,防止延迟过高时开枪声音触发次数大于了当前子弹数
-		if(CurrentAmmoNum <=0 ) return;
+		if(!CheckCanFire()) return;
 	}
 	
 	if(MuzzleEffect && bShowMuzzleFlash)
@@ -392,7 +399,7 @@ void ASWeapon::DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVec
 	}
 }
 
-void ASWeapon::PlayFireAnim_Implementation()
+void ASWeapon::PlayFireAnim()//_Implementation()
 {
 	if(!CheckOwnerValidAndAlive())
 	{
@@ -442,9 +449,6 @@ void ASWeapon::StartFire()
 	float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
 	FirstDelay = FMath::Clamp(FirstDelay, 0.f, FirstDelay);
 	//FirstDelay = FMath::Max(FirstDelay, 0.f);
-
-	//换弹时一直按着开火，换好后isFiring状态没有更新，所以最终挪到Fire()的可开火片段中设置
-	//MyOwner->SetIsFiring(CheckCanFire());
 	
 	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
 }

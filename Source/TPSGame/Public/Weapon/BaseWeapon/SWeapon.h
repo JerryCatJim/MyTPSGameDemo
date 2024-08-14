@@ -206,7 +206,7 @@ protected:
 	virtual void DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 	
 	//播放射击动画
-	UFUNCTION(NetMulticast, Reliable)
+	//UFUNCTION(NetMulticast, Reliable)
 	void PlayFireAnim();
 	//停止射击动画
 	UFUNCTION()//NetMulticast, Reliable)
