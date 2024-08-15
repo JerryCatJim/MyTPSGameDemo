@@ -322,12 +322,6 @@ void ASCharacter::ResetWeaponZoom()
 	}
 }
 
-//将射击行为发送到服务器然后同步
-void ASCharacter::SetIsFiring_Implementation(bool IsFiring)
-{
-	bIsFiring = IsFiring;
-}
-
 void ASCharacter::PickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 {
 	const FWeaponPickUpInfo LastWeaponInfo = GetWeaponPickUpInfo();
@@ -431,7 +425,12 @@ void ASCharacter::StartReload()
 	if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
-		CurrentWeapon->Reload(false);
+		CurrentWeapon->StartReload();
+		if(IsLocallyControlled())
+		{
+			bIsReloading = true;
+			bIsReloadingLocally = true;
+		}
 	}
 }
 
@@ -440,7 +439,12 @@ void ASCharacter::StopReload()
 	//if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
-		CurrentWeapon->StopReload(true);
+		CurrentWeapon->StopReload();
+		if(IsLocallyControlled())
+		{
+			bIsReloading = false;
+			bIsReloadingLocally = false;
+		}
 	}
 }
 

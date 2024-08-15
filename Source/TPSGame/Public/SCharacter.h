@@ -75,8 +75,6 @@ public:
 	UFUNCTION(BlueprintCallable)//, Server, Reliable)
 	void InteractKeyReleased();
 	
-	UFUNCTION(Server,Reliable)  //将射击行为发送到服务器然后同步
-	void SetIsFiring(bool IsFiring);
 	
 	//重写,获取摄像机组件位置
 	virtual FVector GetPawnViewLocation() const override;
@@ -90,11 +88,12 @@ public:
 	UInventoryComponent* GetInventoryComponent();
 	
 	bool GetIsDied()   const { return bDied; }
-
+	
 	bool GetIsAiming() const { return bIsAiming; }
 	void SetIsAiming(const bool& IsAiming){ bIsAiming = IsAiming; }
 
 	bool GetIsFiring() const { return bIsFiring; }
+	void SetIsFiring(const bool& IsFiring){ bIsFiring = IsFiring; }
 	
 	bool GetIsReloading()  const { return bIsReloading; }
 	void SetIsReloading(const bool& IsReloading){ bIsReloading = IsReloading; }
@@ -148,6 +147,8 @@ protected:
 	void OnRep_IsAiming(){ if(IsLocallyControlled()) bIsAiming = bIsAimingLocally; }
 	UFUNCTION()//原理同上
 	void OnRep_IsFiring(){ if(IsLocallyControlled()) bIsFiring = bIsFiringLocally; }
+	UFUNCTION()//原理同上
+	void OnRep_IsReloading(){ if(IsLocallyControlled()) bIsReloading = bIsReloadingLocally; }
 
 private:
 	void HideCharacterIfCameraClose();
@@ -202,12 +203,14 @@ protected:
 	//是否正在射击
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_IsFiring, Category= Weapon)
 	bool bIsFiring;
-	//记录客户端本地的射击状态，以修正延迟较高时快速瞄准又退出时被服务器覆盖了旧时间的状态
+	//记录客户端本地的射击状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
 	bool bIsFiringLocally;
 	
 	//当前武器是否正在重新装填子弹
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category= Weapon)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsReloading, Category= Weapon)
 	bool bIsReloading = false;
+	//记录客户端本地的装弹状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
+	bool bIsReloadingLocally;
 	
 	//默认视野范围
 	float DefaultFOV;

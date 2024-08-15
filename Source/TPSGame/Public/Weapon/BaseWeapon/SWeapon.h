@@ -84,18 +84,16 @@ public:
 	//开始射击函数
 	UFUNCTION(BlueprintCallable)
 	void StartFire();
-	
 	//停止射击函数
 	UFUNCTION(BlueprintCallable)
 	void StopFire();
 
 	//重新装填子弹函数
 	UFUNCTION(BlueprintCallable)
-	void Reload(bool isAutoReload = false);
-
-	UFUNCTION()
-	void StopReload(bool IsInterrupted = false);
-
+	void StartReload();
+	UFUNCTION(BlueprintCallable)
+	void StopReload();
+	
 	//设置武器是否开镜
 	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
 	void SetWeaponZoom();
@@ -121,6 +119,9 @@ public:
 	void RefreshWeaponInfo(FWeaponPickUpInfo WeaponInfo);
 
 	float GetHeadShotBonus() const { return HeadShotBonus; }
+
+	UFUNCTION(BlueprintCallable, Client, Reliable)  //直接改变子弹数，不修正AmmoSequence
+	void ClientChangeCurrentAmmo(int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
 	
 protected:
 	// Called when the game starts or when spawned
@@ -143,9 +144,20 @@ protected:
 	virtual void DealFire();
 	
 	//武器射击函数
-	UFUNCTION(BlueprintCallable, Category= "Weapon")
 	void Fire();
 	void LocalFire();
+
+	//本地停止射击函数
+	void LocalStopFire();
+
+	//装弹函数
+	void Reload(bool IsAutoReload = false);
+	void LocalReload(bool IsAutoReload = false);
+	void ReloadFinished();
+	void LocalReloadFinished();
+
+	//本地停止装弹函数
+	void LocalStopReload();
 
 	//Server服务器端开火函数(客户端client发出请求到服务器执行)
 	UFUNCTION(Server, Reliable, WithValidation) //服务器，可靠链接，进行验证 （RPC函数）
@@ -158,7 +170,7 @@ protected:
 	void ServerReload(bool isAutoReload);
 
 	UFUNCTION(Server, Reliable) //服务器，可靠链接，进行验证 （RPC函数）
-	void ServerStopReload(bool IsInterrupted = false);
+	void ServerStopReload();
 	
 	UFUNCTION(BlueprintCallable)
 	virtual void PostFire();
@@ -167,18 +179,17 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void PostReload();
 	UFUNCTION(BlueprintCallable)
-	virtual void PostStopReload();
+	virtual void PostReloadFinished();
 
 	virtual void DealWeaponZoom();
 	virtual void DealWeaponResetZoom();
 	
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_PlayReloadAnimAndSound();
+	//UFUNCTION(NetMulticast, Reliable)
+	void PlayReloadAnimAndSound();
 	
-	UFUNCTION(BlueprintCallable, Client, Reliable)
-	void ClientSyncCurrentAmmoOnFiring(int ServerAmmo);
-	UFUNCTION(BlueprintCallable, Client, Reliable)
-	void SetClientCurrentAmmoNum(int ServerAmmo);
+	UFUNCTION(Client, Reliable)  //只作为验证函数，若想直接改变数值则调用ClientChangeCurrentAmmo()
+	void ClientSyncCurrentAmmo(int ServerAmmo, int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
+	
 	UFUNCTION(BlueprintCallable)
 	void UpdateCurrentAmmoChange(bool PlayEffect){ OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, PlayEffect); }
 	
@@ -209,10 +220,10 @@ protected:
 	//UFUNCTION(NetMulticast, Reliable)
 	void PlayFireAnim();
 	//停止射击动画
-	UFUNCTION()//NetMulticast, Reliable)
+	//UFUNCTION(NetMulticast, Reliable)
 	void StopFireAnimAndTimer();
 	//停止装弹动画和计时器
-	UFUNCTION(NetMulticast, Reliable)
+	//UFUNCTION(NetMulticast, Reliable)
 	void StopReloadAnimAndTimer();
 
 	//获取开枪起始位置
@@ -222,6 +233,7 @@ public:
 	//当前子弹数
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	int CurrentAmmoNum;
+	//本地相较于服务器未经同步验证的子弹数差值(负数为本地比服务器少的值，正数为本地比服务器多的值)
 	int AmmoSequence = 0;  //射击次数权威仍在服务端，但是本地端预测了开火特效和枪声，延迟过大时可能出现开枪声音次数大于实际次数的问题，用此变量来记录因延迟未被同步的子弹数差值
 	
 	//备用子弹数(不包括当前子弹数)

@@ -201,6 +201,43 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	return EndPoint;
 }
 
+void ASWeapon::StopFireAnimAndTimer()//_Implementation()
+{
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
+	MyOwner->SetIsFiring(false);
+	
+	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+	MyOwner->StopAnimMontage(CurrentFireMontage);
+}
+
+void ASWeapon::StopReloadAnimAndTimer()
+{
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+
+	MyOwner->SetIsReloading(false);
+	
+	GetWorldTimerManager().ClearTimer(ReloadTimer);
+	GetWorldTimerManager().ClearTimer(ReloadSoundTimer);
+	MyOwner->StopAnimMontage(ReloadMontage);
+}
+
+void ASWeapon::StartFire()
+{
+	//第一次延迟时间
+	float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
+	FirstDelay = FMath::Clamp(FirstDelay, 0.f, FirstDelay);
+	//FirstDelay = FMath::Max(FirstDelay, 0.f);
+	
+	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
+}
+
 void ASWeapon::DealFire()
 {
 	//射线检测逻辑挪到了子类HitScanWeapon中
@@ -208,6 +245,12 @@ void ASWeapon::DealFire()
 
 void ASWeapon::Fire()
 {
+	if(!CheckOwnerValidAndAlive())
+	{
+		StopFire();  //不调用StopFire()会一直尝试射击，所以停掉Timer
+		return;
+	}
+	
 	if(!HasAuthority())  //本地只处理一些表现效果，权威端在服务器
 	{
 		ServerFire();
@@ -215,13 +258,7 @@ void ASWeapon::Fire()
 		return;
 	}
 	
-	if(!CheckOwnerValidAndAlive())
-	{
-		StopFire();  //不调用StopFire()会一直尝试射击，所以停掉Timer
-		return;
-	}
-	
-	if(CurrentAmmoNum == 0 && !bIsCurrentAmmoInfinity)
+	if(!CheckCanFire())
 	{
 		//没子弹了还一直按着射击，就一直广播，用于更新子弹数UI，例如把当前子弹数颜色变成红色等
 		OnCurrentAmmoChanged.Broadcast(0, true);
@@ -229,20 +266,18 @@ void ASWeapon::Fire()
 		return;
 	}
 	
-	if(CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity)
+	if(CheckCanFire())
 	{
 		//正在装弹时触发了无限子弹BUFF时在换弹，再射击时打断换弹
 		if(MyOwner->GetIsReloading() && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
 		{
-			StopReload(true);
+			StopReload();
 		}
-
-		MyOwner->SetIsFiring(true);
 
 		if(!bIsCurrentAmmoInfinity)  //无限子弹时射击不用向客户端同步子弹数
 		{
 			CurrentAmmoNum = CurrentAmmoNum - 1;
-			ClientSyncCurrentAmmoOnFiring(CurrentAmmoNum);
+			ClientSyncCurrentAmmo(CurrentAmmoNum, -1);
 		}
 		//广播Reload事件，可用于更新子弹数UI等，C++服务器端手动调用一下子弹数更新委托
 		UpdateCurrentAmmoChange(true);
@@ -282,8 +317,26 @@ void ASWeapon::Fire()
 
 void ASWeapon::LocalFire()
 {
+	if(!CheckOwnerValidAndAlive() || HasAuthority())
+	{
+		return;
+	}
+
+	if(!CheckCanFire())
+	{
+		//没子弹了还一直按着射击，就一直广播，用于更新子弹数UI，例如把当前子弹数颜色变成红色等
+		OnCurrentAmmoChanged.Broadcast(0, true);
+		MyOwner->SetIsFiring(false);
+		return;
+	}
+	
 	if(CheckCanFire())
 	{
+		if(MyOwner->GetIsReloading() && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
+		{
+			LocalStopReload();
+		}
+		
 		//把不影响同步的一些效果函数从Multi改成普通函数，并在本地客户端也执行，增强高延迟下的客户端体验
 		PlayFireEffectsAndSounds();
 		PlayFireAnim();
@@ -292,10 +345,300 @@ void ASWeapon::LocalFire()
 		if(!bIsCurrentAmmoInfinity)
 		{
 			--CurrentAmmoNum;
-			++AmmoSequence;
+			--AmmoSequence;
 			OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, true);
 		}
 	}
+}
+
+void ASWeapon::StopFire()
+{
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
+	if(!HasAuthority())
+	{
+		ServerStopFire();
+		LocalStopFire();
+		return;
+	}
+	
+	//停止播放射击动画
+	//SetIsFiring(false)若放在Server端设置，
+	//假设连射两发，打了一发多一点时间时停火，此时Client向Server发出停火指令，Server立刻停火，但是Multi函数有延迟，
+	//可能会导致Timer因为延迟没有被立刻停止，使得Client多打了一发子弹并且IsFiring状态因此被设为true出现错误
+	//所以收到StopFire()请求时，把SetIsFiring(false)和StopTimer放在一起执行防止延迟，并且Client和Server都立刻执行而不是Server通过Multi函数通知Client
+	StopFireAnimAndTimer();
+	
+	if(CurrentAmmoNum == 0)
+	{
+		Reload(true);
+	}
+	
+	//要处理啥，留个接口出来
+	PostStopFire();
+}
+
+void ASWeapon::LocalStopFire()
+{
+	if(!CheckOwnerValidAndAlive() || HasAuthority())
+	{
+		return;
+	}
+	
+	StopFireAnimAndTimer();
+	
+	if(CurrentAmmoNum == 0)
+	{
+		LocalReload(true);
+	}
+}
+
+void ASWeapon::StartReload()
+{
+	Reload(false);
+}
+
+void ASWeapon::Reload(bool IsAutoReload)
+{
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
+	if(!HasAuthority())
+	{
+		ServerReload(IsAutoReload);
+		LocalReload(IsAutoReload);
+		return;
+	}
+	
+	if(MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
+	{
+		return;
+	}
+
+	if(BackUpAmmoNum == 0)
+	{
+		//0备弹也广播，可能用于UI的备弹量数字颜色改变等小需求，C++服务器端不会自动调用OnRep，所以手动调用
+		//如果当前子弹和备用子弹都空了，按开火后也会走到这里，调用了Reload(true)，不希望此时触发备用子弹的文字动画
+		OnBackUpAmmoChanged.Broadcast(0, !IsAutoReload);
+		return;
+	}
+
+	//客户端换弹时也会立刻播放动画，所以不用Multi
+	PlayReloadAnimAndSound();
+	
+	if(!ReloadMontage)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("Reload蒙太奇不存在！")));
+	}
+
+	//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
+	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
+	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){ReloadFinished();}, MontagePlayTime, false);
+
+	//要处理啥，留个接口出来
+	PostReload();
+}
+
+void ASWeapon::LocalReload(bool IsAutoReload)
+{
+	if(!CheckOwnerValidAndAlive() || HasAuthority())
+	{
+		return;
+	}
+	
+	if(MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
+	{
+		return;
+	}
+
+	if(BackUpAmmoNum == 0)
+	{
+		//0备弹也广播，可能用于UI的备弹量数字颜色改变等小需求，C++服务器端不会自动调用OnRep，所以手动调用
+		//如果当前子弹和备用子弹都空了，按开火后也会走到这里，调用了Reload(true)，不希望此时触发备用子弹的文字动画
+		OnBackUpAmmoChanged.Broadcast(0, !IsAutoReload);
+		return;
+	}
+
+	//客户端换弹时也会立刻播放动画，所以不用Multi
+	PlayReloadAnimAndSound();
+
+	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
+	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){LocalReloadFinished();}, MontagePlayTime, false);
+}
+
+void ASWeapon::ReloadFinished()
+{
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
+	StopReloadAnimAndTimer();
+
+	float IncreaseAmmo;
+	if(CurrentAmmoNum < OnePackageAmmoNum)
+	{
+		const float TempR = FMath::Min(OnePackageAmmoNum-CurrentAmmoNum, OnceReloadAmmoNum);
+		const float ReloadedNum = TempR > BackUpAmmoNum ? BackUpAmmoNum : TempR;
+		BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - ReloadedNum;
+		CurrentAmmoNum = CurrentAmmoNum + ReloadedNum;
+		IncreaseAmmo = ReloadedNum;
+	}
+	else if(CurrentAmmoNum == OnePackageAmmoNum && CanOverloadAmmo) //弹匣满了就只上一发子弹
+	{
+		BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - 1;
+		++CurrentAmmoNum;
+		IncreaseAmmo = 1;
+	}
+	else
+	{
+		return;
+	}
+		
+	//刷新客户端当前子弹数
+	ClientSyncCurrentAmmo(CurrentAmmoNum, IncreaseAmmo);
+
+	if(HasAuthority())
+	{
+		//广播Reload事件，可用于更新子弹数UI等，C++服务器端手动调用一下子弹数更新委托
+		UpdateCurrentAmmoChange(true);
+		OnRep_BackUpAmmoNum();
+	}
+
+	//完成一次装弹后如果还没满且有弹药可装，则继续自动装弹(例如喷子一次上一两发，一直连续上弹)
+	if(CurrentAmmoNum < OnePackageAmmoNum && BackUpAmmoNum > 0)
+	{
+		Reload(true);
+	}
+
+	//要处理啥，留个接口出来
+	PostReloadFinished();
+}
+
+void ASWeapon::LocalReloadFinished()
+{
+	if(!CheckOwnerValidAndAlive() || HasAuthority())
+	{
+		return;
+	}
+	
+	StopReloadAnimAndTimer();
+	
+	if(CurrentAmmoNum < OnePackageAmmoNum)
+	{
+		const float TempR = FMath::Min(OnePackageAmmoNum-CurrentAmmoNum, OnceReloadAmmoNum);
+		const float ReloadedNum = TempR > BackUpAmmoNum ? BackUpAmmoNum : TempR;
+		//等待网络复制
+		//BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - ReloadedNum;
+		CurrentAmmoNum = CurrentAmmoNum + ReloadedNum;
+		AmmoSequence += ReloadedNum;
+	}
+	else if(CurrentAmmoNum == OnePackageAmmoNum && CanOverloadAmmo) //弹匣满了就只上一发子弹
+		{
+		//等待网络复制
+		//BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - 1;
+		++CurrentAmmoNum;
+		++AmmoSequence;
+		}
+	else
+	{
+		return;
+	}
+
+	UpdateCurrentAmmoChange(true);
+
+	//完成一次装弹后如果还没满且有弹药可装，则继续自动装弹(例如喷子一次上一两发，一直连续上弹)
+	if(CurrentAmmoNum < OnePackageAmmoNum && BackUpAmmoNum > 0)
+	{
+		LocalReload(true);
+	}
+}
+
+void ASWeapon::StopReload()
+{
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
+	if(!HasAuthority())
+	{
+		ServerStopReload();
+		LocalStopReload();
+		return;
+	}
+
+	StopReloadAnimAndTimer();
+}
+
+void ASWeapon::LocalStopReload()
+{
+	if(!CheckOwnerValidAndAlive() || HasAuthority())
+	{
+		return;
+	}
+	
+	StopReloadAnimAndTimer();
+}
+
+void ASWeapon::ClientSyncCurrentAmmo_Implementation(int ServerAmmo, int ChangedNum)
+{
+	if(!HasAuthority()) //ListenServer既是Server也是Client,需要加以限制
+	{
+		AmmoSequence -= ChangedNum;
+		CurrentAmmoNum = ServerAmmo + AmmoSequence;
+	}
+}
+
+void ASWeapon::ClientChangeCurrentAmmo_Implementation(int ChangedNum)
+{
+	if(!HasAuthority()) //ListenServer既是Server也是Client,需要加以限制
+	{
+		CurrentAmmoNum += ChangedNum;
+		OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, ChangedNum != 0 );
+	}
+}
+
+void ASWeapon::SetWeaponZoom_Implementation()
+{
+	if(CheckOwnerValidAndAlive())
+	{
+		if(!MyOwner->GetIsAiming()) //防止多次触发
+		{
+			DealWeaponZoom();
+		}
+	}
+}
+
+void ASWeapon::ResetWeaponZoom_Implementation()
+{
+	if(CheckOwnerValidAndAlive())
+	{
+		if(MyOwner->GetIsAiming()) //防止多次触发
+		{
+			DealWeaponResetZoom();
+		}
+	}
+}
+
+void ASWeapon::DealWeaponZoom()
+{
+	MyOwner->SetIsAiming(true);
+}
+
+void ASWeapon::DealWeaponResetZoom()
+{
+	MyOwner->SetIsAiming(false);
+}
+
+void ASWeapon::OnRep_BackUpAmmoNum()
+{
+	OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum,true);
 }
 
 void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
@@ -405,6 +748,8 @@ void ASWeapon::PlayFireAnim()//_Implementation()
 	{
 		return;
 	}
+
+	MyOwner->SetIsFiring(true);
 	
 	if(MyOwner->GetIsAiming() && AimFireMontage)
 	{
@@ -418,203 +763,16 @@ void ASWeapon::PlayFireAnim()//_Implementation()
 	}
 }
 
-void ASWeapon::StopFireAnimAndTimer()//_Implementation()
+void ASWeapon::PlayReloadAnimAndSound()//_Implementation()
 {
 	if(!CheckOwnerValidAndAlive())
 	{
-		return;
-	}
-	
-	MyOwner->SetIsFiring(false);
-	
-	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
-	MyOwner->StopAnimMontage(CurrentFireMontage);
-}
-
-void ASWeapon::StopReloadAnimAndTimer_Implementation()
-{
-	if(!CheckOwnerValidAndAlive())
-	{
-		return;
-	}
-	
-	GetWorldTimerManager().ClearTimer(ReloadTimer);
-	GetWorldTimerManager().ClearTimer(ReloadSoundTimer);
-	MyOwner->StopAnimMontage(ReloadMontage);
-}
-
-void ASWeapon::StartFire()
-{
-	//第一次延迟时间
-	float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
-	FirstDelay = FMath::Clamp(FirstDelay, 0.f, FirstDelay);
-	//FirstDelay = FMath::Max(FirstDelay, 0.f);
-	
-	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
-}
-
-void ASWeapon::StopFire()
-{
-	//停止播放射击动画
-	//SetIsFiring(false)若放在Server端设置，
-	//假设连射两发，打了一发多一点时间时停火，此时Client向Server发出停火指令，Server立刻停火，但是Multi函数有延迟，
-	//可能会导致Timer因为延迟没有被立刻停止，使得Client多打了一发子弹并且IsFiring状态因此被设为true出现错误
-	//所以收到StopFire()请求时，把SetIsFiring(false)和StopTimer放在一起执行防止延迟，并且Client和Server都立刻执行而不是Server通过Multi函数通知Client
-	
-	StopFireAnimAndTimer();
-	
-	if(!HasAuthority())
-	{
-		ServerStopFire();
-		return;
-	}
-	
-	if(!CheckOwnerValidAndAlive())
-	{
-		return;
-	}
-	
-	if(CurrentAmmoNum == 0)
-	{
-		Reload(true);
-	}
-	
-	//要处理啥，留个接口出来
-	PostStopFire();
-}
-
-void ASWeapon::Reload(bool isAutoReload)
-{
-	if(!HasAuthority())
-	{
-		ServerReload(isAutoReload);
-		return;
-	}
-	
-	if(!CheckOwnerValidAndAlive() || MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
-	{
-		return;
-	}
-
-	if(BackUpAmmoNum == 0)
-	{
-		//0备弹也广播，可能用于UI的备弹量数字颜色改变等小需求，C++服务器端不会自动调用OnRep，所以手动调用
-		//如果当前子弹和备用子弹都空了，按开火后也会走到这里，调用了Reload(true)，不希望此时触发备用子弹的文字动画
-		OnBackUpAmmoChanged.Broadcast(0, !isAutoReload);
 		return;
 	}
 	
 	MyOwner->SetIsReloading(true);
-
-	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
-
+	
 	if(ReloadMontage)
-	{
-		//Multi播放换弹动画，保证同步
-		Multi_PlayReloadAnimAndSound();
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("Reload蒙太奇不存在！")));
-	}
-
-	//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
-	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){StopReload(false);}, MontagePlayTime, false);
-
-	//要处理啥，留个接口出来
-	PostReload();
-}
-
-void ASWeapon::StopReload(bool IsInterrupted)
-{
-	if(!HasAuthority())
-	{
-		ServerStopReload(IsInterrupted);
-		return;
-	}
-	
-	if(!CheckOwnerValidAndAlive())
-	{
-		return;
-	}
-	
-	MyOwner->SetIsReloading(false);
-	StopReloadAnimAndTimer();
-	
-	if(!IsInterrupted)
-	{
-		if(CurrentAmmoNum < OnePackageAmmoNum)
-		{
-			const float TempR = FMath::Min(OnePackageAmmoNum-CurrentAmmoNum, OnceReloadAmmoNum);
-			const float ReloadedNum = TempR > BackUpAmmoNum ? BackUpAmmoNum : TempR;
-			BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - ReloadedNum;
-			CurrentAmmoNum = CurrentAmmoNum + ReloadedNum;
-		}
-		else if(CurrentAmmoNum == OnePackageAmmoNum && CanOverloadAmmo) //弹匣满了就只上一发子弹
-		{
-			BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - 1;
-			++CurrentAmmoNum;
-		}
-		else
-		{
-			return;
-		}
-		
-		//刷新客户端当前子弹数
-		SetClientCurrentAmmoNum(CurrentAmmoNum);
-
-		if(HasAuthority())
-		{
-			//广播Reload事件，可用于更新子弹数UI等，C++服务器端手动调用一下子弹数更新委托
-			UpdateCurrentAmmoChange(true);
-			OnRep_BackUpAmmoNum();
-		}
-
-		//完成一次装弹后如果还没满且有弹药可装，则继续自动装弹(例如喷子一次上一两发，一直连续上弹)
-		if(CurrentAmmoNum < OnePackageAmmoNum && BackUpAmmoNum > 0)
-		{
-			Reload(true);
-		}
-	}
-
-	//要处理啥，留个接口出来
-	PostStopReload();
-}
-
-void ASWeapon::ClientSyncCurrentAmmoOnFiring_Implementation(int ServerAmmo)
-{
-	if(!HasAuthority()) //ListenServer既是Server也是Client,需要加以限制
-	{
-		--AmmoSequence;
-		CurrentAmmoNum = ServerAmmo-AmmoSequence;
-	}
-}
-
-void ASWeapon::SetWeaponZoom_Implementation()
-{
-	if(CheckOwnerValidAndAlive())
-	{
-		if(!MyOwner->GetIsAiming()) //防止多次触发
-		{
-			DealWeaponZoom();
-		}
-	}
-}
-
-void ASWeapon::ResetWeaponZoom_Implementation()
-{
-	if(CheckOwnerValidAndAlive())
-	{
-		if(MyOwner->GetIsAiming()) //防止多次触发
-		{
-			DealWeaponResetZoom();
-		}
-	}
-}
-
-void ASWeapon::Multi_PlayReloadAnimAndSound_Implementation()
-{
-	if(CheckOwnerValidAndAlive() && ReloadMontage)
 	{
 		MyOwner->PlayAnimMontage(ReloadMontage, ReloadPlayRate);
 		
@@ -633,36 +791,6 @@ void ASWeapon::Multi_PlayReloadAnimAndSound_Implementation()
 			);
 	}
 }
-
-void ASWeapon::ServerStopReload_Implementation(bool IsInterrupted)
-{
-	StopReload(IsInterrupted);
-}
-
-void ASWeapon::DealWeaponZoom()
-{
-	MyOwner->SetIsAiming(true);
-}
-
-void ASWeapon::DealWeaponResetZoom()
-{
-	MyOwner->SetIsAiming(false);
-}
-
-void ASWeapon::SetClientCurrentAmmoNum_Implementation(int ServerAmmo)
-{
-	if(!HasAuthority()) //ListenServer既是Server也是Client,需要加以限制(虽然不影响)
-	{
-		OnCurrentAmmoChanged.Broadcast(ServerAmmo, ServerAmmo != CurrentAmmoNum);
-		CurrentAmmoNum = ServerAmmo;
-	}
-}
-
-void ASWeapon::OnRep_BackUpAmmoNum()
-{
-	OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum,true);
-}
-
 
 void ASWeapon::OnRep_IsCurrentAmmoInfinity()
 {
@@ -702,6 +830,11 @@ void ASWeapon::ServerReload_Implementation(bool isAutoReload)
 	Reload(isAutoReload);
 }
 
+void ASWeapon::ServerStopReload_Implementation()
+{
+	StopReload();
+}
+
 void ASWeapon::PostFire()
 {
 	//Do Something
@@ -717,7 +850,7 @@ void ASWeapon::PostReload()
 	//Do Something
 }
 
-void ASWeapon::PostStopReload()
+void ASWeapon::PostReloadFinished()
 {
 	//Do Something
 }
