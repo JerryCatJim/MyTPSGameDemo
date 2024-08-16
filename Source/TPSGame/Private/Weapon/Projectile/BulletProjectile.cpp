@@ -2,6 +2,9 @@
 
 
 #include "Weapon/Projectile/BulletProjectile.h"
+
+#include "Kismet/GameplayStatics.h"
+#include "Weapon/BaseWeapon/SWeapon.h"
 #include "Weapon/Component/BulletMovementComponent.h"
 
 ABulletProjectile::ABulletProjectile()
@@ -25,4 +28,11 @@ void ABulletProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	}
 	
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+}
+
+void ABulletProjectile::ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage, const FVector& HitFromDirection, const FHitResult& HitResult)
+{
+	AController* InstigatorController = GetInstigator() ? GetInstigator()->GetController() : nullptr ;
+	//应用伤害
+	UGameplayStatics::ApplyPointDamage(DamagedActor, ActualDamage, HitFromDirection, HitResult, InstigatorController, OwnerWeapon, DamageTypeClass);
 }

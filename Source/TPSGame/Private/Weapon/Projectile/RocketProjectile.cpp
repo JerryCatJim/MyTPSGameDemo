@@ -66,11 +66,12 @@ void ARocketProjectile::BeginPlay()
 	}
 }
 
-void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage)
+void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage, const FVector& HitFromDirection, const FHitResult& HitResult)
 {
 	//Super::ApplyProjectileDamage(DamagedActor, BaseDamage, EventInstigator, DamageCauser, DamageTypeClass);
 	
 	AController* FiringController = GetInstigator() ? GetInstigator()->GetController() : nullptr;
+	
 	TArray<AActor*> IgnoreList;
 	IgnoreList.Emplace(this);  //不无视火箭弹自己会无法造成伤害(?),看源码没看懂
 	

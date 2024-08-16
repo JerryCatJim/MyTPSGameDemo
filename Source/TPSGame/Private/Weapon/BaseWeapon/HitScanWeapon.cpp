@@ -25,10 +25,10 @@ void AHitScanWeapon::DealFire()
 	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
 	float HalfRadian = FMath::DegreesToRadians(GetDynamicBulletSpread());
 	//轴线就是传入的ShotDirection向量
-	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
+	FVector NewShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 		
 	//射程终止点
-	FVector EndPoint = EyeLocation + (ShotDirection*WeaponTraceRange);
+	FVector EndPoint = EyeLocation + (NewShotDirection*WeaponTraceRange);
 	//FVector TraceEnd = EyeLocation + MyOwner->GetActorForwardVector() * WeaponTraceRange
 	
 	ShotTraceEnd = EndPoint;

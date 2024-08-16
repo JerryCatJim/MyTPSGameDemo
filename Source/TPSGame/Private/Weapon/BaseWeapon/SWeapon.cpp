@@ -177,10 +177,10 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	//矫正武器枪口指向位置时不想应用散布导致偏移
 	float HalfRadian = bUseSpread ? FMath::DegreesToRadians(GetDynamicBulletSpread()) : 0;
 	//轴线就是传入的ShotDirection向量
-	ShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
+	FVector NewShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 	
 	//射线检测的最远位置
-	const FVector EndPoint = EyeLocation + (ShotDirection * WeaponTraceRange);
+	const FVector EndPoint = EyeLocation + (NewShotDirection * WeaponTraceRange);
 	//碰撞查询
 	FCollisionQueryParams QueryParams;
 	//忽略武器自身和持有者的碰撞
