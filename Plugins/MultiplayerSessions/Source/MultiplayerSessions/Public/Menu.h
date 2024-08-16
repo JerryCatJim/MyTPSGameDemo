@@ -35,14 +35,16 @@ protected:
 	UFUNCTION()
 	void OnStartSession(bool bWasSuccessful);
 
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void OnHostButtonClicked_NoSteam();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void OnJoinButtonClicked_NoSteam();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void OnFindButtonClicked_NoSteam();
+	
 private:
-
-	UPROPERTY(meta = (BindWidget))
-	class UButton* HostButton;
-
-	UPROPERTY(meta = (BindWidget))
-	UButton* JoinButton;
-
 	UFUNCTION()
 	void HostButtonClicked();
 
@@ -50,6 +52,18 @@ private:
 	void JoinButtonClicked();
 
 	void MenuTearDown();
+	
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bUseSteam = false;
+	
+private:
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* HostButton;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* JoinButton;
 
 	// The subsystem designed to handle all online session functionality
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;

@@ -152,19 +152,33 @@ void UMenu::OnStartSession(bool bWasSuccessful)
 
 void UMenu::HostButtonClicked()
 {
-	HostButton->SetIsEnabled(false);
-	if (MultiplayerSessionsSubsystem)
+	if(!bUseSteam)
 	{
-		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
+		OnHostButtonClicked_NoSteam();
+	}
+	else
+	{
+		HostButton->SetIsEnabled(false);
+		if (MultiplayerSessionsSubsystem)
+		{
+			MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
+		}
 	}
 }
 
 void UMenu::JoinButtonClicked()
 {
-	JoinButton->SetIsEnabled(false);
-	if (MultiplayerSessionsSubsystem)
+	if(!bUseSteam)
 	{
-		MultiplayerSessionsSubsystem->FindSessions(10000);
+		OnJoinButtonClicked_NoSteam();
+	}
+	else
+	{
+		JoinButton->SetIsEnabled(false);
+		if (MultiplayerSessionsSubsystem)
+		{
+			MultiplayerSessionsSubsystem->FindSessions(10000);
+		}
 	}
 }
 
