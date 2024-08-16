@@ -10,7 +10,7 @@ public class TPSGame : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PhysicsCore", "UMG", "Niagara" });
 		
-		PublicDependencyModuleNames.AddRange(new string[] { "OnlineSubsystemSteam", "OnlineSubsystem" });
+		PublicDependencyModuleNames.AddRange(new string[] { "MultiplayerSessions", "OnlineSubsystemSteam", "OnlineSubsystem" });
 		
 		PublicDependencyModuleNames.AddRange(new string[] { "GameplayAbilities", "GameplayTags", "GameplayTasks" });
 
