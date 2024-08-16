@@ -26,7 +26,7 @@ public:
 
 	/** Called after this PlayerController's viewport/net connection is associated with this player controller. */
 	virtual void ReceivedPlayer() override;  //与服务器连接完成后就调用，在这里调用同步时间是最早的
-
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetServerTime();
 	
@@ -43,6 +43,10 @@ public:
 	void SetCrossHairVisibility(bool IsVisible);
 	
 protected:
+	virtual void SetupInputComponent() override;
+	
+	void ShowReturnToMainMenu();
+	
 	//同步服务器和客户端的时间(不是直接同步WorldTime，而是记录两者的差值，让客户端自己加)
 	UFUNCTION(Server, Reliable)
 	void ServerRequestServerTime(float TimeOfClientRequest);
@@ -58,7 +62,6 @@ protected:
 	//OnLagDetected和OnLagEnd委托在蓝图WBP_TPSGameMainView中绑定，此时OnLagDetected可能已经广播过，所以绑定完成后重设一次计时器并发送广播
 	UFUNCTION(BlueprintCallable)
 	void AskForLagSituation();
-	
 public:
 	//背包组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
@@ -84,4 +87,13 @@ protected:
 	FOnLagDetected OnLagDetected;
 	UPROPERTY(BlueprintAssignable)
 	FOnLagDetected OnLagEnded;
+
+private:
+	UPROPERTY(EditAnywhere, Category=HUD)
+	TSubclassOf<UUserWidget> ReturnToMainMenuClass;
+
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
 };

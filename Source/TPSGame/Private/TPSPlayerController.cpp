@@ -7,6 +7,8 @@
 #include "GameFramework/PlayerState.h"
 #include "HUD/TPSHUD.h"
 #include "Kismet/GameplayStatics.h"
+#include "Blueprint/UserWidget.h"
+#include "UserWidget/ReturnToMainMenu.h"
 
 ATPSPlayerController::ATPSPlayerController()
 {
@@ -32,6 +34,36 @@ void ATPSPlayerController::ReceivedPlayer()
 	if(IsLocalController())  //若在服务器调用，服务器有多个Controller，需找到自己的那个
 	{
 		ServerRequestServerTime(GetWorld()->GetDeltaSeconds());
+	}
+}
+
+void ATPSPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	if(InputComponent == nullptr) return;
+
+	InputComponent->BindAction("Quit", IE_Pressed, this, &ATPSPlayerController::ShowReturnToMainMenu);
+}
+
+void ATPSPlayerController::ShowReturnToMainMenu()
+{
+	if(ReturnToMainMenuClass == nullptr) return;
+	
+	if(ReturnToMainMenu == nullptr)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuClass);
+	}
+	if(ReturnToMainMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if(bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetup();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
 	}
 }
 

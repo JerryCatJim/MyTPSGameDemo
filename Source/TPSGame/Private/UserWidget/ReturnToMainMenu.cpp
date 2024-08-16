@@ -26,7 +26,7 @@ void UReturnToMainMenu::MenuSetup()
 		}
 	}
 	
-	if(ReturnButton)
+	if(ReturnButton && !ReturnButton->OnClicked.IsAlreadyBound(this, &UReturnToMainMenu::ReturnButtonClicked))
 	{
 		ReturnButton->OnClicked.AddDynamic(this, &UReturnToMainMenu::ReturnButtonClicked);
 	}
@@ -53,6 +53,16 @@ void UReturnToMainMenu::MenuTearDown()
 			PlayerController->SetInputMode(InputModeData);
 			PlayerController->SetShowMouseCursor(false);
 		}
+	}
+	
+	//移除委托绑定函数
+	if(ReturnButton && ReturnButton->OnClicked.IsAlreadyBound(this, &UReturnToMainMenu::ReturnButtonClicked))
+	{
+		ReturnButton->OnClicked.RemoveDynamic(this, &UReturnToMainMenu::ReturnButtonClicked);
+	}
+	if (MultiplayerSessionSubsystem && MultiplayerSessionSubsystem->MultiplayerOnDestroySessionComplete.IsAlreadyBound(this, &UReturnToMainMenu::OnDestroySession))
+	{
+		MultiplayerSessionSubsystem->MultiplayerOnDestroySessionComplete.RemoveDynamic(this, &UReturnToMainMenu::OnDestroySession);
 	}
 	
 	RemoveFromParent();
