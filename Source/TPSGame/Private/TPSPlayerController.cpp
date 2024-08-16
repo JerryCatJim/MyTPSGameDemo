@@ -14,6 +14,9 @@ ATPSPlayerController::ATPSPlayerController()
 {
 	//背包组件初始化
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+
+	const FString WidgetClassLoadPath = FString(TEXT("'/Game/UI/WBP_ReturnToMainMenu.WBP_ReturnToMainMenu_C'"));//蓝图一定要加_C这个后缀名
+	ReturnToMainMenuClass = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
 }
 
 void ATPSPlayerController::Tick(float DeltaSeconds)
