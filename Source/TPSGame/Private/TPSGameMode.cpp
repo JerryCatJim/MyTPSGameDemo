@@ -3,6 +3,14 @@
 
 #include "TPSGameMode.h"
 #include "SCharacter.h"
+#include "TPSGameState.h"
+
+void ATPSGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	MyGameState = GetGameState<ATPSGameState>();
+}
 
 void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 {
@@ -21,4 +29,42 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 		}*/
 	}
 	RestartPlayer(PlayerController);
+}
+
+void ATPSGameMode::PlayerLeaveGame()
+{
+	
+}
+
+bool ATPSGameMode::ReadyToEndMatch_Implementation()
+{
+	//const bool RetVal = Super::ReadyToEndMatch_Implementation();
+
+	if(!MyGameState)
+	{
+		MyGameState = GetGameState<ATPSGameState>();
+	}
+	if(MyGameState)
+	{
+		TMap<int, int> TempMap = bIsTeamMatchMode ? MyGameState->TeamScoreBoard : MyGameState->PlayerScoreBoard;
+		TArray<int> TempKeysArray;
+		TempMap.GetKeys(TempKeysArray);
+		for(auto& TempID : TempKeysArray)
+		{
+			if(TempMap.Find(TempID) && TempMap.FindRef(TempID) >= WinThreshold)
+			{
+				WinnerID = bIsTeamMatchMode ? -1 : TempID;
+				WinningTeamID = bIsTeamMatchMode ? TempID : -1;
+				OnMatchEnd.Broadcast(WinnerID, WinningTeamID);
+
+				return true;
+			}
+		}
+		return false;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("TPSGameMode : %s中的TPSGameState转换失败"), *FString(__FUNCTION__));
+		return false;
+	}
 }

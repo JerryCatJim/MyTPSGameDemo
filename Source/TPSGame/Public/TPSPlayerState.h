@@ -28,6 +28,39 @@ struct FPlayerDataInGame
 	int TeamID = -1;
 };
 
+USTRUCT(BlueprintType)
+struct FPlayerInfo
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString PlayerName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int Level;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsReady = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int TeamID = -1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int PosInRoom = -1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsHost = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* RankIcon = nullptr;
+};
+
+UENUM(BlueprintType)
+enum EGainScoreType
+{
+	KillPlayerEnemy,
+	KillAIEnemy,
+	PickUpScoreProp,
+	HealTeammate
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnKillOtherPlayers, APlayerState*, PlayerState, const FString&, Victim);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnGainScore, APlayerState*, Gainer, EGainScoreType, GainScoreReason, const FString&, RightName);
+
 UCLASS()
 class TPSGAME_API ATPSPlayerState : public APlayerState
 {
@@ -36,8 +69,6 @@ class TPSGAME_API ATPSPlayerState : public APlayerState
 public:
 	virtual void Reset() override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
-
-	virtual void BeginPlay() override;
 
 #pragma region GetterAndSetter
 	UFUNCTION(BlueprintCallable)
@@ -72,8 +103,28 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddDeaths(int Deaths);
 
+	UFUNCTION(BlueprintCallable)
+	void GetKilled(){ AddDeaths(1); }
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void GainPickUpScore(const FString& PickUpName);
+	
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void GainKill(const FString& VictimName, int VictimID, int VictimTeamID);
+	
+	UFUNCTION(BlueprintCallable)
+	void PlayerStateGainScore(int NewScore);
+	
 protected:
 	virtual void CopyProperties(APlayerState* PlayerState) override;
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool CheckCanGainKillScore(int VictimID, int VictimTeamID);
+	
+private:
+	void TryGetGameState();
+	void LoopSetGameState();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
@@ -81,4 +132,20 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	FPlayerDataInGame PlayerDataInGame;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FPlayerInfo PlayerInfo;
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnKillOtherPlayers OnKillOtherPlayers;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGainScore OnGainScore;
+	
+protected:
+	UPROPERTY()
+	class ATPSGameState* CurGameState;
+
+private:
+	FTimerHandle FGetGameStateHandle;
 };

@@ -15,6 +15,8 @@ class TPSGAME_API ATPSHUD : public AHUD
 	GENERATED_BODY()
 
 public:
+	ATPSHUD();
+	
 	UFUNCTION(BlueprintCallable)
 	void ResetCrossHairWidget(APlayerController* PlayerController);
 
@@ -27,9 +29,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddToWidgetList(UUserWidget* WidgetToRecord);
 
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void ShowEndGameScreen(int WinnerOrTeamID, int Score, bool IsTeamMode);
+	
 	virtual void Destroyed() override;
 	
 protected:
+	virtual void BeginPlay() override;
 	
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -37,4 +43,10 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UTPSCrossHair* CrossHairView;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class UUserWidget> EndGameScreenClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	class UUserWidget* EndGameView;
 };

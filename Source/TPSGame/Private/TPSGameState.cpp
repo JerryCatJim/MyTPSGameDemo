@@ -3,6 +3,33 @@
 
 #include "TPSGameState.h"
 
+#include "SCharacter.h"
+#include "TPSGameMode.h"
+#include "HUD/TPSHUD.h"
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
+
+
+void ATPSGameState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(HasAuthority())
+	{
+		if(GetWorld())
+		{
+			ATPSGameMode* MyGameMode = Cast<ATPSGameMode>(GetWorld()->GetAuthGameMode());
+			if(MyGameMode)
+			{
+				WinThreshold = MyGameMode->WinThreshold;
+				bIsTeamMatchMode = MyGameMode->bIsTeamMatchMode;
+
+				MyGameMode->OnMatchEnd.AddDynamic(this, &ATPSGameState::OnMatchEnded);
+			}
+		}
+	}
+}
+
 void ATPSGameState::SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& PlayerDataArray, bool HighToLow)
 {
 	PlayerDataArray.StableSort(
@@ -15,4 +42,152 @@ void ATPSGameState::SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& 
 	{
 		PlayerDataArray[i].RankInGame = i + 1;
 	}
+}
+
+void ATPSGameState::SortPlayerScoreRank()
+{
+	PlayerDataInGameArray.Empty();
+	for(auto PlayerState : PlayerArray)
+	{
+		ATPSPlayerState* PS = Cast<ATPSPlayerState>(PlayerState);
+		if(PS)
+		{
+			PS->PlayerDataInGame.PlayerId = PS->GetPlayerId();
+			PS->PlayerDataInGame.PlayerName = PS->GetPlayerName();
+
+			PlayerDataInGameArray.Add(PS->PlayerDataInGame);
+		}
+	}
+	SortPlayerRank_Stable(PlayerDataInGameArray, true);
+}
+
+void ATPSGameState::UpdateScoreBoard(int PlayerID, int TeamID, int PlayerScore)
+{
+	if(bIsTeamMatchMode)
+	{
+		AddTeamPoint(TeamID, PlayerScore);
+	}
+	else
+	{
+		AddPlayerPoint(PlayerID, PlayerScore);
+	}
+
+	//刷新一下排行榜
+	if(HasAuthority())
+	{
+		SortPlayerScoreRank();
+		Multi_CallRefreshScoreUI(PlayerDataInGameArray);
+	}
+}
+
+void ATPSGameState::OnMatchEnded(int NewWinnerID, int NewWinningTeamID)
+{
+	WinnerID = NewWinnerID;
+	WinningTeamID = NewWinningTeamID;
+
+	Multi_OnMatchEnd();
+}
+
+void ATPSGameState::Multi_OnMatchEnd_Implementation()
+{
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if(PC)
+	{
+		ASCharacter* Player = Cast<ASCharacter>(PC->GetPawn());
+		if(Player) Player->OnMatchEnd(WinnerID, WinningTeamID);
+
+		PC->UnPossess();
+
+		ATPSHUD* HUD = Cast<ATPSHUD>(PC->GetHUD());
+		if(HUD)
+		{
+			if(bIsTeamMatchMode)
+			{
+				HUD->ShowEndGameScreen(WinningTeamID, TeamScoreBoard.FindRef(WinningTeamID), bIsTeamMatchMode);
+			}
+			else
+			{
+				HUD->ShowEndGameScreen(WinnerID, PlayerScoreBoard.FindRef(WinnerID), bIsTeamMatchMode);
+			}
+		}
+	}
+}
+
+void ATPSGameState::NewPlayerJoined(APlayerController* Controller)
+{
+	if(!Controller) return;
+	
+	ATPSPlayerState* PS = Cast<ATPSPlayerState>(Controller->PlayerState);
+	if(PS)
+	{
+		PS->OnKillOtherPlayers.AddDynamic(this, &ATPSGameState::Server_AnnounceKill);
+		PS->OnGainScore.AddDynamic(this, &ATPSGameState::Server_GainScore);
+	}
+}
+
+void ATPSGameState::RefreshPlayerScoreBoardUI_Implementation(AController* Controller, bool IsLogin)
+{
+	if(!Controller || !Controller->PlayerState) return;
+
+	if(bIsTeamMatchMode)
+	{
+		//组队模式的计分板还没做
+	}
+	else  //重新排列个人竞技计分板
+	{
+		SortPlayerScoreRank();
+	}
+	Multi_CallRefreshScoreUI(PlayerDataInGameArray);
+}
+
+void ATPSGameState::Multi_CallRefreshScoreUI_Implementation(const TArray<FPlayerDataInGame>& PlayerDataArray)
+{
+	OnScoreUpdated.Broadcast(PlayerDataArray);
+}
+
+void ATPSGameState::Server_AnnounceKill_Implementation(APlayerState* Killer, const FString& Victim)
+{
+	Multi_AnnounceKill(Killer, Victim);
+}
+
+void ATPSGameState::Multi_AnnounceKill_Implementation(APlayerState* Killer, const FString& Victim)
+{
+	//子类不要重载组播，而是重载组播调用的函数，否则会导致客户端多调用一次事件：
+	//因为Server端的子类Multi调用了父类的Multi，此时父类Multi在Server和Client都执行了一次，
+	//再走到客户端重写的Multi，又调用了一次父类Multi，此时客户端又执行一次，
+	//所以客户端一共执行了两次Multi
+	AnnounceGainKill(Killer, Victim);
+}
+
+void ATPSGameState::AnnounceGainKill_Implementation(APlayerState* Killer, const FString& Victim)
+{
+	//蓝图里Override了
+}
+
+void ATPSGameState::Server_GainScore_Implementation(APlayerState* Gainer, EGainScoreType GainScoreReason,
+	const FString& RightName)
+{
+	Multi_GainScore(Gainer, GainScoreReason, RightName);
+}
+
+void ATPSGameState::Multi_GainScore_Implementation(APlayerState* Gainer, EGainScoreType GainScoreReason,
+	const FString& RightName)
+{
+	AnnounceGainScore(Gainer, GainScoreReason, RightName);
+}
+
+void ATPSGameState::AnnounceGainScore_Implementation(APlayerState* Gainer, EGainScoreType GainScoreReason, const FString& RightName)
+{
+	//蓝图里Override了
+}
+
+void ATPSGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATPSGameState, PlayerDataInGameArray);
+	DOREPLIFETIME(ATPSGameState, bIsTeamMatchMode);
+	DOREPLIFETIME(ATPSGameState, WinThreshold);
+	DOREPLIFETIME(ATPSGameState, WinnerID);
+	DOREPLIFETIME(ATPSGameState, WinningTeamID);
 }

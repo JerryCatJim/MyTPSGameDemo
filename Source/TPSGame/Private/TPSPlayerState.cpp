@@ -3,6 +3,7 @@
 
 #include "TPSPlayerState.h"
 #include "SCharacter.h"
+#include "TPSGameState.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -11,16 +12,46 @@ void ATPSPlayerState::Reset()
 	Super::Reset();
 }
 
-void ATPSPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ATPSPlayerState, PlayerDataInGame);
-}
-
 void ATPSPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+	TryGetGameState();
+}
+
+bool ATPSPlayerState::CheckCanGainKillScore(int VictimID, int VictimTeamID)
+{
+	return VictimID != GetPlayerId() &&
+		CurGameState &&
+			(!CurGameState->bIsTeamMatchMode ||
+				(GetTeamID() != VictimID && CurGameState->bIsTeamMatchMode));
+}
+
+void ATPSPlayerState::TryGetGameState()
+{
+	UWorld* World = GetWorld();
+	if(World)
+	{
+		GetWorldTimerManager().SetTimer(
+			FGetGameStateHandle,
+			this,
+			&ATPSPlayerState::LoopSetGameState,  //用匿名函数会闪退(?)
+			0.2,
+			true
+			);
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("Fuck U"));
+	}
+}
+
+void ATPSPlayerState::LoopSetGameState()
+{
+	CurGameState = Cast<ATPSGameState>(GetWorld()->GetGameState());
+	if(CurGameState)
+	{
+		GetWorldTimerManager().ClearTimer(FGetGameStateHandle);
+	}
 }
 
 #pragma region GetterAndSetter
@@ -90,6 +121,37 @@ void ATPSPlayerState::AddDeaths(int Deaths)
 	PlayerDataInGame.Deaths += Deaths;
 }
 
+void ATPSPlayerState::GainPickUpScore_Implementation(const FString& PickUpName)
+{
+	OnGainScore.Broadcast(this, EGainScoreType::PickUpScoreProp, PickUpName);
+}
+
+void ATPSPlayerState::GainKill_Implementation(const FString& VictimName, int VictimID, int VictimTeamID)
+{
+	if(CheckCanGainKillScore(VictimID, VictimTeamID))
+	{
+		//自尽或者杀了队友都不算数
+		AddKills(1);
+		OnGainScore.Broadcast(this, KillPlayerEnemy, VictimName);
+	}
+	//触发TPSGameState里的Server_AnnounceKill
+	OnKillOtherPlayers.Broadcast(this, VictimName);
+}
+
+void ATPSPlayerState::PlayerStateGainScore(int NewScore)
+{
+	AddPersonalScore(NewScore);
+	UWorld* World = GetWorld();
+	if(World)
+	{
+		ATPSGameState* GS = Cast<ATPSGameState>(World->GetGameState());
+		if(GS)
+		{
+			GS->UpdateScoreBoard(GetPlayerId(), GetTeamID(), GetPersonalScore());
+		}
+	}
+}
+
 void ATPSPlayerState::CopyProperties(APlayerState* PlayerState)
 {
 	Super::CopyProperties(PlayerState);
@@ -107,4 +169,11 @@ void ATPSPlayerState::CopyProperties(APlayerState* PlayerState)
 			ItemList.Empty();
 		}
 	}
+}
+
+void ATPSPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATPSPlayerState, PlayerDataInGame);
 }
