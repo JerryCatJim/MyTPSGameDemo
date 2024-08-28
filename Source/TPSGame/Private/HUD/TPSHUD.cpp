@@ -9,8 +9,8 @@
 ATPSHUD::ATPSHUD()
 {
 	//从C++中获取蓝图类
-	const FString WidgetClassLoadPath = FString(TEXT("'/Game/UI/GameUI/EndGameScreen.EndGameScreen_C'"));//蓝图一定要加_C这个后缀名
-	EndGameScreenClass = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
+	//const FString WidgetClassLoadPath = FString(TEXT("'/Game/UI/GameUI/EndGameScreen.EndGameScreen_C'"));//蓝图一定要加_C这个后缀名
+	//EndGameScreenClass = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
 }
 
 void ATPSHUD::BeginPlay()

@@ -44,9 +44,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UTPSCrossHair* CrossHairView;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UUserWidget> EndGameScreenClass;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	class UUserWidget* EndGameView;
+	class UUserWidget* EndGameView;*/
 };
