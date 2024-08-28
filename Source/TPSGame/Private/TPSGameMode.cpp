@@ -12,6 +12,41 @@ void ATPSGameMode::BeginPlay()
 	MyGameState = GetGameState<ATPSGameState>();
 }
 
+void ATPSGameMode::SwapPlayerControllers(APlayerController* OldPC, APlayerController* NewPC)
+{
+	Super::SwapPlayerControllers(OldPC, NewPC);
+
+	//ServerTravel时触发OnSwap而不是PostLogin，写在蓝图中的OnSwapPlayerControllers也可以
+	ATPSGameState* GS = GetGameState<ATPSGameState>();
+	if(GS)
+	{
+		GS->NewPlayerJoined(NewPC);
+	}
+}
+
+void ATPSGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	ATPSGameState* GS = GetGameState<ATPSGameState>();
+	if(GS)
+	{
+		GS->NewPlayerJoined(NewPlayer);
+		GS->RefreshPlayerScoreBoardUI(NewPlayer, true);
+	}
+}
+
+void ATPSGameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	ATPSGameState* GS = GetGameState<ATPSGameState>();
+	if(GS)
+	{
+		GS->RefreshPlayerScoreBoardUI(Exiting, false);
+	}
+}
+
 void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 {
 	if(!PlayerController)

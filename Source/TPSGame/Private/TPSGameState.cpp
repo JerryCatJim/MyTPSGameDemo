@@ -44,18 +44,25 @@ void ATPSGameState::SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& 
 	}
 }
 
-void ATPSGameState::SortPlayerScoreRank()
+void ATPSGameState::SortPlayerScoreRank(int PlayerIdToIgnore, bool IsLogin)
 {
 	PlayerDataInGameArray.Empty();
 	for(auto PlayerState : PlayerArray)
 	{
-		ATPSPlayerState* PS = Cast<ATPSPlayerState>(PlayerState);
-		if(PS)
+		if(PlayerState->GetPlayerId() == PlayerIdToIgnore && !IsLogin)
 		{
-			PS->PlayerDataInGame.PlayerId = PS->GetPlayerId();
-			PS->PlayerDataInGame.PlayerName = PS->GetPlayerName();
+			//如果是需要从榜上删除的玩家，则不加入数组
+		}
+		else
+		{
+			ATPSPlayerState* PS = Cast<ATPSPlayerState>(PlayerState);
+			if(PS)
+			{
+				PS->PlayerDataInGame.PlayerId = PS->GetPlayerId();
+				PS->PlayerDataInGame.PlayerName = PS->GetPlayerName();
 
-			PlayerDataInGameArray.Add(PS->PlayerDataInGame);
+				PlayerDataInGameArray.Add(PS->PlayerDataInGame);
+			}
 		}
 	}
 	SortPlayerRank_Stable(PlayerDataInGameArray, true);
@@ -135,7 +142,7 @@ void ATPSGameState::RefreshPlayerScoreBoardUI_Implementation(AController* Contro
 	}
 	else  //重新排列个人竞技计分板
 	{
-		SortPlayerScoreRank();
+		SortPlayerScoreRank(Controller->PlayerState->GetPlayerId(), IsLogin);
 	}
 	Multi_CallRefreshScoreUI(PlayerDataInGameArray);
 }

@@ -16,6 +16,10 @@ class TPSGAME_API ATPSGameMode : public AGameMode
 	GENERATED_BODY()
 
 public:
+	virtual void SwapPlayerControllers(APlayerController* OldPC, APlayerController* NewPC) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+	
 	//GameMode存在于服务器，不用加Server关键字
 	void RespawnPlayer(APlayerController* PlayerController);
 

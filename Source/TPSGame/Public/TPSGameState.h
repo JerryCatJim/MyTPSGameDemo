@@ -33,7 +33,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AddTeamPoint(int TeamID, int TeamScore){TeamScoreBoard.Add(TeamID, TeamScore);}
 
-	UFUNCTION(BlueprintCallable, Server, Reliable)  //从TPSGameMode调用
+	UFUNCTION(BlueprintCallable, Server, Reliable)  //在TPSGameMode的Login或者Logout时调用
 	void RefreshPlayerScoreBoardUI(AController* Controller, bool IsLogin);
 
 	UFUNCTION(BlueprintCallable)
@@ -45,7 +45,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& PlayerDataArray, bool HighToLow = true);
 	UFUNCTION(BlueprintCallable)
-	void SortPlayerScoreRank();
+	void SortPlayerScoreRank(int PlayerIdToIgnore = -1, bool IsLogin = true);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_AnnounceKill(APlayerState* Killer, const FString& Victim);

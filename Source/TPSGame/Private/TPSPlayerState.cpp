@@ -39,10 +39,6 @@ void ATPSPlayerState::TryGetGameState()
 			true
 			);
 	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("Fuck U"));
-	}
 }
 
 void ATPSPlayerState::LoopSetGameState()
