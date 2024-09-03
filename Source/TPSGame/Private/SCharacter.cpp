@@ -498,19 +498,26 @@ void ASCharacter::OnRep_Died()
 	if(HasAuthority())
 	{
 		DropWeapon();  //死亡后掉落武器,然后隐藏手中武器
-		
-		//尝试复活
-		GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
-		[this]()->void
+
+		if(!bPlayerLeftGame)
 		{
-			ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
-			if(MyController && !bPlayerLeftGame)
+			//尝试复活
+			GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
+			[this]()->void
 			{
-				MyController->RequestRespawn();
-			}
-		},
-		RespawnCount,
-		false);
+				ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+				if(MyController)
+				{
+					MyController->RequestRespawn();
+				}
+			},
+			RespawnCount,
+			false);
+		}
+		else
+		{
+			GetWorldTimerManager().ClearTimer(FPlayerRespawnTimerHandle);
+		}
 	}
 	
 	if(CurrentWeapon && CurrentWeapon->GetWeaponMeshComp())
