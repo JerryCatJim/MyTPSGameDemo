@@ -19,11 +19,11 @@ class TPSGAME_API ATPSGameState : public AGameState
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	UFUNCTION()
+	UFUNCTION()  //在GameMode中绑定，所以在Server触发
 	void OnMatchEnded(int NewWinnerID, int NewWinningTeamID);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_OnMatchEnd();
+	void Multi_OnMatchEnd(int NewWinnerID, int NewWinningTeamID, int WinnerScore, bool IsTeamMatchMode);
 
 	UFUNCTION(BlueprintCallable)
 	void NewPlayerJoined(APlayerController* Controller);
@@ -86,10 +86,10 @@ public:
 	UPROPERTY(BlueprintReadWrite)//, Replicated)
 	TArray<FPlayerDataInGame> PlayerDataInGameArray;
 
-	UPROPERTY(BlueprintReadWrite, Replicated)
+	UPROPERTY(BlueprintReadWrite)//, Replicated)
 	int WinnerID;
 
-	UPROPERTY(BlueprintReadWrite, Replicated)
+	UPROPERTY(BlueprintReadWrite)//, Replicated)
 	int WinningTeamID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

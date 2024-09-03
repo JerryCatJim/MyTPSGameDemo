@@ -92,30 +92,27 @@ void ATPSGameState::OnMatchEnded(int NewWinnerID, int NewWinningTeamID)
 	WinnerID = NewWinnerID;
 	WinningTeamID = NewWinningTeamID;
 
-	Multi_OnMatchEnd();
+	const int ShowScore = bIsTeamMatchMode ? TeamScoreBoard.FindRef(WinningTeamID) : PlayerScoreBoard.FindRef(WinnerID);
+
+	//Multicast是Reliable立刻触发，可能比属性复制快，所以传入参数而不是等属性复制
+	Multi_OnMatchEnd(WinnerID, WinningTeamID, ShowScore, bIsTeamMatchMode);
 }
 
-void ATPSGameState::Multi_OnMatchEnd_Implementation()
+void ATPSGameState::Multi_OnMatchEnd_Implementation(int NewWinnerID, int NewWinningTeamID, int WinnerScore, bool IsTeamMatchMode)
 {
-	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if(PC)
 	{
 		ASCharacter* Player = Cast<ASCharacter>(PC->GetPawn());
-		if(Player) Player->OnMatchEnd(WinnerID, WinningTeamID);
+		if(Player) Player->OnMatchEnd(NewWinnerID, NewWinningTeamID);
 
 		PC->UnPossess();
 
 		ATPSHUD* HUD = Cast<ATPSHUD>(PC->GetHUD());
 		if(HUD)
 		{
-			if(bIsTeamMatchMode)
-			{
-				HUD->ShowEndGameScreen(WinningTeamID, TeamScoreBoard.FindRef(WinningTeamID), bIsTeamMatchMode);
-			}
-			else
-			{
-				HUD->ShowEndGameScreen(WinnerID, PlayerScoreBoard.FindRef(WinnerID), bIsTeamMatchMode);
-			}
+			const int ShowWinnerID = IsTeamMatchMode ? NewWinningTeamID : NewWinnerID;
+			HUD->ShowEndGameScreen(ShowWinnerID, WinnerScore, IsTeamMatchMode);
 		}
 	}
 }
@@ -219,6 +216,6 @@ void ATPSGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	//DOREPLIFETIME(ATPSGameState, PlayerDataInGameArray);
 	DOREPLIFETIME(ATPSGameState, bIsTeamMatchMode);
 	DOREPLIFETIME(ATPSGameState, WinThreshold);
-	DOREPLIFETIME(ATPSGameState, WinnerID);
-	DOREPLIFETIME(ATPSGameState, WinningTeamID);
+	//DOREPLIFETIME(ATPSGameState, WinnerID);
+	//DOREPLIFETIME(ATPSGameState, WinningTeamID);
 }

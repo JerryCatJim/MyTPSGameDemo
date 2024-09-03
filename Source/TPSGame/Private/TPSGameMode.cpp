@@ -8,8 +8,11 @@
 void ATPSGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	MyGameState = GetGameState<ATPSGameState>();
+	
+	if(!MyGameState)
+	{
+		MyGameState = GetGameState<ATPSGameState>();
+	}
 }
 
 void ATPSGameMode::SwapPlayerControllers(APlayerController* OldPC, APlayerController* NewPC)
@@ -17,6 +20,10 @@ void ATPSGameMode::SwapPlayerControllers(APlayerController* OldPC, APlayerContro
 	Super::SwapPlayerControllers(OldPC, NewPC);
 
 	//ServerTravel时触发OnSwap而不是PostLogin，写在蓝图中的OnSwapPlayerControllers也可以
+	if(!MyGameState)
+	{
+		MyGameState = GetGameState<ATPSGameState>();
+	}
 	if(MyGameState)
 	{
 		MyGameState->NewPlayerJoined(NewPC);
@@ -26,7 +33,11 @@ void ATPSGameMode::SwapPlayerControllers(APlayerController* OldPC, APlayerContro
 void ATPSGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	
+
+	if(!MyGameState)
+	{
+		MyGameState = GetGameState<ATPSGameState>();
+	}
 	if(MyGameState)
 	{
 		MyGameState->NewPlayerJoined(NewPlayer);
@@ -36,7 +47,11 @@ void ATPSGameMode::PostLogin(APlayerController* NewPlayer)
 void ATPSGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-	
+
+	if(!MyGameState)
+	{
+		MyGameState = GetGameState<ATPSGameState>();
+	}
 	if(MyGameState)
 	{
 		MyGameState->PlayerLeaveGame(Exiting);
