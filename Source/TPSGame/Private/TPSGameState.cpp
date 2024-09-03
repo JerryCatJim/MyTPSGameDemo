@@ -44,12 +44,12 @@ void ATPSGameState::SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& 
 	}
 }
 
-void ATPSGameState::SortPlayerScoreRank(int PlayerIdToIgnore, bool IsLogin)
+void ATPSGameState::SortPlayerScoreRank(int PlayerIdToIgnore, bool RemovePlayer)
 {
 	PlayerDataInGameArray.Empty();
-	for(auto PlayerState : PlayerArray)
+	for(auto PlayerState : PlayerArray)  //退出游戏后有延迟(?)，PlayerArray不会立刻删除该PlayerState，所以手动忽略一下
 	{
-		if(PlayerState->GetPlayerId() == PlayerIdToIgnore && !IsLogin)
+		if(PlayerState->GetPlayerId() == PlayerIdToIgnore && RemovePlayer)
 		{
 			//如果是需要从榜上删除的玩家，则不加入数组
 		}
@@ -130,19 +130,43 @@ void ATPSGameState::NewPlayerJoined(APlayerController* Controller)
 		PS->OnKillOtherPlayers.AddDynamic(this, &ATPSGameState::Server_AnnounceKill);
 		PS->OnGainScore.AddDynamic(this, &ATPSGameState::Server_GainScore);
 	}
+	RefreshPlayerScoreBoardUI(Controller, false);
 }
 
-void ATPSGameState::RefreshPlayerScoreBoardUI_Implementation(AController* Controller, bool IsLogin)
+void ATPSGameState::PlayerLeaveGame(AController* Controller)
+{
+	if(!Controller) return;
+	
+	ATPSPlayerState* PS = Cast<ATPSPlayerState>(Controller->PlayerState);
+	if(PS)
+	{
+		PS->OnKillOtherPlayers.RemoveDynamic(this, &ATPSGameState::Server_AnnounceKill);
+		PS->OnGainScore.RemoveDynamic(this, &ATPSGameState::Server_GainScore);
+
+		//从数据榜单中移除该玩家分数
+		if(bIsTeamMatchMode)
+		{
+			TeamScoreBoard.Remove(PS->GetPlayerId());
+		}
+		else
+		{
+			PlayerScoreBoard.Remove(PS->GetPlayerId());
+		}
+	}
+	RefreshPlayerScoreBoardUI(Controller, true);
+}
+
+void ATPSGameState::RefreshPlayerScoreBoardUI_Implementation(AController* Controller, bool RemovePlayer)
 {
 	if(!Controller || !Controller->PlayerState) return;
-
+	
 	if(bIsTeamMatchMode)
 	{
 		//组队模式的计分板还没做
 	}
 	else  //重新排列个人竞技计分板
 	{
-		SortPlayerScoreRank(Controller->PlayerState->GetPlayerId(), IsLogin);
+		SortPlayerScoreRank(Controller->PlayerState->GetPlayerId(), RemovePlayer);
 	}
 	Multi_CallRefreshScoreUI(PlayerDataInGameArray);
 }
@@ -192,7 +216,7 @@ void ATPSGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ATPSGameState, PlayerDataInGameArray);
+	//DOREPLIFETIME(ATPSGameState, PlayerDataInGameArray);
 	DOREPLIFETIME(ATPSGameState, bIsTeamMatchMode);
 	DOREPLIFETIME(ATPSGameState, WinThreshold);
 	DOREPLIFETIME(ATPSGameState, WinnerID);

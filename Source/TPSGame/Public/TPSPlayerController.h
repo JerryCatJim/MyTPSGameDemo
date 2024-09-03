@@ -11,6 +11,8 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagDetected);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagEnded);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerLeaveGame);
 /**
  * 
  */
@@ -41,9 +43,17 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetCrossHairVisibility(bool IsVisible);
+
+	//UFUNCTION(Server, Reliable)
+	void PlayerLeaveGame();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)  //必须加Server才能调用到GameState中(???)
+	void RefreshScoreBoardUI();
 	
 protected:
 	virtual void SetupInputComponent() override;
+
+	virtual void BeginPlay() override;
 	
 	void ShowReturnToMainMenu();
 	
@@ -66,7 +76,10 @@ public:
 	//背包组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	UInventoryComponent* InventoryComponent;
-
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerLeaveGame OnPlayerLeaveGame;
+	
 protected:
 	float ClientServerDelta = 0.f; //客户端当前时间和服务器时间的差值
 
@@ -94,6 +107,4 @@ private:
 
 	UPROPERTY()
 	class UReturnToMainMenu* ReturnToMainMenu;
-
-	bool bReturnToMainMenuOpen = false;
 };

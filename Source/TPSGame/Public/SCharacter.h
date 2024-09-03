@@ -107,6 +107,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
 	FWeaponPickUpInfo GetWeaponPickUpInfo();
 	
+	UFUNCTION()
+	void OnMatchEnd(int NewWinnerID, int NewWinningTeamID);
+	
+	UFUNCTION(Server, Reliable)
+	void PlayerLeaveGame();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -152,6 +158,7 @@ protected:
 
 private:
 	void HideCharacterIfCameraClose();
+	
 public:	
 	//当前武器
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, ReplicatedUsing = OnRep_CurrentWeapon)  //Replicated : 网络复制
@@ -253,6 +260,9 @@ protected:
 	//角色重生倒计时
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerTimer)
 	float RespawnCount = 5;
+
+private:
+	bool bPlayerLeftGame = false;
 	
 //临时测试接口的区域
 public:

@@ -29,12 +29,15 @@ public:
 	void NewPlayerJoined(APlayerController* Controller);
 
 	UFUNCTION(BlueprintCallable)
+	void PlayerLeaveGame(AController* Controller);
+
+	UFUNCTION(BlueprintCallable)
 	void AddPlayerPoint(int PlayerID, int PlayerScore){PlayerScoreBoard.Add(PlayerID, PlayerScore);}
 	UFUNCTION(BlueprintCallable)
 	void AddTeamPoint(int TeamID, int TeamScore){TeamScoreBoard.Add(TeamID, TeamScore);}
 
-	UFUNCTION(BlueprintCallable, Server, Reliable)  //在TPSGameMode的Login或者Logout时调用
-	void RefreshPlayerScoreBoardUI(AController* Controller, bool IsLogin);
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void RefreshPlayerScoreBoardUI(AController* Controller, bool RemovePlayer);
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateScoreBoard(int PlayerID, int TeamID, int PlayerScore);
@@ -45,7 +48,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void SortPlayerRank_Stable(UPARAM(ref)TArray<FPlayerDataInGame>& PlayerDataArray, bool HighToLow = true);
 	UFUNCTION(BlueprintCallable)
-	void SortPlayerScoreRank(int PlayerIdToIgnore = -1, bool IsLogin = true);
+	void SortPlayerScoreRank(int PlayerIdToIgnore = -1, bool RemovePlayer = false);
 	
 	UFUNCTION(Server, Reliable)
 	void Server_AnnounceKill(APlayerState* Killer, const FString& Victim);
@@ -80,7 +83,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	bool bIsTeamMatchMode;
 
-	UPROPERTY(BlueprintReadWrite, Replicated)
+	UPROPERTY(BlueprintReadWrite)//, Replicated)
 	TArray<FPlayerDataInGame> PlayerDataInGameArray;
 
 	UPROPERTY(BlueprintReadWrite, Replicated)

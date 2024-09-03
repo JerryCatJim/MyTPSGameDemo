@@ -3,6 +3,7 @@
 
 #include "UserWidget/ReturnToMainMenu.h"
 #include "MultiplayerSessionsSubsystem.h"
+#include "SCharacter.h"
 
 #include "Components/Button.h"
 #include "GameFramework/GameModeBase.h"
@@ -16,13 +17,12 @@ void UReturnToMainMenu::MenuSetup()
 	UWorld* World = GetWorld();
 	if(World)
 	{
-		PlayerController = PlayerController == nullptr ? World->GetFirstPlayerController() : PlayerController;
-		if(PlayerController)
+		if(MyPlayerController)
 		{
 			FInputModeGameAndUI InputModeData;
 			InputModeData.SetWidgetToFocus(TakeWidget());
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(true);
+			MyPlayerController->SetInputMode(InputModeData);
+			MyPlayerController->SetShowMouseCursor(true);
 		}
 	}
 	
@@ -46,12 +46,11 @@ void UReturnToMainMenu::MenuTearDown()
 	UWorld* World = GetWorld();
 	if(World)
 	{
-		PlayerController = PlayerController == nullptr ? World->GetFirstPlayerController() : PlayerController;
-		if(PlayerController)
+		if(MyPlayerController)
 		{
 			FInputModeGameOnly InputModeData;
-			PlayerController->SetInputMode(InputModeData);
-			PlayerController->SetShowMouseCursor(false);
+			MyPlayerController->SetInputMode(InputModeData);
+			MyPlayerController->SetShowMouseCursor(false);
 		}
 	}
 	
@@ -68,15 +67,43 @@ void UReturnToMainMenu::MenuTearDown()
 	RemoveFromParent();
 }
 
+void UReturnToMainMenu::ShowOrHideReturnToMainMenu()
+{
+	bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+	if(bReturnToMainMenuOpen)
+	{
+		MenuSetup();
+	}
+	else
+	{
+		MenuTearDown();
+	}
+}
+
 bool UReturnToMainMenu::Initialize()
 {
 	if(!Super::Initialize())
 	{
 		return false;
 	}
-
 	
+	if(GetOwningPlayer())
+	{
+		MyPlayerController = Cast<ATPSPlayerController>(GetOwningPlayer());
+	}
+	else
+	{
+		UWorld* World = GetWorld();
+		if(World)
+		{
+			MyPlayerController = Cast<ATPSPlayerController>(World->GetFirstPlayerController());
+		}
+	}
 	
+	if(MyPlayerController)
+	{
+		MyPlayerController->OnPlayerLeaveGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
+	}
 	return true;
 }
 
@@ -98,10 +125,9 @@ void UReturnToMainMenu::OnDestroySession(bool bWasSuccessful)
 		}
 		else
 		{
-			PlayerController = PlayerController == nullptr ? World->GetFirstPlayerController() : PlayerController;
-			if(PlayerController)
+			if(MyPlayerController)
 			{
-				PlayerController->ClientReturnToMainMenuWithTextReason(FText());
+				MyPlayerController->ClientReturnToMainMenuWithTextReason(FText());
 				//PlayerController->ClientReturnToMainMenu(TEXT(""));  //此函数UE不推荐使用，建议使用上面那个
 			}
 		}
@@ -112,6 +138,19 @@ void UReturnToMainMenu::ReturnButtonClicked()
 {
 	ReturnButton->SetIsEnabled(false);
 	
+	UWorld* World = GetWorld();
+	if(World)
+	{
+		ATPSPlayerController* FirstPlayerController = Cast<ATPSPlayerController>(World->GetFirstPlayerController());
+		if(FirstPlayerController)
+		{
+			FirstPlayerController->PlayerLeaveGame();
+		}
+	}
+}
+
+void UReturnToMainMenu::OnPlayerLeftGame()
+{
 	if (MultiplayerSessionSubsystem)
 	{
 		MultiplayerSessionSubsystem->DestroySession();

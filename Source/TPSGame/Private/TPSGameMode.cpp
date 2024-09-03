@@ -17,33 +17,29 @@ void ATPSGameMode::SwapPlayerControllers(APlayerController* OldPC, APlayerContro
 	Super::SwapPlayerControllers(OldPC, NewPC);
 
 	//ServerTravel时触发OnSwap而不是PostLogin，写在蓝图中的OnSwapPlayerControllers也可以
-	ATPSGameState* GS = GetGameState<ATPSGameState>();
-	if(GS)
+	if(MyGameState)
 	{
-		GS->NewPlayerJoined(NewPC);
+		MyGameState->NewPlayerJoined(NewPC);
 	}
 }
 
 void ATPSGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
-	ATPSGameState* GS = GetGameState<ATPSGameState>();
-	if(GS)
+	
+	if(MyGameState)
 	{
-		GS->NewPlayerJoined(NewPlayer);
-		GS->RefreshPlayerScoreBoardUI(NewPlayer, true);
+		MyGameState->NewPlayerJoined(NewPlayer);
 	}
 }
 
 void ATPSGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-
-	ATPSGameState* GS = GetGameState<ATPSGameState>();
-	if(GS)
+	
+	if(MyGameState)
 	{
-		GS->RefreshPlayerScoreBoardUI(Exiting, false);
+		MyGameState->PlayerLeaveGame(Exiting);
 	}
 }
 
@@ -66,19 +62,10 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 	RestartPlayer(PlayerController);
 }
 
-void ATPSGameMode::PlayerLeaveGame()
-{
-	
-}
-
 bool ATPSGameMode::ReadyToEndMatch_Implementation()
 {
 	//const bool RetVal = Super::ReadyToEndMatch_Implementation();
-
-	if(!MyGameState)
-	{
-		MyGameState = GetGameState<ATPSGameState>();
-	}
+	
 	if(MyGameState)
 	{
 		TMap<int, int> TempMap = bIsTeamMatchMode ? MyGameState->TeamScoreBoard : MyGameState->PlayerScoreBoard;

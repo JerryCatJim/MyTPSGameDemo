@@ -18,11 +18,16 @@ public:
 	void MenuSetup();
 	void MenuTearDown();
 
+	void ShowOrHideReturnToMainMenu();
+	
 protected:
 	virtual bool Initialize() override;
 
 	UFUNCTION()
 	void OnDestroySession(bool bWasSuccessful);
+
+	UFUNCTION()
+	void OnPlayerLeftGame();
 	
 private:
 	UFUNCTION()
@@ -36,5 +41,7 @@ private:
 	class UMultiplayerSessionsSubsystem* MultiplayerSessionSubsystem;
 
 	UPROPERTY()
-	class APlayerController* PlayerController;
+	class ATPSPlayerController* MyPlayerController;
+	
+	bool bReturnToMainMenuOpen = false;
 };

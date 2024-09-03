@@ -617,7 +617,8 @@ void ASWeapon::SetWeaponZoom_Implementation()
 
 void ASWeapon::ResetWeaponZoom_Implementation()
 {
-	if(CheckOwnerValidAndAlive())
+	//if(CheckOwnerValidAndAlive())  //人物死亡时需要自动取消开镜
+	if(IsValid(MyOwner))
 	{
 		if(MyOwner->GetIsAiming()) //防止多次触发
 		{

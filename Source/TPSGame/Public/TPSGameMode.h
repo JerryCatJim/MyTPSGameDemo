@@ -23,8 +23,6 @@ public:
 	//GameMode存在于服务器，不用加Server关键字
 	void RespawnPlayer(APlayerController* PlayerController);
 
-	void PlayerLeaveGame();
-
 protected:
 	virtual void BeginPlay() override;
 	

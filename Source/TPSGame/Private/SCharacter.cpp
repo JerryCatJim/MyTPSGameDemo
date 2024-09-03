@@ -101,7 +101,7 @@ void ASCharacter::BeginPlay()
 			OnRep_CurrentWeapon();
 		}
 	}
-
+	
 	//测试UEC++函数 可以返回多个值
 	//testtest();
 }
@@ -125,6 +125,12 @@ void ASCharacter::Tick(float DeltaTime)
 	SetPlayerControllerRotation();
 
 	HideCharacterIfCameraClose();
+}
+
+void ASCharacter::OnMatchEnd(int NewWinnerID, int NewWinningTeamID)
+{
+	StopFire();
+	GetCharacterMovement()->StopMovementImmediately();
 }
 
 void ASCharacter::HideCharacterIfCameraClose()
@@ -481,6 +487,8 @@ void ASCharacter::OnRep_CurrentWeapon()
 
 void ASCharacter::OnRep_Died()
 {
+	if(!bDied) return;
+	
 	//角色死亡
 	GetMovementComponent()->UNavMovementComponent::StopMovementImmediately();  //无法移动  4.27以上用GetMovementComponent()->StopMovement会出错(？)
 	GetCharacterMovement()->DisableMovement();
@@ -490,10 +498,25 @@ void ASCharacter::OnRep_Died()
 	if(HasAuthority())
 	{
 		DropWeapon();  //死亡后掉落武器,然后隐藏手中武器
+		
+		//尝试复活
+		GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
+		[this]()->void
+		{
+			ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+			if(MyController && !bPlayerLeftGame)
+			{
+				MyController->RequestRespawn();
+			}
+		},
+		RespawnCount,
+		false);
 	}
+	
 	if(CurrentWeapon && CurrentWeapon->GetWeaponMeshComp())
 	{
 		CurrentWeapon->GetWeaponMeshComp()->SetVisibility(false);
+		CurrentWeapon->ResetWeaponZoom();
 	}
 	ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
 	if(MyController)
@@ -503,18 +526,16 @@ void ASCharacter::OnRep_Died()
 		
 	//获取胶囊体碰撞
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
-		[this]()->void
-		{
-			ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
-			if(MyController)
-			{
-				MyController->RequestRespawn();
-			}
-		},
-		RespawnCount,
-		false);
+}
+
+void ASCharacter::PlayerLeaveGame_Implementation()
+{
+	bPlayerLeftGame = true;
+	if(!bDied)
+	{
+		bDied = true;
+		OnRep_Died();
+	}
 }
 
 UInventoryComponent* ASCharacter::GetInventoryComponent()

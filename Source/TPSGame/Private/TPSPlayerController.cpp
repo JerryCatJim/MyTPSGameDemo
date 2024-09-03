@@ -3,7 +3,9 @@
 
 #include "TPSPlayerController.h"
 
+#include "SCharacter.h"
 #include "TPSGameMode.h"
+#include "TPSGameState.h"
 #include "GameFramework/PlayerState.h"
 #include "HUD/TPSHUD.h"
 #include "Kismet/GameplayStatics.h"
@@ -12,6 +14,8 @@
 
 ATPSPlayerController::ATPSPlayerController()
 {
+	SetReplicates(true);
+	
 	//背包组件初始化
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 
@@ -48,6 +52,21 @@ void ATPSPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Quit", IE_Pressed, this, &ATPSPlayerController::ShowReturnToMainMenu);
 }
 
+void ATPSPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
+void ATPSPlayerController::RefreshScoreBoardUI_Implementation()
+{
+	ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	if(GS)
+	{
+		GS->RefreshPlayerScoreBoardUI(this, false);
+	}
+}
+
 void ATPSPlayerController::ShowReturnToMainMenu()
 {
 	if(ReturnToMainMenuClass == nullptr) return;
@@ -58,15 +77,7 @@ void ATPSPlayerController::ShowReturnToMainMenu()
 	}
 	if(ReturnToMainMenu)
 	{
-		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
-		if(bReturnToMainMenuOpen)
-		{
-			ReturnToMainMenu->MenuSetup();
-		}
-		else
-		{
-			ReturnToMainMenu->MenuTearDown();
-		}
+		ReturnToMainMenu->ShowOrHideReturnToMainMenu();
 	}
 }
 
@@ -103,6 +114,20 @@ void ATPSPlayerController::SetCrossHairVisibility(bool IsVisible)
 	if(CurHUD)
 	{
 		CurHUD->SetCrossHairVisibility(IsVisible);
+	}
+}
+
+void ATPSPlayerController::PlayerLeaveGame()//_Implementation()	//在ReturnToMainMenu.Cpp中被调用
+{
+	ASCharacter* MyCharacter = Cast<ASCharacter>(GetPawn());
+	if(MyCharacter)
+	{
+		MyCharacter->PlayerLeaveGame();
+	}
+
+	if(IsLocalController()) //ReturnToMainMenu是UI，存在于本地，所以限制本地发送广播
+	{
+		OnPlayerLeaveGame.Broadcast();  //ReturnToMainMenu.Cpp中绑定了此委托，收到后会调用OnPlayerLeftGame()销毁会话退出游戏
 	}
 }
 
