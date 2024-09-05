@@ -89,7 +89,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		
 		if(!bIsAoeDamage)  //火箭筒是Aoe伤害，不用做单点射线检测
 		{
-			//PlayerCharacter的Hit碰撞检测有些问题，没法精确碰撞，所以命中后再做一下射线检测获取命中区域的材质
+			//OnComponentHit碰撞检测有些问题，拿不到命中材质，所以命中后再做一下射线检测获取命中区域的材质
 			//碰撞查询
 			FCollisionQueryParams QueryParams;
 			QueryParams.AddIgnoredActor(this);
