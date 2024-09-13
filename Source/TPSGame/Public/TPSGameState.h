@@ -66,6 +66,11 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_CallRefreshScoreUI(const TArray<FPlayerDataInGame>& PlayerDataArray);
+
+	UFUNCTION()
+	void OnRep_RedTeamScore();
+	UFUNCTION()
+	void OnRep_BlueTeamScore();
 	
 public:
 	UPROPERTY(BlueprintAssignable)
@@ -103,5 +108,16 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int HealTeammateScore = 1;
+
+	UPROPERTY()
+	TArray<ATPSPlayerState*> RedTeamPlayerStates;
+
+	UPROPERTY()
+	TArray<ATPSPlayerState*> BlueTeamPlayerStates;
+
+	UPROPERTY(ReplicatedUsing=OnRep_RedTeamScore)
+	float RedTeamScore;
+	UPROPERTY(ReplicatedUsing=OnRep_BlueTeamScore)
+	float BlueTeamScore;
 	
 };

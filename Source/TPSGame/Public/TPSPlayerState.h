@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "Component/InventoryComponent.h"
+#include "TPSGameType/Team.h"
 #include "TPSPlayerState.generated.h"
 
 USTRUCT(BlueprintType)
@@ -114,6 +115,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void PlayerStateGainScore(int NewScore);
+
+	FORCEINLINE ETeam GetTeam() const { return Team; }
+	FORCEINLINE void SetTeam(ETeam TeamToSet) { Team = TeamToSet; }
 	
 protected:
 	virtual void CopyProperties(APlayerState* PlayerState) override;
@@ -148,4 +152,7 @@ protected:
 
 private:
 	FTimerHandle FGetGameStateHandle;
+
+	UPROPERTY(Replicated)
+	ETeam Team = ETeam::ET_NoTeam;
 };

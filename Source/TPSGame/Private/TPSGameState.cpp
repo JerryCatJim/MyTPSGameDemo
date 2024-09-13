@@ -117,6 +117,14 @@ void ATPSGameState::Multi_OnMatchEnd_Implementation(int NewWinnerID, int NewWinn
 	}
 }
 
+void ATPSGameState::OnRep_RedTeamScore()
+{
+}
+
+void ATPSGameState::OnRep_BlueTeamScore()
+{
+}
+
 void ATPSGameState::NewPlayerJoined(APlayerController* Controller)
 {
 	if(!Controller) return;
@@ -218,4 +226,6 @@ void ATPSGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ATPSGameState, WinThreshold);
 	//DOREPLIFETIME(ATPSGameState, WinnerID);
 	//DOREPLIFETIME(ATPSGameState, WinningTeamID);
+	DOREPLIFETIME(ATPSGameState, RedTeamScore);
+	DOREPLIFETIME(ATPSGameState, BlueTeamScore);
 }
