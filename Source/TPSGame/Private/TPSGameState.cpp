@@ -4,7 +4,7 @@
 #include "TPSGameState.h"
 
 #include "SCharacter.h"
-#include "TPSGameMode.h"
+#include "GameMode/TPSGameMode.h"
 #include "HUD/TPSHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"

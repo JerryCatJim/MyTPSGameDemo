@@ -4,7 +4,7 @@
 #include "TPSPlayerController.h"
 
 #include "SCharacter.h"
-#include "TPSGameMode.h"
+#include "GameMode/TPSGameMode.h"
 #include "TPSGameState.h"
 #include "GameFramework/PlayerState.h"
 #include "HUD/TPSHUD.h"
