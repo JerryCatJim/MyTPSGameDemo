@@ -110,10 +110,10 @@ public:
 	int HealTeammateScore = 1;
 
 	UPROPERTY()
-	TArray<ATPSPlayerState*> RedTeamPlayerStates;
+	TArray<ATPSPlayerState*> RedTeam;
 
 	UPROPERTY()
-	TArray<ATPSPlayerState*> BlueTeamPlayerStates;
+	TArray<ATPSPlayerState*> BlueTeam;
 
 	UPROPERTY(ReplicatedUsing=OnRep_RedTeamScore)
 	float RedTeamScore;
