@@ -9,6 +9,8 @@
 #include "TPSGame/TPSGame.h"
 //#include "Component/SHealthComponent.h"
 //#include "Component/SBuffComponent.h"
+#include "TPSPlayerController.h"
+#include "TPSPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -82,7 +84,10 @@ void ASCharacter::BeginPlay()
 	{
 		HealthComponent->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
 	}
-
+	
+	//初始化身体颜色
+	TryInitBodyColor();
+	
 	//如果控制权在服务器Server(相对Client)则执行下列代码
 	if(HasAuthority())
 	{
@@ -127,7 +132,7 @@ void ASCharacter::Tick(float DeltaTime)
 	HideCharacterIfCameraClose();
 }
 
-void ASCharacter::OnMatchEnd(int NewWinnerID, int NewWinningTeamID)
+void ASCharacter::OnMatchEnd(int NewWinnerID, ETeam NewWinningTeam)
 {
 	StopFire();
 	GetCharacterMovement()->StopMovementImmediately();
@@ -157,6 +162,44 @@ void ASCharacter::HideCharacterIfCameraClose()
 		{
 			CurrentWeapon->GetWeaponMeshComp()->bOwnerNoSee = false;
 			CurrentWeapon->bShowMuzzleFlash = true;
+		}
+	}
+}
+
+void ASCharacter::TryInitBodyColor()
+{
+	UWorld* World = GetWorld();
+	if(World)
+	{
+		GetWorldTimerManager().SetTimer(
+			FGetPlayerStateHandle,
+			this,
+			&ASCharacter::LoopSetBodyColor,  //用匿名函数会闪退(?)
+			0.2,
+			true,
+			0
+			);
+	}
+}
+
+void ASCharacter::LoopSetBodyColor()
+{
+	ATPSPlayerController* MyController = GetController<ATPSPlayerController>();
+	if(!MyController) return;
+	
+	ATPSPlayerState* MyPlayerState = MyController->GetPlayerState<ATPSPlayerState>();
+	if(MyPlayerState)
+	{
+		SetBodyColor(MyPlayerState->GetTeam());
+		GetWorldTimerManager().ClearTimer(FGetPlayerStateHandle);
+	}
+	else
+	{
+		TryGetPlayerStateTimes++;
+		if(TryGetPlayerStateTimes >= 5 )
+		{
+			//超过5次还没成功就停止计时器
+			GetWorldTimerManager().ClearTimer(FGetPlayerStateHandle);
 		}
 	}
 }
@@ -545,6 +588,27 @@ void ASCharacter::PlayerLeaveGame_Implementation()
 	}
 }
 
+void ASCharacter::SetBodyColor(ETeam Team)
+{
+	if( GetMesh() == nullptr || (Team == ETeam::ET_NoTeam && OriginalMaterial == nullptr) ) return;
+
+	PlayerTeam = Team;
+	switch(Team)
+	{
+	case ETeam::ET_NoTeam:
+		GetMesh()->SetMaterial(0, OriginalMaterial);
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0, BlueMaterial);
+		break;
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0, RedMaterial);
+		break;
+	default:
+		break;
+	}
+}
+
 UInventoryComponent* ASCharacter::GetInventoryComponent()
 {
 	ATPSPlayerController* PC = GetController<ATPSPlayerController>();
@@ -596,6 +660,7 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ASCharacter, AimOffset_Y);
 	DOREPLIFETIME(ASCharacter, AimOffset_Z);
 	DOREPLIFETIME(ASCharacter, bDisableGamePlayInput);
+	DOREPLIFETIME(ASCharacter, PlayerTeam);
 }
 
 bool ASCharacter::NotEvent_NativeTest_Implementation()

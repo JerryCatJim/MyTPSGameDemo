@@ -6,6 +6,11 @@
 #include "TPSPlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
+ATeamGameMode::ATeamGameMode()
+{
+	bIsTeamMatchMode = true;
+}
+
 void ATeamGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -52,7 +57,6 @@ void ATeamGameMode::HandleMatchHasStarted()
 			TryAddAndSetTeam(PS);
 		}
 	}
-	
 }
 
 void ATeamGameMode::TryAddAndSetTeam(APlayerState* NewPlayerState)

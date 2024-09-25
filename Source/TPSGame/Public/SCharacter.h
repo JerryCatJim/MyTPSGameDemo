@@ -10,8 +10,8 @@
 #include "Component/SHealthComponent.h"
 #include "Component/InventoryComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "TPSPlayerController.h"
 #include "Interface/MyInterfaceTest.h"
+#include "TPSGameType/Team.h"
 #include "SCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
@@ -108,10 +108,13 @@ public:
 	FWeaponPickUpInfo GetWeaponPickUpInfo();
 	
 	UFUNCTION()
-	void OnMatchEnd(int NewWinnerID, int NewWinningTeamID);
+	void OnMatchEnd(int NewWinnerID, ETeam NewWinningTeam);
 	
 	UFUNCTION(Server, Reliable)
 	void PlayerLeaveGame();
+
+	UFUNCTION(BlueprintCallable)
+	void SetBodyColor(ETeam Team);
 	
 protected:
 	// Called when the game starts or when spawned
@@ -155,9 +158,14 @@ protected:
 	void OnRep_IsFiring(){ if(IsLocallyControlled()) bIsFiring = bIsFiringLocally; }
 	UFUNCTION()//原理同上
 	void OnRep_IsReloading(){ if(IsLocallyControlled()) bIsReloading = bIsReloadingLocally; }
-
+	
 private:
 	void HideCharacterIfCameraClose();
+	void TryInitBodyColor();
+	void LoopSetBodyColor();
+
+	UFUNCTION()
+	void OnRep_PlayerTeam(){ SetBodyColor(PlayerTeam); }
 	
 public:	
 	//当前武器
@@ -261,8 +269,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerTimer)
 	float RespawnCount = 5;
 
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_PlayerTeam, Category=Team)
+	ETeam PlayerTeam = ETeam::ET_NoTeam;
+	
+	UPROPERTY(EditAnywhere, Category=PlayerColor)
+	UMaterialInstance* OriginalMaterial;
+	UPROPERTY(EditAnywhere, Category=PlayerColor)
+	UMaterialInstance* RedMaterial;
+	UPROPERTY(EditAnywhere, Category=PlayerColor)
+	UMaterialInstance* BlueMaterial;
+	
 private:
 	bool bPlayerLeftGame = false;
+	
+	FTimerHandle FGetPlayerStateHandle;
+	int TryGetPlayerStateTimes = 0;  //超过5次还没成功就停止计时器
 	
 //临时测试接口的区域
 public:

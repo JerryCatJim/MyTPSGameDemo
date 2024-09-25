@@ -4,6 +4,7 @@
 #include "Weapon/SniperRifle.h"
 #include "Blueprint/UserWidget.h"
 #include "SCharacter.h"
+#include "TPSPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"

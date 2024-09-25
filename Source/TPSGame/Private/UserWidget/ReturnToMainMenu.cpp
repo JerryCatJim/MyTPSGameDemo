@@ -3,7 +3,7 @@
 
 #include "UserWidget/ReturnToMainMenu.h"
 #include "MultiplayerSessionsSubsystem.h"
-#include "SCharacter.h"
+#include "TPSPlayerController.h"
 
 #include "Components/Button.h"
 #include "GameFramework/GameModeBase.h"

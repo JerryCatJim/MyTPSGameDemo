@@ -30,7 +30,7 @@ public:
 	void AddToWidgetList(UUserWidget* WidgetToRecord);
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
-	void ShowEndGameScreen(int WinnerOrTeamID, int Score, bool IsTeamMode);
+	void ShowEndGameScreen(int WinnerID, ETeam WinningTeam, int Score, bool IsTeamMode);
 	
 	virtual void Destroyed() override;
 	

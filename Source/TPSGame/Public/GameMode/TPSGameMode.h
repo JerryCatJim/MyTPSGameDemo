@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "TPSGameType/Team.h"
 #include "TPSGameMode.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMatchEnd, int, WinnerID, int, WinningTeamID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMatchEnd, int, WinnerID, ETeam, WinningTeam);
 /**
  * 
  */
@@ -16,6 +17,8 @@ class TPSGAME_API ATPSGameMode : public AGameMode
 	GENERATED_BODY()
 
 public:
+	ATPSGameMode();
+	
 	virtual void SwapPlayerControllers(APlayerController* OldPC, APlayerController* NewPC) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
@@ -40,9 +43,9 @@ public:
 	int WinnerID;
 
 	UPROPERTY(BlueprintReadWrite)
-	int WinningTeamID;
+	ETeam WinningTeam;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsTeamMatchMode;
 
 protected:

@@ -68,15 +68,47 @@ void ATPSGameState::SortPlayerScoreRank(int PlayerIdToIgnore, bool RemovePlayer)
 	SortPlayerRank_Stable(PlayerDataInGameArray, true);
 }
 
-void ATPSGameState::UpdateScoreBoard(int PlayerID, int TeamID, int PlayerScore)
+void ATPSGameState::AddTeamPoint(ETeam Team, int TeamScore, int PlayerID)
+{
+	switch(Team)
+	{
+	case ETeam::ET_BlueTeam:
+		BlueTeamScore += TeamScore;
+		BlueTeamScoreBoard.Add(PlayerID, TeamScore);
+		break;
+	case ETeam::ET_RedTeam:
+		RedTeamScore += TeamScore;
+		RedTeamScoreBoard.Add(PlayerID, TeamScore);
+		break;
+	case ETeam::ET_NoTeam:
+	default:
+		break;
+	}
+}
+
+int ATPSGameState::GetTeamScore(ETeam Team)
+{
+	switch(Team)
+	{
+	case ETeam::ET_BlueTeam:
+		return BlueTeamScore;
+	case ETeam::ET_RedTeam:
+		return RedTeamScore;
+	case ETeam::ET_NoTeam:
+	default:
+		return -1;
+	}
+}
+
+void ATPSGameState::UpdateScoreBoard(int PlayerID, ETeam Team, int AddScore)
 {
 	if(bIsTeamMatchMode)
 	{
-		AddTeamPoint(TeamID, PlayerScore);
+		AddTeamPoint(Team, AddScore, PlayerID);
 	}
 	else
 	{
-		AddPlayerPoint(PlayerID, PlayerScore);
+		AddPlayerPoint(PlayerID, AddScore);
 	}
 
 	//刷新一下排行榜
@@ -87,32 +119,47 @@ void ATPSGameState::UpdateScoreBoard(int PlayerID, int TeamID, int PlayerScore)
 	}
 }
 
-void ATPSGameState::OnMatchEnded(int NewWinnerID, int NewWinningTeamID)
+ETeam ATPSGameState::GetWinningTeam()
 {
-	WinnerID = NewWinnerID;
-	WinningTeamID = NewWinningTeamID;
-
-	const int ShowScore = bIsTeamMatchMode ? TeamScoreBoard.FindRef(WinningTeamID) : PlayerScoreBoard.FindRef(WinnerID);
-
-	//Multicast是Reliable立刻触发，可能比属性复制快，所以传入参数而不是等属性复制
-	Multi_OnMatchEnd(WinnerID, WinningTeamID, ShowScore, bIsTeamMatchMode);
+	if(BlueTeamScore >= WinThreshold)
+	{
+		return ETeam::ET_BlueTeam;
+	}
+	else if(RedTeamScore >= WinThreshold)
+	{
+		return ETeam::ET_RedTeam;
+	}
+	else
+	{
+		return ETeam::ET_NoTeam;
+	}
 }
 
-void ATPSGameState::Multi_OnMatchEnd_Implementation(int NewWinnerID, int NewWinningTeamID, int WinnerScore, bool IsTeamMatchMode)
+void ATPSGameState::OnMatchEnded(int NewWinnerID, ETeam NewWinningTeam)
+{
+	WinnerID = NewWinnerID;
+	WinningTeam = NewWinningTeam;
+
+	const int ShowScore = bIsTeamMatchMode ? GetTeamScore(NewWinningTeam) : PlayerScoreBoard.FindRef(WinnerID);
+
+	//Multicast是Reliable立刻触发，可能比属性复制快，所以传入参数而不是等属性复制
+	Multi_OnMatchEnd(WinnerID, WinningTeam, ShowScore, bIsTeamMatchMode);
+}
+
+void ATPSGameState::Multi_OnMatchEnd_Implementation(int NewWinnerID, ETeam NewWinningTeam, int WinnerScore, bool IsTeamMatchMode)
 {
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 	if(PC)
 	{
 		ASCharacter* Player = Cast<ASCharacter>(PC->GetPawn());
-		if(Player) Player->OnMatchEnd(NewWinnerID, NewWinningTeamID);
+		if(Player) Player->OnMatchEnd(NewWinnerID, NewWinningTeam);
 
 		PC->UnPossess();
 
 		ATPSHUD* HUD = Cast<ATPSHUD>(PC->GetHUD());
 		if(HUD)
 		{
-			const int ShowWinnerID = IsTeamMatchMode ? NewWinningTeamID : NewWinnerID;
-			HUD->ShowEndGameScreen(ShowWinnerID, WinnerScore, IsTeamMatchMode);
+			HUD->ShowEndGameScreen(NewWinnerID, NewWinningTeam, WinnerScore, IsTeamMatchMode);
 		}
 	}
 }
@@ -151,7 +198,14 @@ void ATPSGameState::PlayerLeaveGame(AController* Controller)
 		//从数据榜单中移除该玩家分数
 		if(bIsTeamMatchMode)
 		{
-			TeamScoreBoard.Remove(PS->GetPlayerId());
+			if(PS->GetTeam() == ETeam::ET_BlueTeam)
+			{
+				BlueTeamScoreBoard.Remove(PS->GetPlayerId());
+			}
+			else if(PS->GetTeam() == ETeam::ET_RedTeam)
+			{
+				RedTeamScoreBoard.Remove(PS->GetPlayerId());
+			}
 		}
 		else
 		{
@@ -168,6 +222,7 @@ void ATPSGameState::RefreshPlayerScoreBoardUI_Implementation(AController* Contro
 	if(bIsTeamMatchMode)
 	{
 		//组队模式的计分板还没做
+		SortPlayerScoreRank(Controller->PlayerState->GetPlayerId(), RemovePlayer);
 	}
 	else  //重新排列个人竞技计分板
 	{

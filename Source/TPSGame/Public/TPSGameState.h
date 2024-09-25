@@ -20,10 +20,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	UFUNCTION()  //在GameMode中绑定，所以在Server触发
-	void OnMatchEnded(int NewWinnerID, int NewWinningTeamID);
+	void OnMatchEnded(int NewWinnerID, ETeam NewWinningTeam);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_OnMatchEnd(int NewWinnerID, int NewWinningTeamID, int WinnerScore, bool IsTeamMatchMode);
+	void Multi_OnMatchEnd(int NewWinnerID, ETeam NewWinningTeam, int WinnerScore, bool IsTeamMatchMode);
 
 	UFUNCTION(BlueprintCallable)
 	void NewPlayerJoined(APlayerController* Controller);
@@ -32,15 +32,17 @@ public:
 	void PlayerLeaveGame(AController* Controller);
 
 	UFUNCTION(BlueprintCallable)
-	void AddPlayerPoint(int PlayerID, int PlayerScore){PlayerScoreBoard.Add(PlayerID, PlayerScore);}
+	void AddPlayerPoint(int PlayerID, int AddScore){PlayerScoreBoard.Add(PlayerID, AddScore);}
 	UFUNCTION(BlueprintCallable)
-	void AddTeamPoint(int TeamID, int TeamScore){TeamScoreBoard.Add(TeamID, TeamScore);}
+	void AddTeamPoint(ETeam Team, int AddScore, int PlayerID);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void RefreshPlayerScoreBoardUI(AController* Controller, bool RemovePlayer);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateScoreBoard(int PlayerID, int TeamID, int PlayerScore);
+	void UpdateScoreBoard(int PlayerID, ETeam Team, int PlayerScore);
+
+	ETeam GetWinningTeam();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -71,6 +73,8 @@ protected:
 	void OnRep_RedTeamScore();
 	UFUNCTION()
 	void OnRep_BlueTeamScore();
+
+	int GetTeamScore(ETeam Team);
 	
 public:
 	UPROPERTY(BlueprintAssignable)
@@ -80,7 +84,9 @@ public:
 	TMap<int, int> PlayerScoreBoard;
 
 	UPROPERTY(BlueprintReadWrite)
-	TMap<int, int> TeamScoreBoard;
+	TMap<int, int> BlueTeamScoreBoard;
+	UPROPERTY(BlueprintReadWrite)
+	TMap<int, int> RedTeamScoreBoard;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	int WinThreshold;
@@ -95,7 +101,7 @@ public:
 	int WinnerID;
 
 	UPROPERTY(BlueprintReadWrite)//, Replicated)
-	int WinningTeamID;
+	ETeam WinningTeam;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int KillPlayerEnemyScore = 1;
@@ -116,8 +122,8 @@ public:
 	TArray<ATPSPlayerState*> BlueTeam;
 
 	UPROPERTY(ReplicatedUsing=OnRep_RedTeamScore)
-	float RedTeamScore;
+	int RedTeamScore = 0;
 	UPROPERTY(ReplicatedUsing=OnRep_BlueTeamScore)
-	float BlueTeamScore;
+	int BlueTeamScore = 0;
 	
 };

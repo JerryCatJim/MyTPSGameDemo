@@ -25,8 +25,6 @@ struct FPlayerDataInGame
 	int Kills = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int Deaths = 0;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int TeamID = -1;
 };
 
 USTRUCT(BlueprintType)
@@ -68,6 +66,8 @@ class TPSGAME_API ATPSPlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
+	ATPSPlayerState();
+	
 	virtual void Reset() override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const override;
 
@@ -92,13 +92,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetDeaths(int Deaths);
 
-	UFUNCTION(BlueprintCallable)
-	int GetTeamID() const;
-	UFUNCTION(BlueprintCallable)
-	void SetTeamID(int TeamID);
 #pragma endregion GetterAndSetter
 	UFUNCTION(BlueprintCallable)
-	void AddPersonalScore(int PersonalScore);
+	void AddPersonalScore(int AddScore);
 	UFUNCTION(BlueprintCallable)
 	void AddKills(int Kills);
 	UFUNCTION(BlueprintCallable)
@@ -111,25 +107,34 @@ public:
 	void GainPickUpScore(const FString& PickUpName);
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void GainKill(const FString& VictimName, int VictimID, int VictimTeamID);
+	void GainKill(const FString& VictimName, int VictimID, ETeam VictimTeam);
 	
 	UFUNCTION(BlueprintCallable)
 	void PlayerStateGainScore(int NewScore);
+	
+	UFUNCTION(BlueprintCallable)
+	ETeam GetTeam() const { return Team; };
+	UFUNCTION(BlueprintCallable)
+	void SetTeam(ETeam TeamID);
 
-	FORCEINLINE ETeam GetTeam() const { return Team; }
-	FORCEINLINE void SetTeam(ETeam TeamToSet) { Team = TeamToSet; }
+	UFUNCTION(BlueprintCallable)
+	void SetPawnBodyColor();
 	
 protected:
 	virtual void CopyProperties(APlayerState* PlayerState) override;
 	virtual void BeginPlay() override;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool CheckCanGainKillScore(int VictimID, int VictimTeamID);
+	bool CheckCanGainKillScore(int VictimID, ETeam VictimTeam);
+
+	//SetTeam()在TeamGameMode中被调用，所以只在服务端被改变了身体颜色，需在OnRep_Team()中使客户端也设置颜色
+	UFUNCTION()
+	void OnRep_Team(){ SetPawnBodyColor(); };
 	
 private:
 	void TryGetGameState();
 	void LoopSetGameState();
-
+	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	TArray<FMyItem> ItemList;
@@ -152,7 +157,8 @@ protected:
 
 private:
 	FTimerHandle FGetGameStateHandle;
+	int TryGetGameStateTimes = 0;  //超过5次还没成功就停止计时器
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_Team)
 	ETeam Team = ETeam::ET_NoTeam;
 };

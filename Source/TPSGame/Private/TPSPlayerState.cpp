@@ -7,6 +7,11 @@
 
 #include "Net/UnrealNetwork.h"
 
+ATPSPlayerState::ATPSPlayerState()
+{
+	SetReplicates(true);
+}
+
 void ATPSPlayerState::Reset()
 {
 	Super::Reset();
@@ -18,12 +23,12 @@ void ATPSPlayerState::BeginPlay()
 	TryGetGameState();
 }
 
-bool ATPSPlayerState::CheckCanGainKillScore(int VictimID, int VictimTeamID)
+bool ATPSPlayerState::CheckCanGainKillScore(int VictimID, ETeam VictimTeam)
 {
 	return VictimID != GetPlayerId() &&
 		CurGameState &&
 			(!CurGameState->bIsTeamMatchMode ||
-				(GetTeamID() != VictimID && CurGameState->bIsTeamMatchMode));
+				(GetTeam() != VictimTeam && CurGameState->bIsTeamMatchMode));
 }
 
 void ATPSPlayerState::TryGetGameState()
@@ -36,7 +41,8 @@ void ATPSPlayerState::TryGetGameState()
 			this,
 			&ATPSPlayerState::LoopSetGameState,  //用匿名函数会闪退(?)
 			0.2,
-			true
+			true,
+			0
 			);
 	}
 }
@@ -47,6 +53,15 @@ void ATPSPlayerState::LoopSetGameState()
 	if(CurGameState)
 	{
 		GetWorldTimerManager().ClearTimer(FGetGameStateHandle);
+	}
+	else
+	{
+		TryGetGameStateTimes++;
+		if(TryGetGameStateTimes >= 5 )
+		{
+			//超过5次还没成功就停止计时器
+			GetWorldTimerManager().ClearTimer(FGetGameStateHandle);
+		}
 	}
 }
 
@@ -91,15 +106,6 @@ void ATPSPlayerState::SetDeaths(int Deaths)
 	PlayerDataInGame.Deaths = Deaths;
 }
 
-int ATPSPlayerState::GetTeamID() const
-{
-	return PlayerDataInGame.TeamID;
-}
-
-void ATPSPlayerState::SetTeamID(int TeamID)
-{
-	PlayerDataInGame.TeamID = TeamID;
-}
 #pragma endregion GetterAndSetter
 
 void ATPSPlayerState::AddPersonalScore(int PersonalScore)
@@ -122,9 +128,9 @@ void ATPSPlayerState::GainPickUpScore_Implementation(const FString& PickUpName)
 	OnGainScore.Broadcast(this, EGainScoreType::PickUpScoreProp, PickUpName);
 }
 
-void ATPSPlayerState::GainKill_Implementation(const FString& VictimName, int VictimID, int VictimTeamID)
+void ATPSPlayerState::GainKill_Implementation(const FString& VictimName, int VictimID, ETeam VictimTeam)
 {
-	if(CheckCanGainKillScore(VictimID, VictimTeamID))
+	if(CheckCanGainKillScore(VictimID, VictimTeam))
 	{
 		//自尽或者杀了队友都不算数
 		AddKills(1);
@@ -134,17 +140,34 @@ void ATPSPlayerState::GainKill_Implementation(const FString& VictimName, int Vic
 	OnKillOtherPlayers.Broadcast(this, VictimName);
 }
 
-void ATPSPlayerState::PlayerStateGainScore(int NewScore)
+void ATPSPlayerState::PlayerStateGainScore(int AddScore)
 {
-	AddPersonalScore(NewScore);
+	AddPersonalScore(AddScore);
 	UWorld* World = GetWorld();
 	if(World)
 	{
 		ATPSGameState* GS = Cast<ATPSGameState>(World->GetGameState());
 		if(GS)
 		{
-			GS->UpdateScoreBoard(GetPlayerId(), GetTeamID(), GetPersonalScore());
+			GS->UpdateScoreBoard(GetPlayerId(), Team, AddScore);
 		}
+	}
+}
+
+void ATPSPlayerState::SetTeam(ETeam NewTeam)
+{
+	//此函数在TeamGameMode.cpp中调用，所以是服务端调用
+	Team = NewTeam;
+	SetPawnBodyColor();
+}
+
+void ATPSPlayerState::SetPawnBodyColor()
+{
+	//如果是刚初始化时设置,PlayerPawn还不存在,设置颜色不会成功
+	ASCharacter* MyPlayer = GetPawn<ASCharacter>();
+	if(MyPlayer)
+	{
+		MyPlayer->SetBodyColor(Team);
 	}
 }
 
@@ -152,12 +175,12 @@ void ATPSPlayerState::CopyProperties(APlayerState* PlayerState)
 {
 	Super::CopyProperties(PlayerState);
 
-	ASCharacter* Player = Cast<ASCharacter>(GetInstigator());
-	if(Player && Player->GetInventoryComponent())
+	ASCharacter* MyPlayer = GetPawn<ASCharacter>();
+	if(MyPlayer && MyPlayer->GetInventoryComponent())
 	{
-		if(Player->GetInventoryComponent()->ItemList.Num() > 0)
+		if(MyPlayer->GetInventoryComponent()->ItemList.Num() > 0)
 		{
-			ItemList = Player->GetInventoryComponent()->ItemList;
+			ItemList = MyPlayer->GetInventoryComponent()->ItemList;
 			ItemList.Shrink();
 		}
 		else

@@ -5,6 +5,11 @@
 #include "SCharacter.h"
 #include "TPSGameState.h"
 
+ATPSGameMode::ATPSGameMode()
+{
+	bIsTeamMatchMode = false;
+}
+
 void ATPSGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -83,17 +88,29 @@ bool ATPSGameMode::ReadyToEndMatch_Implementation()
 	
 	if(MyGameState)
 	{
-		TMap<int, int> TempMap = bIsTeamMatchMode ? MyGameState->TeamScoreBoard : MyGameState->PlayerScoreBoard;
-		TArray<int> TempKeysArray;
-		TempMap.GetKeys(TempKeysArray);
-		for(auto& TempID : TempKeysArray)
+		if(!bIsTeamMatchMode)
 		{
-			if(TempMap.Find(TempID) && TempMap.FindRef(TempID) >= WinThreshold)
+			TMap<int, int> TempMap = MyGameState->PlayerScoreBoard;
+			TArray<int> TempKeysArray;
+			TempMap.GetKeys(TempKeysArray);
+			for(auto& TempID : TempKeysArray)
 			{
-				WinnerID = bIsTeamMatchMode ? -1 : TempID;
-				WinningTeamID = bIsTeamMatchMode ? TempID : -1;
-				OnMatchEnd.Broadcast(WinnerID, WinningTeamID);
-
+				if(TempMap.Find(TempID) && TempMap.FindRef(TempID) >= WinThreshold)
+				{
+					WinnerID = TempID;
+					WinningTeam = ETeam::ET_NoTeam;
+					OnMatchEnd.Broadcast(WinnerID, WinningTeam);
+					return true;
+				}
+			}
+		}
+		else
+		{
+			WinnerID = -1;
+			WinningTeam = MyGameState->GetWinningTeam();
+			if(WinningTeam != ETeam::ET_NoTeam)
+			{
+				OnMatchEnd.Broadcast(WinnerID, WinningTeam);
 				return true;
 			}
 		}
