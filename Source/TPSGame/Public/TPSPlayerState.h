@@ -57,8 +57,8 @@ enum EGainScoreType
 	HealTeammate
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnKillOtherPlayers, APlayerState*, PlayerState, const FString&, Victim);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnGainScore, APlayerState*, Gainer, EGainScoreType, GainScoreReason, const FString&, RightName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnKillOtherPlayers, ATPSPlayerState*, PlayerState, const FString&, VictimName, ETeam, VictimTeam);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnGainScore, ATPSPlayerState*, Gainer, EGainScoreType, GainScoreReason, const FString&, RightName, ETeam, VictimTeam);
 
 UCLASS()
 class TPSGAME_API ATPSPlayerState : public APlayerState

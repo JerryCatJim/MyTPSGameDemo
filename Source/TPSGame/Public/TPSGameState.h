@@ -53,18 +53,18 @@ protected:
 	void SortPlayerScoreRank(int PlayerIdToIgnore = -1, bool RemovePlayer = false);
 	
 	UFUNCTION(Server, Reliable)
-	void Server_AnnounceKill(APlayerState* Killer, const FString& Victim);
+	void Server_AnnounceKill(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_AnnounceKill(APlayerState* Killer, const FString& Victim);
+	void Multi_AnnounceKill(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void AnnounceGainKill(APlayerState* Killer, const FString& Victim);
+	void AnnounceGainKill(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam);
 
 	UFUNCTION(Server, Reliable)
-	void Server_GainScore(APlayerState* Gainer, EGainScoreType GainScoreReason, const FString& RightName);
+	void Server_GainScore(ATPSPlayerState* Gainer, EGainScoreType GainScoreReason, const FString& VictimName, ETeam VictimTeam);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_GainScore(APlayerState* Gainer, EGainScoreType GainScoreReason, const FString& RightName);
+	void Multi_GainScore(ATPSPlayerState* Gainer, EGainScoreType GainScoreReason, const FString& VictimName, ETeam VictimTeam);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void AnnounceGainScore(APlayerState* Gainer, EGainScoreType GainScoreReason, const FString& RightName);
+	void AnnounceGainScore(ATPSPlayerState* Gainer, EGainScoreType GainScoreReason, const FString& VictimName, ETeam VictimTeam);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_CallRefreshScoreUI(const TArray<FPlayerDataInGame>& PlayerDataArray);

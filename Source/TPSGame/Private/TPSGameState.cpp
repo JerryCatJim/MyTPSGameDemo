@@ -236,38 +236,38 @@ void ATPSGameState::Multi_CallRefreshScoreUI_Implementation(const TArray<FPlayer
 	OnScoreUpdated.Broadcast(PlayerDataArray);
 }
 
-void ATPSGameState::Server_AnnounceKill_Implementation(APlayerState* Killer, const FString& Victim)
+void ATPSGameState::Server_AnnounceKill_Implementation(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam)
 {
-	Multi_AnnounceKill(Killer, Victim);
+	Multi_AnnounceKill(Killer, Victim, VictimTeam);
 }
 
-void ATPSGameState::Multi_AnnounceKill_Implementation(APlayerState* Killer, const FString& Victim)
+void ATPSGameState::Multi_AnnounceKill_Implementation(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam)
 {
 	//子类不要重载组播，而是重载组播调用的函数，否则会导致客户端多调用一次事件：
 	//因为Server端的子类Multi调用了父类的Multi，此时父类Multi在Server和Client都执行了一次，
 	//再走到客户端重写的Multi，又调用了一次父类Multi，此时客户端又执行一次，
 	//所以客户端一共执行了两次Multi
-	AnnounceGainKill(Killer, Victim);
+	AnnounceGainKill(Killer, Victim, VictimTeam);
 }
 
-void ATPSGameState::AnnounceGainKill_Implementation(APlayerState* Killer, const FString& Victim)
+void ATPSGameState::AnnounceGainKill_Implementation(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam)
 {
 	//蓝图里Override了
 }
 
-void ATPSGameState::Server_GainScore_Implementation(APlayerState* Gainer, EGainScoreType GainScoreReason,
-	const FString& RightName)
+void ATPSGameState::Server_GainScore_Implementation(ATPSPlayerState* Gainer, EGainScoreType GainScoreReason,
+	const FString& VictimName, ETeam VictimTeam)
 {
-	Multi_GainScore(Gainer, GainScoreReason, RightName);
+	Multi_GainScore(Gainer, GainScoreReason, VictimName, VictimTeam);
 }
 
-void ATPSGameState::Multi_GainScore_Implementation(APlayerState* Gainer, EGainScoreType GainScoreReason,
-	const FString& RightName)
+void ATPSGameState::Multi_GainScore_Implementation(ATPSPlayerState* Gainer, EGainScoreType GainScoreReason,
+	const FString& VictimName, ETeam VictimTeam)
 {
-	AnnounceGainScore(Gainer, GainScoreReason, RightName);
+	AnnounceGainScore(Gainer, GainScoreReason, VictimName, VictimTeam);
 }
 
-void ATPSGameState::AnnounceGainScore_Implementation(APlayerState* Gainer, EGainScoreType GainScoreReason, const FString& RightName)
+void ATPSGameState::AnnounceGainScore_Implementation(ATPSPlayerState* Gainer, EGainScoreType GainScoreReason, const FString& VictimName, ETeam VictimTeam)
 {
 	//蓝图里Override了
 }

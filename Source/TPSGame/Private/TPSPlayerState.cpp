@@ -125,7 +125,7 @@ void ATPSPlayerState::AddDeaths(int Deaths)
 
 void ATPSPlayerState::GainPickUpScore_Implementation(const FString& PickUpName)
 {
-	OnGainScore.Broadcast(this, EGainScoreType::PickUpScoreProp, PickUpName);
+	OnGainScore.Broadcast(this, EGainScoreType::PickUpScoreProp, PickUpName, ETeam::ET_NoTeam);
 }
 
 void ATPSPlayerState::GainKill_Implementation(const FString& VictimName, int VictimID, ETeam VictimTeam)
@@ -134,10 +134,11 @@ void ATPSPlayerState::GainKill_Implementation(const FString& VictimName, int Vic
 	{
 		//自尽或者杀了队友都不算数
 		AddKills(1);
-		OnGainScore.Broadcast(this, KillPlayerEnemy, VictimName);
+		//触发了TPSGameState里的Server_GainScore
+		OnGainScore.Broadcast(this, KillPlayerEnemy, VictimName, VictimTeam);
 	}
 	//触发TPSGameState里的Server_AnnounceKill
-	OnKillOtherPlayers.Broadcast(this, VictimName);
+	OnKillOtherPlayers.Broadcast(this, VictimName, VictimTeam);
 }
 
 void ATPSPlayerState::PlayerStateGainScore(int AddScore)

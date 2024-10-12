@@ -512,6 +512,7 @@ void ASCharacter::OnHealthChanged(class USHealthComponent* OwningHealthComponent
 		{
 			bDied = true;
 			OnRep_Died();
+			//BP_PlayerCharacter蓝图里绑定了, PlayerDead_Bind函数
 			OnPlayerDead.Broadcast(InstigatedBy, DamageCauser, DamageType);
 		}
 	}
