@@ -26,6 +26,8 @@ public:
 	//GameMode存在于服务器，不用加Server关键字
 	void RespawnPlayer(APlayerController* PlayerController);
 
+	virtual float CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage);
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -48,6 +50,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsTeamMatchMode;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
+	bool bCanAttackTeammate = false;  //是否开启友军伤害
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
+	float TeammateDamageRate;  //友军伤害倍率
+	
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	class ATPSGameState* MyGameState;

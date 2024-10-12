@@ -9,6 +9,8 @@
 ATeamGameMode::ATeamGameMode()
 {
 	bIsTeamMatchMode = true;
+	bCanAttackTeammate = true;
+	TeammateDamageRate = 0.2;
 }
 
 void ATeamGameMode::PostLogin(APlayerController* NewPlayer)
@@ -40,6 +42,23 @@ void ATeamGameMode::Logout(AController* Exiting)
 			}
 		}
 	}
+}
+
+float ATeamGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
+{
+	if(Attacker == nullptr || Victim == nullptr) return 0;
+	
+	ATPSPlayerState* AttackerPS = Attacker->GetPlayerState<ATPSPlayerState>();
+	ATPSPlayerState* VictimPS = Victim->GetPlayerState<ATPSPlayerState>();
+
+	if(AttackerPS == nullptr || VictimPS == nullptr) return BaseDamage;
+	if(AttackerPS == VictimPS) return BaseDamage;  //自己打自己
+	if(AttackerPS->GetTeam() == VictimPS->GetTeam())
+	{
+		return bCanAttackTeammate ? BaseDamage * TeammateDamageRate : 0.0f;
+	}
+
+	return BaseDamage;
 }
 
 void ATeamGameMode::HandleMatchHasStarted()

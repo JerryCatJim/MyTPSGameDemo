@@ -2,6 +2,8 @@
 
 
 #include "Component/SHealthComponent.h"
+
+#include "GameMode/TPSGameMode.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
@@ -25,12 +27,13 @@ void USHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	MyOwnerPawn = Cast<APawn>(GetOwner());
+	
 	if(GetOwnerRole() == ROLE_Authority)  //如果所属角色具有主控权（服务器）
 	{
-		AActor* MyOwner = GetOwner();
-		if(MyOwner)
+		if(MyOwnerPawn)
 		{
-			MyOwner->OnTakeAnyDamage.AddDynamic(this, &USHealthComponent::HandleTakeAnyDamage);  //Actor.h中自带的动态委托，受到伤害后OnTakeAnyDamage会Broadcast绑定的函数
+			MyOwnerPawn->OnTakeAnyDamage.AddDynamic(this, &USHealthComponent::HandleTakeAnyDamage);  //Actor.h中自带的动态委托，受到伤害后OnTakeAnyDamage会Broadcast绑定的函数
 		}
 	}
 	
@@ -51,14 +54,23 @@ void USHealthComponent::HandleTakeAnyDamage_Implementation(AActor* DamagedActor,
 	{
 		return;
 	}
-
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	
+	float CurDamage = Damage;
+	ATPSGameMode* MyGameMode = GetWorld()->GetAuthGameMode<ATPSGameMode>();
+	if(MyGameMode)
+	{
+		AController* OwnerController = MyOwnerPawn ? MyOwnerPawn->GetController() : nullptr;
+		CurDamage = MyGameMode->CalculateDamage(InstigatedBy, OwnerController, Damage);
+	}
+	
+	Health = FMath::Clamp(Health - CurDamage, 0.f, MaxHealth);
 
 	//在(例如血条UI等)蓝图中绑定好事件，通过广播可以接收
-	//OnHealthChanged.Broadcast(this, Health, -Damage, DamageType, InstigatedBy, DamageCauser);
-	
-	//传入Health是因为多播时 Health还没从服务端复制到客户端
-	Multi_OnHealthChangedBoardCast(Health, -Damage, DamageType, InstigatedBy, DamageCauser);
+	//OnHealthChanged.Broadcast(this, Health, -CurDamage, DamageType, InstigatedBy, DamageCauser);
+
+	//改用Multi而不是OnRep_Health是因为想传递DamageType, InstigatedBy, DamageCauser，用OnRep_Health无法满足
+	//参数传入Health是因为多播时 Health可能还没从服务端复制到客户端
+	Multi_OnHealthChangedBoardCast(Health, -CurDamage, DamageType, InstigatedBy, DamageCauser);
 	
 	UE_LOG(LogTemp, Log, TEXT("Health Changed: %s"), *FString::SanitizeFloat(Health));
 }

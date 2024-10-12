@@ -82,6 +82,11 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 	RestartPlayer(PlayerController);
 }
 
+float ATPSGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
+{
+	return BaseDamage;
+}
+
 bool ATPSGameMode::ReadyToEndMatch_Implementation()
 {
 	//const bool RetVal = Super::ReadyToEndMatch_Implementation();

@@ -60,5 +60,7 @@ protected:
 	//默认生命值
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= HealthComponent)
 	float MaxHealth;
-	
+
+	UPROPERTY()
+	APawn* MyOwnerPawn;
 };
