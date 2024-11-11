@@ -10,6 +10,8 @@
 
 void UReturnToMainMenu::MenuSetup()
 {
+	if(bReturnToMainMenuOpen == true) return;
+	
 	AddToViewport();
 	SetVisibility(ESlateVisibility::Visible);
 	bIsFocusable = true;
@@ -104,6 +106,10 @@ bool UReturnToMainMenu::Initialize()
 	{
 		MyPlayerController->OnPlayerLeaveGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
 	}
+
+	MenuSetup();
+	bReturnToMainMenuOpen = true;
+	
 	return true;
 }
 
