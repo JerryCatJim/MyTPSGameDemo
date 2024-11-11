@@ -123,7 +123,7 @@ bool ATPSGameMode::ReadyToEndMatch_Implementation()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("TPSGameMode : %s中的TPSGameState转换失败"), *FString(__FUNCTION__));
+		//UE_LOG(LogTemp, Error, TEXT("TPSGameMode : %s中的TPSGameState转换失败"), *FString(__FUNCTION__));
 		return false;
 	}
 }

@@ -32,6 +32,13 @@ protected:
 private:
 	UFUNCTION()
 	void ReturnButtonClicked();
+
+public:
+	UPROPERTY(EditDefaultsOnly)
+	bool bShowWidgetAfterCreate = false;
+
+	UPROPERTY(EditDefaultsOnly)
+	bool bCanAddToViewport = true;  //已经有parentview的就不要加入viewport
 	
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -43,5 +50,5 @@ private:
 	UPROPERTY()
 	class ATPSPlayerController* MyPlayerController;
 	
-	bool bReturnToMainMenuOpen = false;
+	bool bShowWidget = false;
 };

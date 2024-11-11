@@ -10,9 +10,10 @@
 
 void UReturnToMainMenu::MenuSetup()
 {
-	if(bReturnToMainMenuOpen == true) return;
-	
-	AddToViewport();
+	if(bCanAddToViewport)
+	{
+		AddToViewport();
+	}
 	SetVisibility(ESlateVisibility::Visible);
 	bIsFocusable = true;
 
@@ -71,8 +72,8 @@ void UReturnToMainMenu::MenuTearDown()
 
 void UReturnToMainMenu::ShowOrHideReturnToMainMenu()
 {
-	bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
-	if(bReturnToMainMenuOpen)
+	bShowWidget = !bShowWidget;
+	if(bShowWidget)
 	{
 		MenuSetup();
 	}
@@ -107,8 +108,11 @@ bool UReturnToMainMenu::Initialize()
 		MyPlayerController->OnPlayerLeaveGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
 	}
 
-	MenuSetup();
-	bReturnToMainMenuOpen = true;
+	if(bShowWidgetAfterCreate)
+	{
+		MenuSetup();
+		bShowWidget = true;
+	}
 	
 	return true;
 }
