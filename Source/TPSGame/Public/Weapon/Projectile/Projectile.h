@@ -47,6 +47,8 @@ protected:
 	UPROPERTY()
 	class ASWeapon* OwnerWeapon;
 
+	float HeadShotBonusRate = 1;
+
 	UPROPERTY()
 	TSubclassOf<UDamageType> DamageTypeClass;
 	

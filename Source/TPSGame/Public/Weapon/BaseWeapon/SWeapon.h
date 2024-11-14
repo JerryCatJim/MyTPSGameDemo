@@ -4,25 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "WeaponAndBulletType/WeaponType.h"
+#include "WeaponAndBulletType/BulletType.h"
 #include "SWeapon.generated.h"
-
-UENUM(BlueprintType)
-enum EWeaponBulletType
-{
-	HitScan,
-	Projectile,
-};
-
-UENUM(BlueprintType)
-enum EWeaponType
-{
-	Rifle,
-	Pistol,
-	RocketLauncher,
-	ShotGun,
-	MachineGun,
-	SniperRifle,
-};
 
 USTRUCT(BlueprintType)
 struct FWeaponPickUpInfo

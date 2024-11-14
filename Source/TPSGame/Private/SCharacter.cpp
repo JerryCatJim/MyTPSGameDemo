@@ -374,8 +374,11 @@ void ASCharacter::ResetWeaponZoom()
 void ASCharacter::PickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 {
 	const FWeaponPickUpInfo LastWeaponInfo = GetWeaponPickUpInfo();
-	StopReload();
+	
+	//要先StopFire在StopReload，否则会导致0子弹时更换武器，StopFire中因为0子弹又执行了一次Reload，生成武器后的新武器子弹数没及时刷新时又执行一次换弹
+	//（当然，你也可以生成时再执行一次StopReload，但我感觉那样不好）
 	StopFire();
+	StopReload();
 	
 	//把旧武器信息广播出去，可用于和地上可拾取武器的信息互换
 	OnPickUpWeapon.Broadcast(LastWeaponInfo);

@@ -43,6 +43,9 @@ void AProjectile::BeginPlay()
 
 	OwnerWeapon = Cast<ASWeapon>(GetOwner());
 	DamageTypeClass = OwnerWeapon ? OwnerWeapon->GetWeaponDamageType() : UDamageType::StaticClass();
+
+	//射出子弹后立刻更换武器可能导致OwnerWeapon被销毁(与地面武器交换或丢弃等操作)，所以会取不到GetHeadShotBonus()，因此提前记录，然后在OnHit爆头时直接取用数值防止崩溃
+	HeadShotBonusRate = OwnerWeapon ? OwnerWeapon->GetHeadShotBonus() : 1;
 	
 	if(Tracer)
 	{
@@ -82,9 +85,14 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		{
 			FVector EyeLocation;
 			FRotator EyeRotation;
-			OwnerWeapon->GetOwner()->GetActorEyesViewPoint(EyeLocation,EyeRotation);
-			//伤害效果射击方位
-			ShotDirection = EyeRotation.Vector();
+			//射出子弹后立刻更换武器可能导致OwnerWeapon被销毁(与地面武器交换或丢弃等操作)，所以会取不到GetOwner导致空指针游戏崩溃
+			//如果射出子弹后，命中前开枪人物立刻被销毁也可能崩溃，所以做好边界限制
+			if(OwnerWeapon->GetOwner())
+			{
+				OwnerWeapon->GetOwner()->GetActorEyesViewPoint(EyeLocation,EyeRotation);
+				//伤害效果射击方位(只有TakePointDamage会用到)
+				ShotDirection = EyeRotation.Vector();
+			}
 		}
 		
 		if(!bIsAoeDamage)  //火箭筒是Aoe伤害，不用做单点射线检测
@@ -107,7 +115,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 				//爆头伤害加成
 				if(SurfaceType == Surface_FleshVulnerable)
 				{
-					ActualDamage *= OwnerWeapon ? OwnerWeapon->GetHeadShotBonus() : 1;
+					ActualDamage *= HeadShotBonusRate;
 				}
 			}
 		}
