@@ -42,6 +42,9 @@ void APickUpWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//记录原始武器信息
+	OriginalWeaponInfo = WeaponPickUpInfo;
+
 	//从C++中获取蓝图类
 	const FString WidgetClassLoadPath = FString(TEXT("/Game/UI/WBP_ItemPickUpTip.WBP_ItemPickUpTip_C"));//蓝图一定要加_C这个后缀名
 	UClass* Widget = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
@@ -90,6 +93,12 @@ void APickUpWeapon::TryPickUpWeapon()
 	}
 }
 
+void APickUpWeapon::RefreshOriginalWeapon()
+{
+	Server_ResetPickUpWeaponInfo(OriginalWeaponInfo);
+}
+
+
 void APickUpWeapon::OnRep_WeaponPickUpInfo()
 {
 	//拾取武器后 地上武器的提示文字名字和Mesh没改为被换下来的武器，手动刷新一下
@@ -114,7 +123,8 @@ void APickUpWeapon::OnCapsuleComponentBeginOverlap(UPrimitiveComponent* Overlapp
 		{
 			return;
 		}
-		LastOverlapPlayer->OnInteractKeyDown.AddDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+		LastOverlapPlayer->OnInteractKeyUp.AddDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+		LastOverlapPlayer->OnInteractKeyLongPress.AddDynamic(this, &APickUpWeapon::RefreshOriginalWeapon);
 		//OnPickUpWeapon在SCharacter中仅服务端广播，但广播收到后会触发这里的Multicast函数，无所谓了
 		LastOverlapPlayer->OnPickUpWeapon.AddDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		//角色在拾取范围内死亡时也关闭文字显示
@@ -136,7 +146,8 @@ void APickUpWeapon::OnCapsuleComponentEndOverlap(UPrimitiveComponent* Overlapped
 		{
 			return;
 		}
-		LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+		LastOverlapPlayer->OnInteractKeyUp.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+		LastOverlapPlayer->OnInteractKeyLongPress.RemoveDynamic(this, &APickUpWeapon::RefreshOriginalWeapon);
 		LastOverlapPlayer->OnPickUpWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
 		ShowTipWidget(false);
@@ -186,7 +197,8 @@ void APickUpWeapon::OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser
 	{
 		ShowTipWidget(false);
 		
-		LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+		LastOverlapPlayer->OnInteractKeyUp.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+		LastOverlapPlayer->OnInteractKeyLongPress.RemoveDynamic(this, &APickUpWeapon::RefreshOriginalWeapon);
 		LastOverlapPlayer->OnPickUpWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
 		

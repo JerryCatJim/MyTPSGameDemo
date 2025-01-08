@@ -360,7 +360,7 @@ protected:
 	float BulletSpread;
 	
 	//连续射击速度(每分钟射速,不是两发之间的秒数间隔)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category= Weapon, meta=(ClampMin = 100.f, ClampMax = 900.f))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly,Category= Weapon, meta=(ClampMin = 1.f, ClampMax = 9999.f))
 	float RateOfShoot;
 
 	//射击间隔(60除以射击速度)

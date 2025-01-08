@@ -34,6 +34,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void TryPickUpWeapon();
+
+	UFUNCTION(BlueprintCallable) //将当前武器刷新为最初设定的武器
+	void RefreshOriginalWeapon();
 	
 protected:
 	// Called when the game starts or when spawned
@@ -62,6 +65,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;
+	//最初被设定的提供的武器
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FWeaponPickUpInfo OriginalWeaponInfo;
 	
 	UPROPERTY(VisibleAnywhere)
 	ASCharacter* LastOverlapPlayer;

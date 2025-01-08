@@ -264,15 +264,58 @@ void ASCharacter::EndCrouch()
 
 void ASCharacter::InteractKeyPressed()//_Implementation()
 {
-	if(bDisableGamePlayInput) return;
+	if(bDisableGamePlayInput || bDied) return;
+
+	//对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 	//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
 	OnInteractKeyDown.Broadcast();
+	
+	TryLongPressInteractKey();
 }
 
 void ASCharacter::InteractKeyReleased()//_Implementation()
 {
-	if(bDisableGamePlayInput) return;
+	if(bDisableGamePlayInput || bDied) return;
+
+	//松开按键就清除长按计时器
+	GetWorldTimerManager().ClearTimer(FInteractKeyLongPressBeginHandle);
+	GetWorldTimerManager().ClearTimer(FInteractKeyLongPressFinishHandle);
+	
+	if(!bIsLongPressing) //如果按住时间太短，未进入长按状态，则执行普通按键逻辑
+	{
+		OnInteractKeyUp.Broadcast();
+	}
+	bIsLongPressing = false;
 }
+
+void ASCharacter::TryLongPressInteractKey()
+{
+	if(bDisableGamePlayInput || bDied) return;
+
+	//进入长按状态
+	GetWorldTimerManager().SetTimer(
+	FInteractKeyLongPressBeginHandle,
+	this,
+	&ASCharacter::BeginLongPressInteractKey,
+	InteractKeyLongPressBeginSecond,
+	false);
+}
+
+void ASCharacter::BeginLongPressInteractKey()
+{
+	bIsLongPressing = true;
+	//例如 长按0.5秒后进入长安状态后，在 2 - 0.5 秒后执行长按完成的广播
+	GetWorldTimerManager().SetTimer(
+	FInteractKeyLongPressFinishHandle,
+	[this]()->void
+	{
+		//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
+		OnInteractKeyLongPress.Broadcast();
+	},
+	InteractKeyLongPressFinishSecond - InteractKeyLongPressBeginSecond,
+	false);
+}
+
 
 // Called to bind functionality to input
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

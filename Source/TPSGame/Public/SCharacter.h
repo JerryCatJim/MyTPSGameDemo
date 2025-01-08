@@ -15,7 +15,9 @@
 #include "SCharacter.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyUp);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyLongPress);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FPlayerDead, AController*, InstigatedBy, AActor*, DamageCauser,const UDamageType*, DamageType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickUpWeapon, FWeaponPickUpInfo, OldWeaponInfo);
 
@@ -74,7 +76,11 @@ public:
 	void InteractKeyPressed();
 	UFUNCTION(BlueprintCallable)//, Server, Reliable)
 	void InteractKeyReleased();
-	
+	UFUNCTION(BlueprintCallable)//, Server, Reliable)
+	//尝试长按交互键
+	void TryLongPressInteractKey();
+	//进入长按状态
+	void BeginLongPressInteractKey();
 	
 	//重写,获取摄像机组件位置
 	virtual FVector GetPawnViewLocation() const override;
@@ -196,8 +202,12 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPickUpWeapon OnPickUpWeapon;
 
+	UPROPERTY(BlueprintAssignable)  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件
+	FOnInteractKeyUp OnInteractKeyDown;
 	UPROPERTY(BlueprintAssignable)
-	FOnInteractKeyDown OnInteractKeyDown;
+	FOnInteractKeyUp OnInteractKeyUp;
+	UPROPERTY(BlueprintAssignable)
+	FOnInteractKeyLongPress OnInteractKeyLongPress;
 
 	//防止同时与多个可拾取武器发生重叠时间
 	bool bHasBeenOverlappedWithPickUpWeapon = false;
@@ -278,6 +288,22 @@ protected:
 	UMaterialInstance* RedMaterial;
 	UPROPERTY(EditAnywhere, Category=PlayerColor)
 	UMaterialInstance* BlueMaterial;
+
+	//按X秒互动键(E)判定进入长按的计时器
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PlayerTimer)
+	FTimerHandle FInteractKeyLongPressBeginHandle;
+	//按X秒进入长按
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
+	float InteractKeyLongPressBeginSecond = 0.5f;
+	//是否进入长按状态
+	bool bIsLongPressing;
+	
+	//长按X秒互动键(E)完成长按的计时器
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = PlayerTimer)
+	FTimerHandle FInteractKeyLongPressFinishHandle;
+	//按X秒完成长按
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
+	float InteractKeyLongPressFinishSecond = 2.f;
 	
 private:
 	bool bPlayerLeftGame = false;
