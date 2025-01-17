@@ -59,6 +59,18 @@ protected:
 	UPROPERTY(EditAnywhere)
 	bool bIsAoeDamage = false;
 
+	//被发射时的时间，配合命中时的时间来做例如刚发射时就因碰撞问题Hit到自己还是发射了一段时间后才Hit自己
+	float SpawnTime = 0;
+	float OnHitTime = 0;
+	float LastOnHitTime = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)  //子弹发射的x秒内无法命中发射者自身
+	float CannotHitOwnerTimeAfterSpawn = 0.5;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)  //子弹是否可以命中发射者自身
+	bool bCanHitOwner = true;
+
+	bool bOnHitSuccessful = false;  //鉴于上面设定的子弹在一定时间内可以多次碰撞发射者，记录真正完成有效Hit的结果，以供子类做一些逻辑判断判断
+	
 private:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComponent;

@@ -92,16 +92,12 @@ void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor, float Actual
 
 void ARocketProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//有较低概率会发射火箭筒时直接炸到自己，配合RocketMovementComponent在炸到自己时让火箭弹继续飞行而不是停在空中
-	if(OtherActor == GetInstigator())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Rocket Hit Self."));
-		return;
-	}
-	
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
 
-	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &ARocketProjectile::DestroyTimerFinished, DestroyTime, false);
+	if(bOnHitSuccessful)  //发射物有可能碰撞到发射者自身并不产生碰撞行为，此时视为没发生过碰撞，所以需要判断真正碰撞后才开始计时器
+	{
+		GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &ARocketProjectile::DestroyTimerFinished, DestroyTime, false);
+	}
 }
 
 void ARocketProjectile::PostOnHit()
@@ -121,4 +117,19 @@ void ARocketProjectile::PostOnHit()
 void ARocketProjectile::DestroyTimerFinished()
 {
 	Destroy();
+}
+
+void ARocketProjectile::Destroyed()
+{
+	Super::Destroyed();
+
+	//防止弹头突然被销毁时没有同步关闭粒子系统
+	if(TrailSystemComponent && TrailSystemComponent->GetSystemInstance())
+	{
+		TrailSystemComponent->GetSystemInstance()->Deactivate();
+	}
+	if(ProjectileLoopComponent && ProjectileLoopComponent->IsPlaying())
+	{
+		ProjectileLoopComponent->Stop();
+	}
 }

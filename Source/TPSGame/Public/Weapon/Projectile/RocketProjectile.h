@@ -50,6 +50,8 @@ private:
 	
 public:
 	ARocketProjectile();
+
+	virtual void Destroyed() override;
 	
 protected:
 	virtual void BeginPlay() override;

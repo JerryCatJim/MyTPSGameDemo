@@ -62,8 +62,10 @@ void AProjectile::BeginPlay()
 	//在构造函数中绑定可能有些问题
 	if(HasAuthority())
 	{
-		//Bullet型Projectile的OnHit()在击中离人物很近的位置时，只有服务器响应了OnHit，客户端没响应(?)，击中远一点的地方时都响应(?)，所以还是改回Multicast同步特效等
+		//Bullet型Projectile的OnHit()在击中离人物很近的位置时，只有服务器响应了OnHit，客户端没响应(?)，击中远一点的地方时都响应(?)，所以还是改回只在服务器响应OnHit，使用Multicast同步特效等
 		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
+
+		SpawnTime = GetWorld()->GetTimeSeconds();
 	}
 }
 
@@ -73,6 +75,35 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	//EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
 	EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 	FVector HitLocation = GetActorLocation();
+
+	LastOnHitTime = OnHitTime;
+	OnHitTime = GetWorld()->GetTimeSeconds();
+	
+	//在面对后方时向前方射击，BulletProjectile子类有较低概率会打中自己(因为当时的枪口在身体后方)，配合BulletMovementComponent在打中自己时会停在空中等待(?难道需要手动处理让子弹向前瞬移一段距离还是怎么)
+	//RocketProjectile子类同理
+	if(HasAuthority())
+	{
+		if(OtherActor == GetInstigator() && bCanHitOwner )
+		{
+			if(OnHitTime - SpawnTime <= 0)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("子弹OnHit时间小于等于Spawn时间,时间有误."));
+				return;
+			}
+			if(OnHitTime - SpawnTime <= CannotHitOwnerTimeAfterSpawn )  //假设发射后很短时间(或自定义时间)内就击中了自身,则试图让子弹穿过自身
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Bullet Hit Self."));
+				SetActorLocation(GetActorLocation() + GetActorForwardVector()*GetWorld()->GetDeltaSeconds()*GetVelocity().Size());
+				return;
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Blue, TEXT("Bullet Damage Self."));
+			}
+		}
+	}
+
+	bOnHitSuccessful = true;
 	
 	if(HasAuthority()) //应用伤害效果只能在服务器
 	{
@@ -120,9 +151,9 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 			}
 		}
 		ApplyProjectileDamage(DamagedActor, ActualDamage, ShotDirection, NewHit);
+		Multi_PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
+		Multi_PostOnHit();
 	}
-	Multi_PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
-	Multi_PostOnHit();
 }
 
 void AProjectile::Multi_PostOnHit_Implementation()
@@ -132,7 +163,7 @@ void AProjectile::Multi_PostOnHit_Implementation()
 
 void AProjectile::PostOnHit()
 {
-	//子类RocketProjectile期望命中后延迟销毁来创造浓雾，所以在其类中设为false
+	//子类RocketProjectile期望命中后延迟销毁来创造浓雾，所以在其类中初始化时手动设为false
 	if(bDestroyOnHit)
 	{
 		Destroy();

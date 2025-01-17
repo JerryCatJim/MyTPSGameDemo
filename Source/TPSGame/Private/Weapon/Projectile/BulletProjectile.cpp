@@ -20,14 +20,12 @@ ABulletProjectile::ABulletProjectile()
 void ABulletProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
-	//在面对后方时向前方射击，子弹有较低概率会打中自己(因为当时的枪口在身体后方)，配合BulletMovementComponent在打中自己时继续飞行而不是停在空中
-	if(OtherActor == GetInstigator())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("Bullet Hit Self."));
-		return;
-	}
-	
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+	
+	//if(bOnHitSuccessful)  //发射物有可能碰撞到发射者自身并不产生碰撞行为，此时视为没发生过碰撞，所以需要判断真正碰撞后才开始一些自定义逻辑
+	//{
+	//	//
+	//}
 }
 
 void ABulletProjectile::ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage, const FVector& HitFromDirection, const FHitResult& HitResult)
