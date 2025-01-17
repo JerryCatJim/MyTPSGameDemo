@@ -480,6 +480,9 @@ void ASCharacter::DropWeapon_Implementation()
 			UClass* Widget = LoadClass<UUserWidget>(nullptr, *WidgetClassLoadPath);
 			PickUpWeapon->WidgetComponent->SetWidgetClass(Widget);
 			PickUpWeapon->bCanMeshDropOnTheGround = true;
+
+			//主动扔掉的武器不能长按刷新为原武器(场景内摆放的或者什么道具点刷新的才可以)
+			PickUpWeapon->bCanInteractKeyLongPress = false;
 			
 			PickUpWeapon->FinishSpawning(FTransform(GetActorLocation()));
 		}

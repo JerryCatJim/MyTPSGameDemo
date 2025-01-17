@@ -52,6 +52,9 @@ protected:
 
 	UFUNCTION()
 	void OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser,const UDamageType* DamageType);
+
+	UFUNCTION()
+	void OnInteractKeyLongPressed();
 	
 public:
 	UPROPERTY(EditAnywhere, Category=Component)
@@ -75,7 +78,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)  //武器是否可以掉落在地面(拖进场景时默认悬浮，人物死亡后掉落时落到地上)
 	bool bCanMeshDropOnTheGround = false;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bCanInteractKeyLongPress = true;  //写在Protected里然后Public用Getter Setter更好，这里懒了就不做了
+protected:
+
 private:
-	//同一时间只能有一个可拾取武器发生重叠时间，记录那个是不是自己
+	//同一时间只能有一个可拾取武器发生重叠时间，记录正在发生重叠的武器是不是此武器自己
 	bool bIsThisTheOverlapOne = false;
 };
