@@ -253,4 +253,5 @@ void APickUpWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME(APickUpWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(APickUpWeapon, bCanMeshDropOnTheGround);
+	DOREPLIFETIME(APickUpWeapon, bCanInteractKeyLongPress);
 }
