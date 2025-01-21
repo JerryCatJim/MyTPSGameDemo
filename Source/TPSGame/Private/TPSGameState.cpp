@@ -21,8 +21,10 @@ void ATPSGameState::BeginPlay()
 			ATPSGameMode* MyGameMode = Cast<ATPSGameMode>(GetWorld()->GetAuthGameMode());
 			if(MyGameMode)
 			{
-				WinThreshold = MyGameMode->WinThreshold;
-				bIsTeamMatchMode = MyGameMode->bIsTeamMatchMode;
+				//GameMode只在服务器有，若GameState想实时同步这些变量的修改，可以在GameMode中设置一些委托绑定变量，以便在GameState中绑定，然后Replicate到客户端的GameState中以便读取
+				WinThreshold = MyGameMode->GetWinThreshold();
+				bIsTeamMatchMode = MyGameMode->GetIsTeamMatchMode();
+				RespawnCount = MyGameMode->GetRespawnCount();
 
 				MyGameMode->OnMatchEnd.AddDynamic(this, &ATPSGameState::OnMatchEnded);
 			}
@@ -283,4 +285,5 @@ void ATPSGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	//DOREPLIFETIME(ATPSGameState, WinningTeamID);
 	DOREPLIFETIME(ATPSGameState, RedTeamScore);
 	DOREPLIFETIME(ATPSGameState, BlueTeamScore);
+	DOREPLIFETIME(ATPSGameState, RespawnCount);
 }

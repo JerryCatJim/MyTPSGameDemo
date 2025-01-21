@@ -49,6 +49,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)  //必须加Server才能调用到GameState中(???)
 	void RefreshScoreBoardUI();
+
+	UFUNCTION(BlueprintCallable)
+	float GetRespawnCount();
 	
 protected:
 	virtual void SetupInputComponent() override;
@@ -100,6 +103,10 @@ protected:
 	FOnLagDetected OnLagDetected;
 	UPROPERTY(BlueprintAssignable)
 	FOnLagDetected OnLagEnded;
+	
+	//角色死亡后重生的计时器句柄
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
+	FTimerHandle FPlayerRespawnTimerHandle;
 
 private:
 	UPROPERTY(EditAnywhere, Category=HUD)

@@ -67,6 +67,12 @@ void ATPSPlayerController::RefreshScoreBoardUI_Implementation()
 	}
 }
 
+float ATPSPlayerController::GetRespawnCount()
+{
+	ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(GetWorld()));
+	return GS ? GS->GetRespawnCount() : -1 ;
+}
+
 void ATPSPlayerController::ShowReturnToMainMenu()
 {
 	if(ReturnToMainMenuClass == nullptr) return;
@@ -86,7 +92,22 @@ void ATPSPlayerController::RequestRespawn_Implementation()
 	ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	if(GM)
 	{
-		GM->RespawnPlayer(this);
+		const float RespawnCount = GM->GetRespawnCount();
+		if(RespawnCount >= 0)  //复活时间小于0 约定为禁止复活
+		{
+			//尝试复活
+			GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
+			[this, GM]()->void
+			{
+				GM->RespawnPlayer(this);
+			},
+			RespawnCount,
+			false);
+		}
+		else
+		{
+			//设置观战之类的逻辑
+		}
 	}
 }
 
@@ -124,6 +145,8 @@ void ATPSPlayerController::PlayerLeaveGame()//_Implementation()	//在ReturnToMai
 	{
 		MyCharacter->PlayerLeaveGame();
 	}
+
+	GetWorldTimerManager().ClearTimer(FPlayerRespawnTimerHandle);
 
 	if(IsLocalController()) //ReturnToMainMenu是UI，存在于本地，所以限制本地发送广播
 	{

@@ -42,7 +42,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateScoreBoard(int PlayerID, ETeam Team, int PlayerScore);
 
+#pragma region GetterAndSetter
 	ETeam GetWinningTeam();
+
+	int GetTeamScore(ETeam Team);
+	
+	UFUNCTION(BlueprintCallable)
+	float GetWinThreshold() const { return WinThreshold; }
+	UFUNCTION(BlueprintCallable)
+	float GetIsTeamMatchMode() const { return bIsTeamMatchMode; }
+	UFUNCTION(BlueprintCallable)
+	float GetRespawnCount() const { return RespawnCount; }
+#pragma endregion GetterAndSetter
 	
 protected:
 	virtual void BeginPlay() override;
@@ -73,13 +84,12 @@ protected:
 	void OnRep_RedTeamScore();
 	UFUNCTION()
 	void OnRep_BlueTeamScore();
-
-	int GetTeamScore(ETeam Team);
 	
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnScoreUpdated OnScoreUpdated;
-	
+
+	//这里的有些变量设置到protected里用Getter和Setter可能更好，暂时先不改了
 	UPROPERTY(BlueprintReadWrite)
 	TMap<int, int> PlayerScoreBoard;
 
@@ -87,13 +97,7 @@ public:
 	TMap<int, int> BlueTeamScoreBoard;
 	UPROPERTY(BlueprintReadWrite)
 	TMap<int, int> RedTeamScoreBoard;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
-	int WinThreshold;
-
-	UPROPERTY(BlueprintReadWrite, Replicated)
-	bool bIsTeamMatchMode;
-
+	
 	UPROPERTY(BlueprintReadWrite)//, Replicated)
 	TArray<FPlayerDataInGame> PlayerDataInGameArray;
 
@@ -126,4 +130,13 @@ public:
 	UPROPERTY(ReplicatedUsing=OnRep_BlueTeamScore)
 	int BlueTeamScore = 0;
 	
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	int WinThreshold;
+
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	bool bIsTeamMatchMode;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
+	float RespawnCount = -1;
 };

@@ -271,10 +271,6 @@ protected:
 	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Z;
 
-	//角色死亡后重生的计时器句柄
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
-	FTimerHandle FPlayerRespawnTimerHandle;
-
 	//角色重生倒计时
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerTimer)
 	float RespawnCount = 5;

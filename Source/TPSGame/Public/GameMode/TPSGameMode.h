@@ -25,8 +25,17 @@ public:
 	
 	//GameMode存在于服务器，不用加Server关键字
 	void RespawnPlayer(APlayerController* PlayerController);
-
+	
 	virtual float CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage);
+
+#pragma region GetterAndSetter
+	UFUNCTION(BlueprintCallable)
+	int GetWinThreshold() const { return WinThreshold; }
+	UFUNCTION(BlueprintCallable)
+	bool GetIsTeamMatchMode() const { return bIsTeamMatchMode; }
+	UFUNCTION(BlueprintCallable)
+	float GetRespawnCount() const { return RespawnCount; }
+#pragma endregion GetterAndSetter
 	
 protected:
 	virtual void BeginPlay() override;
@@ -37,7 +46,14 @@ protected:
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnMatchEnd OnMatchEnd;
-
+	
+	//这里的有些变量设置到protected里用Getter和Setter可能更好，暂时先不改了
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
+	bool bCanAttackTeammate = false;  //是否开启友军伤害
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
+	float TeammateDamageRate;  //友军伤害倍率
+	
+protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int WinThreshold = 5;
 
@@ -46,16 +62,13 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	ETeam WinningTeam;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsTeamMatchMode;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
-	bool bCanAttackTeammate = false;  //是否开启友军伤害
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
-	float TeammateDamageRate;  //友军伤害倍率
 	
-protected:
 	UPROPERTY(BlueprintReadOnly)
 	class ATPSGameState* MyGameState;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float RespawnCount = 5.f;  //若设定数值为小于0则意思为禁止复活
 };

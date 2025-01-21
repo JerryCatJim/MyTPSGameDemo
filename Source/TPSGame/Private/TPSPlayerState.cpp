@@ -27,8 +27,8 @@ bool ATPSPlayerState::CheckCanGainKillScore(int VictimID, ETeam VictimTeam)
 {
 	return VictimID != GetPlayerId() &&
 		CurGameState &&
-			(!CurGameState->bIsTeamMatchMode ||
-				(GetTeam() != VictimTeam && CurGameState->bIsTeamMatchMode));
+			(!CurGameState->GetIsTeamMatchMode() ||
+				(GetTeam() != VictimTeam && CurGameState->GetIsTeamMatchMode()));
 }
 
 void ATPSPlayerState::TryGetGameState()

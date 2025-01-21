@@ -595,21 +595,11 @@ void ASCharacter::OnRep_Died()
 		if(!bPlayerLeftGame)
 		{
 			//尝试复活
-			GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
-			[this]()->void
+			ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+			if(MyController)
 			{
-				ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
-				if(MyController)
-				{
-					MyController->RequestRespawn();
-				}
-			},
-			RespawnCount,
-			false);
-		}
-		else
-		{
-			GetWorldTimerManager().ClearTimer(FPlayerRespawnTimerHandle);
+				MyController->RequestRespawn();
+			}
 		}
 	}
 	
@@ -626,6 +616,8 @@ void ASCharacter::OnRep_Died()
 		
 	//获取胶囊体碰撞
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//死亡后Mesh仍处于站立状态？所以设置为无碰撞响应防止Projectile子弹继续击中虚空Mesh
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void ASCharacter::PlayerLeaveGame_Implementation()
