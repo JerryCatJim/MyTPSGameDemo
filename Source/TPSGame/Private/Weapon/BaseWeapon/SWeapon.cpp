@@ -81,12 +81,15 @@ void ASWeapon::BeginPlay()
 	//Owner在构造函数里拿不到，在BeginPlay里就拿到了(?)
 	MyOwner = Cast<ASCharacter>(GetOwner());
 
-	WeaponPickUpInfo.Owner = MyOwner;
-	WeaponPickUpInfo.WeaponClass = GetClass();
-	WeaponPickUpInfo.WeaponMesh = GetWeaponMeshComp()->SkeletalMesh;
-	WeaponPickUpInfo.CurrentAmmo = CurrentAmmoNum;
-	WeaponPickUpInfo.BackUpAmmo = BackUpAmmoNum;
-	WeaponPickUpInfo.WeaponName = WeaponName;
+	if(HasAuthority())
+	{
+		WeaponPickUpInfo.Owner = MyOwner;
+		WeaponPickUpInfo.WeaponClass = GetClass();
+		WeaponPickUpInfo.WeaponMesh = GetWeaponMeshComp()->SkeletalMesh;
+		WeaponPickUpInfo.CurrentAmmo = CurrentAmmoNum;
+		WeaponPickUpInfo.BackUpAmmo = BackUpAmmoNum;
+		WeaponPickUpInfo.WeaponName = WeaponName;
+	}
 }
 
 /*// Called every frame
@@ -126,6 +129,9 @@ void ASWeapon::RefreshWeaponInfo_Implementation(FWeaponPickUpInfo WeaponInfo)
 	GetWeaponMeshComp()->SetSkeletalMesh(WeaponInfo.WeaponMesh);
 	CurrentAmmoNum = WeaponInfo.CurrentAmmo;
 	BackUpAmmoNum = WeaponInfo.BackUpAmmo;
+
+	//客户端的CurrentAmmoNum没有设置Replicated，所以每次生成武器都会是默认值，需手动修改
+	ClientChangeCurrentAmmo(CurrentAmmoNum - OnePackageAmmoNum);
 }
 
 float ASWeapon::GetDynamicBulletSpread()

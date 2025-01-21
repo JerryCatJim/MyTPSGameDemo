@@ -100,6 +100,7 @@ void APickUpWeapon::RefreshOriginalWeapon()
 
 void APickUpWeapon::OnInteractKeyLongPressed()
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Blue, FString::Printf(TEXT("长按成功")));
 	if(bCanInteractKeyLongPress)
 	{
 		RefreshOriginalWeapon();
@@ -251,6 +252,7 @@ void APickUpWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	//DOREPLIFETIME(APickUpWeapon, OriginalWeaponInfo);
 	DOREPLIFETIME(APickUpWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(APickUpWeapon, bCanMeshDropOnTheGround);
 	DOREPLIFETIME(APickUpWeapon, bCanInteractKeyLongPress);

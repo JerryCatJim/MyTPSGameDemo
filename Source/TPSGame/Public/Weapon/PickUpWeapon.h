@@ -69,7 +69,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;
 	//最初被设定的提供的武器
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)//, Replicated)
 	FWeaponPickUpInfo OriginalWeaponInfo;
 	
 	UPROPERTY(VisibleAnywhere)

@@ -414,22 +414,28 @@ void ASCharacter::ResetWeaponZoom()
 	}
 }
 
-void ASCharacter::PickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
+void ASCharacter::PickUpWeapon(FWeaponPickUpInfo WeaponInfo)
 {
-	const FWeaponPickUpInfo LastWeaponInfo = GetWeaponPickUpInfo();
-	
-	//要先StopFire在StopReload，否则会导致0子弹时更换武器，StopFire中因为0子弹又执行了一次Reload，生成武器后的新武器子弹数没及时刷新时又执行一次换弹
-	//（当然，你也可以生成时再执行一次StopReload，但我感觉那样不好）
+	//要先StopFire再StopReload，否则会导致0子弹时更换武器，StopFire中因为0子弹又执行了一次Reload，生成武器后的新武器子弹数没及时刷新时又执行一次换弹
+	//(当然，你也可以生成时再执行一次StopReload，但我感觉那样不好)
 	StopFire();
 	StopReload();
 	
+	//客户端或服务端都在拾取武器时停止开火，但是生成新武器等操作仅在服务端执行
+	DealPickUpWeapon(WeaponInfo);
+}
+
+void ASCharacter::DealPickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
+{
+	const FWeaponPickUpInfo LastWeaponInfo = GetWeaponPickUpInfo();
+	
 	//把旧武器信息广播出去，可用于和地上可拾取武器的信息互换
 	OnPickUpWeapon.Broadcast(LastWeaponInfo);
-	
-	CurrentWeaponClass = WeaponInfo.WeaponClass;
-	
-	CurrentWeapon->Destroy(true);
 
+	CurrentWeaponClass = WeaponInfo.WeaponClass;
+
+	CurrentWeapon->Destroy(true);
+	
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.Owner = this;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

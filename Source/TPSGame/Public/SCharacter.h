@@ -45,7 +45,7 @@ public:
 	//通常只在服务端触发, 刚进游戏时服务端先OnPossess然后BeginPlay，RestartPlayer后服务端先BeginPlay然后OnPossess
 	virtual void PossessedBy(AController* NewController) override;
 	
-	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
+	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 
 	//死亡时掉落武器
@@ -164,6 +164,9 @@ protected:
 	void OnRep_IsFiring(){ if(IsLocallyControlled()) bIsFiring = bIsFiringLocally; }
 	UFUNCTION()//原理同上
 	void OnRep_IsReloading(){ if(IsLocallyControlled()) bIsReloading = bIsReloadingLocally; }
+
+	UFUNCTION(Server, Reliable)
+	void DealPickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 	
 private:
 	void HideCharacterIfCameraClose();
