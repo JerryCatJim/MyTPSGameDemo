@@ -17,7 +17,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyUp);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyLongPress);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyLongPressed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FPlayerDead, AController*, InstigatedBy, AActor*, DamageCauser,const UDamageType*, DamageType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickUpWeapon, FWeaponPickUpInfo, OldWeaponInfo);
 
@@ -77,10 +77,14 @@ public:
 	UFUNCTION(BlueprintCallable)//, Server, Reliable)
 	void InteractKeyReleased();
 	UFUNCTION(BlueprintCallable)//, Server, Reliable)
-	//尝试长按交互键
-	void TryLongPressInteractKey();
-	//进入长按状态
-	void BeginLongPressInteractKey();
+	void TryLongPressInteractKey();   //尝试长按交互键
+	void BeginLongPressInteractKey(); //进入长按状态
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OnInteractKeyDown();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OnInteractKeyUp();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OnInteractKeyLongPressed();
 	
 	//重写,获取摄像机组件位置
 	virtual FVector GetPawnViewLocation() const override;
@@ -210,7 +214,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractKeyUp OnInteractKeyUp;
 	UPROPERTY(BlueprintAssignable)
-	FOnInteractKeyLongPress OnInteractKeyLongPress;
+	FOnInteractKeyLongPressed OnInteractKeyLongPressed;
 
 	//防止同时与多个可拾取武器发生重叠时间
 	bool bHasBeenOverlappedWithPickUpWeapon = false;

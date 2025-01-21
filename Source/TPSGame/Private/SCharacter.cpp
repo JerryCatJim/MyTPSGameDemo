@@ -288,7 +288,7 @@ void ASCharacter::InteractKeyReleased()//_Implementation()
 	bIsLongPressing = false;
 }
 
-void ASCharacter::TryLongPressInteractKey()
+void ASCharacter::TryLongPressInteractKey()//_Implementation()
 {
 	if(bDisableGamePlayInput || bDied) return;
 
@@ -310,12 +310,25 @@ void ASCharacter::BeginLongPressInteractKey()
 	[this]()->void
 	{
 		//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
-		OnInteractKeyLongPress.Broadcast();
+		OnInteractKeyLongPressed.Broadcast();
 	},
 	InteractKeyLongPressFinishSecond - InteractKeyLongPressBeginSecond,
 	false);
 }
-
+//由于被交互的物体可能为ROLE_SimulatedProxy,从客户端发送的Server版RPC调用会被丢弃，Multicast也仅会本地调用，
+//所以有时需从那边手动触发SCharacter的Server版事件广播以完成 被交互物体 的Server端逻辑响应
+void ASCharacter::Server_OnInteractKeyDown_Implementation()
+{
+	OnInteractKeyDown.Broadcast();
+}
+void ASCharacter::Server_OnInteractKeyUp_Implementation()
+{
+	OnInteractKeyUp.Broadcast();
+}
+void ASCharacter::Server_OnInteractKeyLongPressed_Implementation()
+{
+	OnInteractKeyLongPressed.Broadcast();
+}
 
 // Called to bind functionality to input
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -421,7 +434,7 @@ void ASCharacter::PickUpWeapon(FWeaponPickUpInfo WeaponInfo)
 	StopFire();
 	StopReload();
 	
-	//客户端或服务端都在拾取武器时停止开火，但是生成新武器等操作仅在服务端执行
+	//客户端或服务端都应在拾取武器时停止开火，但是生成新武器等操作仅在服务端执行
 	DealPickUpWeapon(WeaponInfo);
 }
 

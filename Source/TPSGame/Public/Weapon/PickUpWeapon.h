@@ -29,14 +29,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ShowTipWidgetOnOwningClient();
 	
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_ResetPickUpWeaponInfo(FWeaponPickUpInfo NewInfo);
-
 	UFUNCTION(BlueprintCallable)
 	void TryPickUpWeapon();
-
-	UFUNCTION(BlueprintCallable) //将当前武器刷新为最初设定的武器
-	void RefreshOriginalWeapon();
 	
 protected:
 	// Called when the game starts or when spawned
@@ -44,6 +38,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_WeaponPickUpInfo();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)  //刷新PickUpWeapon的值为输入值
+	void Server_ResetPickUpWeaponInfo(FWeaponPickUpInfo NewInfo);
 
 	UFUNCTION()
 	void OnCapsuleComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
@@ -53,6 +50,10 @@ protected:
 	UFUNCTION()
 	void OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser,const UDamageType* DamageType);
 
+	UFUNCTION()
+	void OnInteractKeyUp();
+	UFUNCTION()
+	void OnInteractKeyDown();
 	UFUNCTION()
 	void OnInteractKeyLongPressed();
 	
@@ -78,7 +79,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)  //武器是否可以掉落在地面(拖进场景时默认悬浮，人物死亡后掉落时落到地上)
 	bool bCanMeshDropOnTheGround = false;
 
-	UPROPERTY(BlueprintReadOnly, Replicated)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	bool bCanInteractKeyLongPress = true;  //写在Protected里然后Public用Getter Setter更好，这里懒了就不做了
 protected:
 

@@ -76,12 +76,31 @@ void APickUpWeapon::Tick(float DeltaTime)
 
 }
 
-void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInfo NewInfo)
+void APickUpWeapon::OnInteractKeyUp()
 {
-	WeaponPickUpInfo = NewInfo;
-	if(HasAuthority())
+	//TryPickUpWeapon会触发Character的Server端的广播回到这个Actor，不用手动触发其对应事件广播的Server版
+	TryPickUpWeapon();
+}
+void APickUpWeapon::OnInteractKeyDown()
+{
+	TryPickUpWeapon();
+}
+void APickUpWeapon::OnInteractKeyLongPressed()
+{
+	if(!HasAuthority())
 	{
-		OnRep_WeaponPickUpInfo();
+		if(LastOverlapPlayer)
+		{
+			LastOverlapPlayer->Server_OnInteractKeyLongPressed();
+		}
+		return;
+	}
+	//人物的Interact事件未限定为仅Server端，若以客户端触发了广播，由于此Actor为ROLE_SimulatedProxy，
+	//从客户端发送的Server版RPC调用会被丢弃，Multicast也仅会本地调用，所以需手动触发SCharacter的Server版事件广播以完成此Actor的Server端逻辑响应
+	if(bCanInteractKeyLongPress)
+	{
+		//进入此处时已从SCharacter的Server广播函数来到了Server端执行
+		Server_ResetPickUpWeaponInfo(OriginalWeaponInfo);
 	}
 }
 
@@ -89,21 +108,16 @@ void APickUpWeapon::TryPickUpWeapon()
 {
 	if(LastOverlapPlayer)
 	{
-		LastOverlapPlayer->PickUpWeapon(WeaponPickUpInfo);  //PickUpWeapon是Server函数
+		LastOverlapPlayer->PickUpWeapon(WeaponPickUpInfo);  //PickUpWeapon会在Server端执行OnPickUpWeapon的广播回到这个Actor
 	}
 }
 
-void APickUpWeapon::RefreshOriginalWeapon()
+void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInfo NewInfo)
 {
-	Server_ResetPickUpWeaponInfo(OriginalWeaponInfo);
-}
-
-void APickUpWeapon::OnInteractKeyLongPressed()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Blue, FString::Printf(TEXT("长按成功")));
-	if(bCanInteractKeyLongPress)
+	WeaponPickUpInfo = NewInfo;
+	if(HasAuthority())
 	{
-		RefreshOriginalWeapon();
+		OnRep_WeaponPickUpInfo();
 	}
 }
 
@@ -135,15 +149,15 @@ void APickUpWeapon::OnCapsuleComponentBeginOverlap(UPrimitiveComponent* Overlapp
 		//对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 		if(bCanInteractKeyLongPress)
 		{
-			LastOverlapPlayer->OnInteractKeyUp.AddDynamic(this, &APickUpWeapon::TryPickUpWeapon);
-			LastOverlapPlayer->OnInteractKeyLongPress.AddDynamic(this, &APickUpWeapon::OnInteractKeyLongPressed);
+			LastOverlapPlayer->OnInteractKeyUp.AddDynamic(this, &APickUpWeapon::OnInteractKeyUp);
+			LastOverlapPlayer->OnInteractKeyLongPressed.AddDynamic(this, &APickUpWeapon::OnInteractKeyLongPressed);
 		}
 		else
 		{
-			LastOverlapPlayer->OnInteractKeyDown.AddDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+			LastOverlapPlayer->OnInteractKeyDown.AddDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
 		
-		//OnPickUpWeapon在SCharacter中仅服务端广播，但广播收到后会触发这里的Multicast函数，无所谓了
+		//OnPickUpWeapon在SCharacter中仅服务端广播
 		LastOverlapPlayer->OnPickUpWeapon.AddDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		//角色在拾取范围内死亡时也关闭文字显示
 		LastOverlapPlayer->OnPlayerDead.AddDynamic(this, &APickUpWeapon::OnPlayerDead);
@@ -168,12 +182,12 @@ void APickUpWeapon::OnCapsuleComponentEndOverlap(UPrimitiveComponent* Overlapped
 		//对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 		if(bCanInteractKeyLongPress)
 		{
-			LastOverlapPlayer->OnInteractKeyUp.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
-			LastOverlapPlayer->OnInteractKeyLongPress.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyLongPressed);
+			LastOverlapPlayer->OnInteractKeyUp.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyUp);
+			LastOverlapPlayer->OnInteractKeyLongPressed.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyLongPressed);
 		}
 		else
 		{
-			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
 		LastOverlapPlayer->OnPickUpWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
@@ -227,12 +241,12 @@ void APickUpWeapon::OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser
 		//对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 		if(bCanInteractKeyLongPress)
 		{
-			LastOverlapPlayer->OnInteractKeyUp.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
-			LastOverlapPlayer->OnInteractKeyLongPress.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyLongPressed);
+			LastOverlapPlayer->OnInteractKeyUp.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyUp);
+			LastOverlapPlayer->OnInteractKeyLongPressed.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyLongPressed);
 		}
 		else
 		{
-			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::TryPickUpWeapon);
+			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
 		LastOverlapPlayer->OnPickUpWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
