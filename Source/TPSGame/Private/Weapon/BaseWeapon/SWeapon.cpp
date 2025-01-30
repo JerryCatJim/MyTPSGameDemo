@@ -240,7 +240,7 @@ void ASWeapon::StartFire()
 	float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
 	FirstDelay = FMath::Clamp(FirstDelay, 0.f, FirstDelay);
 	//FirstDelay = FMath::Max(FirstDelay, 0.f);
-	
+
 	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
 }
 
@@ -342,6 +342,9 @@ void ASWeapon::LocalFire()
 		{
 			LocalStopReload();
 		}
+
+		//记录世界时间
+		LastFireTime = GetWorld()->TimeSeconds;
 		
 		//把不影响同步的一些效果函数从Multi改成普通函数，并在本地客户端也执行，增强高延迟下的客户端体验
 		PlayFireEffectsAndSounds();
@@ -475,6 +478,9 @@ void ASWeapon::LocalReload(bool IsAutoReload)
 
 	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
 	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){LocalReloadFinished();}, MontagePlayTime, false);
+
+	//要处理啥，留个接口出来
+	PostReload();
 }
 
 void ASWeapon::ReloadFinished()
@@ -610,35 +616,47 @@ void ASWeapon::ClientChangeCurrentAmmo_Implementation(int ChangedNum)
 	}
 }
 
-void ASWeapon::SetWeaponZoom_Implementation()
+void ASWeapon::SetWeaponZoom()
 {
 	if(CheckOwnerValidAndAlive())
 	{
 		if(!MyOwner->GetIsAiming()) //防止多次触发
 		{
+			PreDealWeaponZoom();
 			DealWeaponZoom();
 		}
 	}
 }
 
-void ASWeapon::ResetWeaponZoom_Implementation()
+void ASWeapon::ResetWeaponZoom()
 {
 	//if(CheckOwnerValidAndAlive())  //人物死亡时需要自动取消开镜
 	if(IsValid(MyOwner))
 	{
 		if(MyOwner->GetIsAiming()) //防止多次触发
 		{
+			PreDealWeaponResetZoom();
 			DealWeaponResetZoom();
 		}
 	}
 }
 
-void ASWeapon::DealWeaponZoom()
+void ASWeapon::PreDealWeaponZoom()
+{
+	//狙击枪子类可以在这里播放开镜动画
+}
+
+void ASWeapon::PreDealWeaponResetZoom()
+{
+	//狙击枪子类可以在这里播放关镜动画
+}
+
+void ASWeapon::DealWeaponZoom_Implementation()
 {
 	MyOwner->SetIsAiming(true);
 }
 
-void ASWeapon::DealWeaponResetZoom()
+void ASWeapon::DealWeaponResetZoom_Implementation()
 {
 	MyOwner->SetIsAiming(false);
 }

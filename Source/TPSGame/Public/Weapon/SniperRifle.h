@@ -24,8 +24,8 @@ protected:
 
 	virtual float GetDynamicBulletSpread() override;
 	
-	virtual void DealWeaponZoom() override;
-	virtual void DealWeaponResetZoom() override;
+	virtual void PreDealWeaponZoom() override;
+	virtual void PreDealWeaponResetZoom() override;
 
 	UFUNCTION(BlueprintCallable, Client, Reliable)
 	void ShowSniperScope(bool ShowScopeView);

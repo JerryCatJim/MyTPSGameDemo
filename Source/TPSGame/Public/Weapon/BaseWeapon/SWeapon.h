@@ -79,9 +79,9 @@ public:
 	void StopReload();
 	
 	//设置武器是否开镜
-	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
+	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
 	void SetWeaponZoom();
-	UFUNCTION(BlueprintCallable, Server,Reliable)  //将开镜行为发送到服务器然后同步
+	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
 	void ResetWeaponZoom();
 	
 	int GetCurrentAmmoNum() const { return CurrentAmmoNum; }
@@ -165,8 +165,13 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void PostReloadFinished();
 
-	virtual void DealWeaponZoom();
-	virtual void DealWeaponResetZoom();
+	//将不同枪在开镜时的不同需求剥离出来一个函数单独处理，而且不要标记Server,以便客户端高延迟时也能直接响应
+	virtual void PreDealWeaponZoom();
+	virtual void PreDealWeaponResetZoom();
+	UFUNCTION(Server,Reliable)
+	void DealWeaponZoom();
+	UFUNCTION(Server,Reliable)
+	void DealWeaponResetZoom();
 	
 	//UFUNCTION(NetMulticast, Reliable)
 	void PlayReloadAnimAndSound();

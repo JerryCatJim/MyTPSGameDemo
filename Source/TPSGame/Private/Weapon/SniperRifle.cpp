@@ -66,18 +66,21 @@ void ASniperRifle::PostReload()
 {
 	Super::PostReload();
 	
-	ResetWeaponZoom();
+	if(CheckOwnerValidAndAlive())
+	{
+		MyOwner->ResetWeaponZoom();
+	}
 }
 
-void ASniperRifle::DealWeaponZoom()
+void ASniperRifle::PreDealWeaponZoom()
 {
-	Super::DealWeaponZoom();
+	Super::PreDealWeaponZoom();
 	ShowSniperScope(true);
 }
 
-void ASniperRifle::DealWeaponResetZoom()
+void ASniperRifle::PreDealWeaponResetZoom()
 {
-	Super::DealWeaponResetZoom();
+	Super::PreDealWeaponResetZoom();
 	ShowSniperScope(false);
 }
 
