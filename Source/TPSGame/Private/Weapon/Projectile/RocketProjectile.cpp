@@ -3,8 +3,6 @@
 
 #include "Weapon/Projectile/RocketProjectile.h"
 #include "Components/BoxComponent.h"
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
@@ -16,8 +14,6 @@ ARocketProjectile::ARocketProjectile()
 	Damage = 120.f;
 	CollisionBox->InitBoxExtent(FVector(15,3,3));
 	
-	//禁止Super::OnHit()中的Destroy(),手动管理销毁时机
-	bDestroyOnHit = false;
 	bIsAoeDamage = true;
 
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
@@ -27,25 +23,15 @@ ARocketProjectile::ARocketProjectile()
 
 	RocketMovementComponent->InitialSpeed = 1500.f;
 	RocketMovementComponent->MaxSpeed = 1500.f;
+
+	//命中后需要延迟销毁火箭弹以造成烟雾逐渐散去的效果(效果不好，现在改成0立刻销毁了)
+	OnHitDestroyTime = 0.f;
 }
 
 void ARocketProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	//在RocketProjectile子类中手动指定TrailSystem
-	if(TrailSystem)
-	{
-		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			TrailSystem,
-			GetRootComponent(),
-			FName(),
-			GetActorLocation(),
-			GetActorRotation(),
-			EAttachLocation::KeepWorldPosition,
-			false  //手动销毁，创造出火箭弹命中后有一阵浓烟未散去的效果
-			);
-	}
 	if(ProjectileLoop && LoopingSoundAttenuation)
 	{
 		ProjectileLoopComponent = UGameplayStatics::SpawnSoundAttached(
@@ -93,41 +79,30 @@ void ARocketProjectile::ApplyProjectileDamage(AActor* DamagedActor, float Actual
 void ARocketProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
-
-	if(bOnHitSuccessful)  //发射物有可能碰撞到发射者自身并不产生碰撞行为，此时视为没发生过碰撞，所以需要判断真正碰撞后才开始计时器
-	{
-		GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &ARocketProjectile::DestroyTimerFinished, DestroyTime, false);
-	}
+	//原本有逻辑，都优化整合到基类中了
 }
 
 void ARocketProjectile::PostOnHit()
 {
 	Super::PostOnHit();
 
-	if(TrailSystemComponent && TrailSystemComponent->GetSystemInstance())
-	{
-		TrailSystemComponent->GetSystemInstance()->Deactivate();
-	}
+	RocketMovementComponent->Deactivate();
 	if(ProjectileLoopComponent && ProjectileLoopComponent->IsPlaying())
 	{
 		ProjectileLoopComponent->Stop();
 	}
 }
 
-void ARocketProjectile::DestroyTimerFinished()
+void ARocketProjectile::StartDestroyTimerFinished()
 {
-	Destroy();
+	//到达生命周期，触发一次空爆
+	OnHit(nullptr,nullptr,nullptr,FVector(),FHitResult());
 }
 
 void ARocketProjectile::Destroyed()
 {
 	Super::Destroyed();
-
-	//防止弹头突然被销毁时没有同步关闭粒子系统
-	if(TrailSystemComponent && TrailSystemComponent->GetSystemInstance())
-	{
-		TrailSystemComponent->GetSystemInstance()->Deactivate();
-	}
+	
 	if(ProjectileLoopComponent && ProjectileLoopComponent->IsPlaying())
 	{
 		ProjectileLoopComponent->Stop();

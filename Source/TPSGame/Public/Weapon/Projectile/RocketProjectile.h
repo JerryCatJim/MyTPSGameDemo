@@ -26,12 +26,6 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class URocketMovementComponent* RocketMovementComponent;
-	
-	UPROPERTY(EditAnywhere)
-	class UNiagaraSystem* TrailSystem;
-
-	UPROPERTY()
-	class UNiagaraComponent* TrailSystemComponent;
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ProjectileLoop;
@@ -41,12 +35,6 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* LoopingSoundAttenuation;
-	
-private:
-	FTimerHandle DestroyTimerHandle;
-
-	UPROPERTY(EditAnywhere)
-	float DestroyTime = 3.f;
 	
 public:
 	ARocketProjectile();
@@ -62,5 +50,5 @@ protected:
 
 	virtual void PostOnHit() override;
 	
-	void DestroyTimerFinished();
+	virtual void StartDestroyTimerFinished() override;
 };

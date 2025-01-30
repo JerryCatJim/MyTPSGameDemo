@@ -7,6 +7,7 @@
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "NiagaraFunctionLibrary.h"
 #include "TPSGame/TPSGame.h"
 
 // Sets default values
@@ -59,6 +60,23 @@ void AProjectile::BeginPlay()
 			);
 	}
 
+	//在RocketProjectile等子类中手动指定TrailSystem
+	if(TrailSystem)
+	{
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false  //手动销毁，创造出火箭弹命中后有一阵浓烟未散去的效果
+			);
+	}
+
+	//子弹被生成时开启X秒后主动销毁子弹的计时器
+	GetWorldTimerManager().SetTimer(StartDestroyTimerHandle, this, &AProjectile::StartDestroyTimerFinished, StartDestroyTime, false);
+	
 	//在构造函数中绑定可能有些问题
 	if(HasAuthority())
 	{
@@ -102,8 +120,6 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 			}
 		}
 	}
-
-	bOnHitSuccessful = true;
 	
 	if(HasAuthority()) //应用伤害效果只能在服务器
 	{
@@ -163,10 +179,15 @@ void AProjectile::Multi_PostOnHit_Implementation()
 
 void AProjectile::PostOnHit()
 {
-	//子类RocketProjectile期望命中后延迟销毁来创造浓雾，所以在其类中初始化时手动设为false
-	if(bDestroyOnHit)
+	//命中后延迟X秒销毁，用于例如创造出火箭弹命中后有一阵浓烟未散去的效果
+	if(OnHitDestroyTime <= 0)
 	{
-		Destroy();
+		//Timer的 InRate <=0 时会清除Timer而不是触发
+		OnHitDestroyTimerFinished();
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(OnHitDestroyTimerHandle, this, &AProjectile::OnHitDestroyTimerFinished, OnHitDestroyTime, false);
 	}
 	
 	//命中后隐藏Mesh
@@ -178,6 +199,18 @@ void AProjectile::PostOnHit()
 	{
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+}
+
+void AProjectile::StartDestroyTimerFinished()
+{
+	GetWorldTimerManager().ClearTimer(OnHitDestroyTimerHandle);
+	Destroy();
+}
+
+void AProjectile::OnHitDestroyTimerFinished()
+{
+	GetWorldTimerManager().ClearTimer(StartDestroyTimerHandle);
+	Destroy();
 }
 
 void AProjectile::Multi_PlayImpactEffectsAndSounds_Implementation(EPhysicalSurface SurfaceType, FVector HitLocation)
@@ -218,5 +251,14 @@ void AProjectile::PlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVect
 	{
 		//播放命中音效
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ImpactSound, HitLocation);
+	}
+}
+
+void AProjectile::Destroyed()
+{
+	//弹头被销毁时粒子系统需要手动关闭
+	if(TrailSystemComponent && TrailSystemComponent->GetSystemInstance())
+	{
+		TrailSystemComponent->GetSystemInstance()->Deactivate();
 	}
 }
