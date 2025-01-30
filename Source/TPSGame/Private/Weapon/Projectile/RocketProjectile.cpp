@@ -21,8 +21,8 @@ ARocketProjectile::ARocketProjectile()
 	RocketMovementComponent->SetIsReplicated(true);
 	RocketMovementComponent->ProjectileGravityScale = 0.f;
 
-	RocketMovementComponent->InitialSpeed = 1500.f;
-	RocketMovementComponent->MaxSpeed = 1500.f;
+	RocketMovementComponent->InitialSpeed = 2000.f;
+	RocketMovementComponent->MaxSpeed = 2000.f;
 
 	//命中后需要延迟销毁火箭弹以造成烟雾逐渐散去的效果(效果不好，现在改成0立刻销毁了)
 	OnHitDestroyTime = 0.f;
@@ -96,7 +96,7 @@ void ARocketProjectile::PostOnHit()
 void ARocketProjectile::StartDestroyTimerFinished()
 {
 	//到达生命周期，触发一次空爆
-	OnHit(nullptr,nullptr,nullptr,FVector(),FHitResult());
+	Super::OnHit(nullptr,nullptr,nullptr,FVector(),FHitResult());
 }
 
 void ARocketProjectile::Destroyed()

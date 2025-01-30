@@ -96,7 +96,7 @@ void AProjectile::SpawnTracerAndTrailSystem()
 	}
 }
 
-
+//后续可添加子弹忽视友军/开启友军伤害选项功能
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	//获得表面类型 PhysicalMaterial
