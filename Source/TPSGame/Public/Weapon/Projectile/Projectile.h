@@ -30,7 +30,7 @@ protected:
 	
 	//命中后的处理函数
 	virtual void PostOnHit();  //将具体内容从Multi中剥离，防止如果想继承修改Multi函数导致多次调用
-
+	
 	virtual void StartDestroyTimerFinished();  //子弹生成x秒后完成生命周期主动销毁时触发的函数
 	virtual void OnHitDestroyTimerFinished();  //子弹命中物体后延迟x秒后销毁时触发的函数
 	
@@ -41,6 +41,10 @@ protected:
 
 	//UFUNCTION(Server, Reliable)  //OnHit中调用应用伤害时检测是否有服务器权限
 	virtual void ApplyProjectileDamage(AActor* DamagedActor, float ActualDamage, const FVector& HitFromDirection, const FHitResult& HitResult);
+
+private:
+	void StartDestroyTimer();
+	void SpawnTracerAndTrailSystem();
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

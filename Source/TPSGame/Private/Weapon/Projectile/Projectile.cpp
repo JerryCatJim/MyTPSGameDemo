@@ -48,6 +48,27 @@ void AProjectile::BeginPlay()
 	//射出子弹后立刻更换武器可能导致OwnerWeapon被销毁(与地面武器交换或丢弃等操作)，所以会取不到GetHeadShotBonus()，因此提前记录，然后在OnHit爆头时直接取用数值防止崩溃
 	HeadShotBonusRate = OwnerWeapon ? OwnerWeapon->GetHeadShotBonus() : 1;
 	
+	StartDestroyTimer();
+	SpawnTracerAndTrailSystem();
+	
+	//在构造函数中绑定可能有些问题
+	if(HasAuthority())
+	{
+		//Bullet型Projectile的OnHit()在击中离人物很近的位置时，只有服务器响应了OnHit，客户端没响应(?)，击中远一点的地方时都响应(?)，所以还是改回只在服务器响应OnHit，使用Multicast同步特效等
+		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
+
+		SpawnTime = GetWorld()->GetTimeSeconds();
+	}
+}
+
+void AProjectile::StartDestroyTimer()
+{
+	//子弹被生成时开启X秒后主动销毁子弹的计时器
+	GetWorldTimerManager().SetTimer(StartDestroyTimerHandle, this, &AProjectile::StartDestroyTimerFinished, StartDestroyTime, false);
+}
+
+void AProjectile::SpawnTracerAndTrailSystem()
+{
 	if(Tracer)
 	{
 		TracerComponent = UGameplayStatics::SpawnEmitterAttached(
@@ -73,19 +94,8 @@ void AProjectile::BeginPlay()
 			false  //手动销毁，创造出火箭弹命中后有一阵浓烟未散去的效果
 			);
 	}
-
-	//子弹被生成时开启X秒后主动销毁子弹的计时器
-	GetWorldTimerManager().SetTimer(StartDestroyTimerHandle, this, &AProjectile::StartDestroyTimerFinished, StartDestroyTime, false);
-	
-	//在构造函数中绑定可能有些问题
-	if(HasAuthority())
-	{
-		//Bullet型Projectile的OnHit()在击中离人物很近的位置时，只有服务器响应了OnHit，客户端没响应(?)，击中远一点的地方时都响应(?)，所以还是改回只在服务器响应OnHit，使用Multicast同步特效等
-		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
-
-		SpawnTime = GetWorld()->GetTimeSeconds();
-	}
 }
+
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
