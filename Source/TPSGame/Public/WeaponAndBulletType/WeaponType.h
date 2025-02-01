@@ -10,4 +10,5 @@ enum EWeaponType
 	ShotGun,
 	MachineGun,
 	SniperRifle,
+	ThrowGrenade,
 };

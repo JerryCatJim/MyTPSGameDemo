@@ -39,7 +39,7 @@ void UTPSCharacter_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	if(EquippedWeapon) { EquippedWeaponType = EquippedWeapon->GetWeaponType(); }
 	
-	bUseCommonLeftHandIK = !PlayerCharacter->GetIsReloading();
+	bUseCommonLeftHandIK = !PlayerCharacter->GetIsReloading() && EquippedWeaponType != ThrowGrenade;
 	bUsePistolRightHandIK = EquippedWeaponType == Pistol && !PlayerCharacter->GetIsReloading();
 	
 	if(bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMeshComp() && PlayerCharacter->GetMesh())

@@ -80,9 +80,9 @@ public:
 	
 	//设置武器是否开镜
 	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
-	void SetWeaponZoom();
+	bool SetWeaponZoom();
 	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
-	void ResetWeaponZoom();
+	bool ResetWeaponZoom();
 	
 	int GetCurrentAmmoNum() const { return CurrentAmmoNum; }
 
@@ -401,7 +401,7 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
-
+	
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;

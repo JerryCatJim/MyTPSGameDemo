@@ -616,29 +616,33 @@ void ASWeapon::ClientChangeCurrentAmmo_Implementation(int ChangedNum)
 	}
 }
 
-void ASWeapon::SetWeaponZoom()
+bool ASWeapon::SetWeaponZoom()
 {
-	if(CheckOwnerValidAndAlive())
+	if(!CheckOwnerValidAndAlive()) return false;
+	
+	if(MyOwner->GetIsAiming()) //防止多次触发
 	{
-		if(!MyOwner->GetIsAiming()) //防止多次触发
-		{
-			PreDealWeaponZoom();
-			DealWeaponZoom();
-		}
+		return false;
 	}
+	
+	PreDealWeaponZoom();
+	DealWeaponZoom();
+	return true;
 }
 
-void ASWeapon::ResetWeaponZoom()
+bool ASWeapon::ResetWeaponZoom()
 {
 	//if(CheckOwnerValidAndAlive())  //人物死亡时需要自动取消开镜
-	if(IsValid(MyOwner))
+	if(!IsValid(MyOwner)) return false;
+	
+	if(!MyOwner->GetIsAiming()) //防止多次触发
 	{
-		if(MyOwner->GetIsAiming()) //防止多次触发
-		{
-			PreDealWeaponResetZoom();
-			DealWeaponResetZoom();
-		}
+		return false;
 	}
+	
+	PreDealWeaponResetZoom();
+	DealWeaponResetZoom();
+	return true;
 }
 
 void ASWeapon::PreDealWeaponZoom()

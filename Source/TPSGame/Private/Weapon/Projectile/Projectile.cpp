@@ -115,7 +115,9 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		{
 			if(OnHitTime - SpawnTime <= 0)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, TEXT("子弹OnHit时间小于等于Spawn时间,时间有误."));
+				GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
+					FString::Printf(TEXT("子弹OnHit时间小于等于Spawn时间,时间之差为: %f, 可能为刚生成就碰撞到自身,建议调整MuzzleFlash插槽位置."),
+						OnHitTime - SpawnTime));
 				return;
 			}
 			if(OnHitTime - SpawnTime <= CannotHitOwnerTimeAfterSpawn )  //假设发射后很短时间(或自定义时间)内就击中了自身,则试图让子弹穿过自身

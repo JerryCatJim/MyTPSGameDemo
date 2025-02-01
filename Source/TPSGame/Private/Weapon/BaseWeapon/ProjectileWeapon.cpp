@@ -3,6 +3,7 @@
 #include "Weapon/BaseWeapon/ProjectileWeapon.h"
 #include "Weapon/Projectile/Projectile.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "DrawDebugHelpers.h"  //射线检测显示颜色
 
 AProjectileWeapon::AProjectileWeapon()
 {
@@ -16,27 +17,35 @@ void AProjectileWeapon::DealFire()
 
 	APawn* InstigatorPawn = Cast<APawn>(GetOwner());
 	const USkeletalMeshSocket* MuzzleSocket = GetWeaponMeshComp()->GetSocketByName(MuzzleSocketName);
-	if(MuzzleSocket)
+
+	//没有MuzzleSocket的武器无法发射子弹
+	if(!MuzzleSocket)
 	{
-		FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMeshComp());
-		//枪口 指向 准星瞄准方向的终点 的向量
-		FVector ToTarget = GetCurrentAimingPoint() - SocketTransform.GetLocation();
-		FRotator TargetRotation = ToTarget.Rotation();
-		if(ProjectileClass && InstigatorPawn)
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
+					FString::Printf(TEXT("当前武器未设置MuzzleFlash位置!")));
+		return;
+	}
+	
+	FTransform SocketTransform = MuzzleSocket->GetSocketTransform(GetWeaponMeshComp());
+	//枪口 指向 准星瞄准方向的终点 的向量
+	FVector ToTarget = GetCurrentAimingPoint() - SocketTransform.GetLocation();
+	FRotator TargetRotation = ToTarget.Rotation();
+	if(ProjectileClass && InstigatorPawn)
+	{
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = this;
+		SpawnParameters.Instigator = InstigatorPawn;
+		UWorld* World = GetWorld();
+		if(World)
 		{
-			FActorSpawnParameters SpawnParameters;
-			SpawnParameters.Owner = this;
-			SpawnParameters.Instigator = InstigatorPawn;
-			UWorld* World = GetWorld();
-			if(World)
-			{
-				World->SpawnActor<AProjectile>(
-					ProjectileClass,
-					SocketTransform.GetLocation(),
-					TargetRotation,
-					SpawnParameters
-				);
-			}
+			World->SpawnActor<AProjectile>(
+				ProjectileClass,
+				SocketTransform.GetLocation(),
+				TargetRotation,
+				SpawnParameters
+			);
 		}
 	}
+
+	//DrawDebugLine(GetWorld(), SocketTransform.GetLocation(), GetCurrentAimingPoint(), FColor::Red, false, 1.0f, 0,1.0f);
 }
