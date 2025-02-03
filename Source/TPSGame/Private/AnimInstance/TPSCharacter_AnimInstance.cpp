@@ -41,7 +41,7 @@ void UTPSCharacter_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	
 	bUseCommonLeftHandIK = !PlayerCharacter->GetIsReloading() && !PlayerCharacter->GetIsSwappingWeapon() &&
 		!(EquippedWeaponType == ThrowGrenade || EquippedWeaponType == Knife || EquippedWeaponType == Fist);
-	bUsePistolRightHandIK = EquippedWeaponType == Pistol && !PlayerCharacter->GetIsReloading();
+	bUsePistolRightHandIK = EquippedWeaponType == Pistol && !PlayerCharacter->GetIsReloading() && !PlayerCharacter->GetIsSwappingWeapon();
 	
 	if(bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMeshComp() && PlayerCharacter->GetMesh())
 	{
