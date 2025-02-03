@@ -67,7 +67,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Component)
 	UWidgetComponent* WidgetComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponPickUpInfo)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ASWeapon> WeaponClass;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;
 	//最初被设定的提供的武器
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)//, Replicated)

@@ -42,8 +42,16 @@ void APickUpWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Owner = this;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
+	
+	ASWeapon* CurWeapon = GetWorld()->SpawnActor<ASWeapon>(WeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
+	WeaponPickUpInfo = CurWeapon->GetWeaponPickUpInfo();
 	//记录原始武器信息
 	OriginalWeaponInfo = WeaponPickUpInfo;
+
+	CurWeapon->Destroy();
 
 	//从C++中获取蓝图类
 	const FString WidgetClassLoadPath = FString(TEXT("/Game/UI/WBP_ItemPickUpTip.WBP_ItemPickUpTip_C"));//蓝图一定要加_C这个后缀名
@@ -124,7 +132,15 @@ void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInf
 void APickUpWeapon::OnRep_WeaponPickUpInfo()
 {
 	//拾取武器后 地上武器的提示文字名字和Mesh没改为被换下来的武器，手动刷新一下
-	MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+	if(IsValid(WeaponPickUpInfo.WeaponMesh))
+	{
+		MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+	}
+	else
+	{
+		MeshComponent->SetSkeletalMesh(OriginalWeaponInfo.WeaponMesh);
+		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("当前角色替换下来的武器为空，将可拾取武器刷新为原始武器"));
+	}
 	ShowTipWidgetOnOwningClient();
 }
 
@@ -158,7 +174,7 @@ void APickUpWeapon::OnCapsuleComponentBeginOverlap(UPrimitiveComponent* Overlapp
 		}
 		
 		//OnPickUpWeapon在SCharacter中仅服务端广播
-		LastOverlapPlayer->OnPickUpWeapon.AddDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
+		LastOverlapPlayer->OnExchangeWeapon.AddDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		//角色在拾取范围内死亡时也关闭文字显示
 		LastOverlapPlayer->OnPlayerDead.AddDynamic(this, &APickUpWeapon::OnPlayerDead);
 
@@ -189,7 +205,7 @@ void APickUpWeapon::OnCapsuleComponentEndOverlap(UPrimitiveComponent* Overlapped
 		{
 			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
-		LastOverlapPlayer->OnPickUpWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
+		LastOverlapPlayer->OnExchangeWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
 		ShowTipWidget(false);
 		LastOverlapPlayer->bHasBeenOverlappedWithPickUpWeapon = false;
@@ -248,7 +264,7 @@ void APickUpWeapon::OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser
 		{
 			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
-		LastOverlapPlayer->OnPickUpWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
+		LastOverlapPlayer->OnExchangeWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
 		
 		LastOverlapPlayer = nullptr;

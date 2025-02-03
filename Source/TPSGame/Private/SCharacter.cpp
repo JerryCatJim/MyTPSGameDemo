@@ -95,12 +95,12 @@ void ASCharacter::BeginPlay()
 	//如果控制权在服务器Server(相对Client)则执行下列代码
 	if(HasAuthority())
 	{
-		TArray<ASWeapon*> TempWeaponList = {
-			MainWeapon,
-			SecondaryWeapon,
-			MeleeWeapon,
-			ThrowableWeapon
-		};
+		/*TArray<ASWeapon*&> TempWeaponList = {
+			GetWeaponByEquipType(EWeaponEquipType::MainWeapon),
+			GetWeaponByEquipType(EWeaponEquipType::SecondaryWeapon),
+			GetWeaponByEquipType(EWeaponEquipType::MeleeWeapon),
+			GetWeaponByEquipType(EWeaponEquipType::ThrowableWeapon),
+		};*/
 		TArray<TEnumAsByte<EWeaponEquipType>> TempEquipTypeList = {
 			EWeaponEquipType::MainWeapon,
 			EWeaponEquipType::SecondaryWeapon,
@@ -109,17 +109,18 @@ void ASCharacter::BeginPlay()
 		};
 		
 		//生成默认武器并吸附到角色部位
-		for(int i = 0; i < TempWeaponList.Num(); ++i)
+		for(int i = 0; i < TempEquipTypeList.Num(); ++i)
 		{
 			FWeaponPickUpInfo TempInfo = FWeaponPickUpInfo();
 			TempInfo.WeaponClass = GetWeaponSpawnClass(TempEquipTypeList[i]);
 			
 			//武器当前还为空值，取不到自身PickUpWeaponInfo，所以手动造一个，并且不刷新信息(这样造出来的武器的WeaponPickUpInfo的是默认值)
-			TempWeaponList[i] = SpawnAndAttachWeapon(TempInfo, false);
+			ASWeapon*& CurWeapon = GetWeaponByEquipType(TempEquipTypeList[i]) = SpawnAndAttachWeapon(TempInfo, false);
 			
-			if(!CurrentWeapon && TempWeaponList[i])  //把有效的第一把武器设置为当前默认武器
+			if(!CurrentWeapon && CurWeapon)  //把有效的第一把武器设置为当前默认武器
 			{
-				CurrentWeapon = TempWeaponList[i];
+				CurrentWeapon = CurWeapon;
+				CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
 				//C++中的服务器不会自动调用OnRep函数，需要手动调用
 				OnRep_CurrentWeapon();
 			}
@@ -229,7 +230,7 @@ ASWeapon* ASCharacter::SpawnAndAttachWeapon(FWeaponPickUpInfo WeaponInfo, bool R
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Owner = this;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
 	
-	ASWeapon* NewWeapon = GetWorld()->SpawnActor<ASWeapon>(WeaponInfo.WeaponClass, FTransform(), SpawnParams);
+	ASWeapon* NewWeapon = GetWorld()->SpawnActor<ASWeapon>(WeaponInfo.WeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
 	//NewWeapon->SetOwner(this);
 	if(NewWeapon)
 	{
@@ -299,7 +300,6 @@ FName ASCharacter::GetWeaponSocketName(TEnumAsByte<EWeaponEquipType> WeaponEquip
 
 ASWeapon*& ASCharacter::GetWeaponByEquipType(TEnumAsByte<EWeaponEquipType> WeaponEquipType)
 {
-	ASWeapon* NoWeapon = nullptr;
 	switch(WeaponEquipType)
 	{
 	case EWeaponEquipType::MainWeapon:
@@ -311,7 +311,7 @@ ASWeapon*& ASCharacter::GetWeaponByEquipType(TEnumAsByte<EWeaponEquipType> Weapo
 	case EWeaponEquipType::ThrowableWeapon:
 		return ThrowableWeapon;
 	default:
-		return NoWeapon;
+		return MainWeapon;
 	}
 }
 
@@ -359,15 +359,24 @@ void ASCharacter::DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipType> WeaponE
 {
 	if(!HasAuthority()) return; //只有服务器做实质性逻辑
 	
-	ASWeapon*& TempWeapon = GetWeaponByEquipType(WeaponEquipType);
-	CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, GetWeaponSocketName(CurrentWeapon->GetWeaponEquipType()));
-	TempWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
-
-	CurrentWeapon = GetWeaponByEquipType(WeaponEquipType);
-	
 	CurrentSwapWeaponAnim = nullptr;
-
 	bIsSwappingWeapon = false;
+
+	//若要切换位置的武器已经被装备为当前武器则无事发生
+	if(CurrentWeapon == GetWeaponByEquipType(WeaponEquipType))
+	{
+		return;
+	}
+	
+	ASWeapon* LastWeapon = CurrentWeapon;
+	CurrentWeapon = GetWeaponByEquipType(WeaponEquipType);
+	if(HasAuthority())
+	{
+		OnRep_CurrentWeapon();
+	}
+	CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
+	LastWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, GetWeaponSocketName(LastWeapon->GetWeaponEquipType()));
+	
 }
 
 void ASCharacter::LookUp(float Value)
@@ -606,13 +615,8 @@ void ASCharacter::PickUpWeapon(FWeaponPickUpInfo WeaponInfo)
 
 void ASCharacter::DealPickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 {
-	const FWeaponPickUpInfo LastWeaponInfo = GetWeaponPickUpInfo();
-	
-	//把旧武器信息广播出去，可用于和地上可拾取武器的信息互换
-	OnPickUpWeapon.Broadcast(LastWeaponInfo);
-
 	ASWeapon*& WeaponToExchange = GetWeaponByEquipType(WeaponInfo.WeaponEquipType);
-	/*if(!WeaponToExchange)  //如果没装备对应位置的武器则直接拾取
+	if(!WeaponToExchange)  //如果没装备对应位置的武器则直接拾取
 	{
 		WeaponToExchange = SpawnAndAttachWeapon(WeaponInfo);
 		if(!CurrentWeapon || CurrentWeapon->GetWeaponEquipType() == EWeaponEquipType::MeleeWeapon || CurrentWeapon->GetWeaponEquipType() == EWeaponEquipType::ThrowableWeapon)
@@ -622,19 +626,15 @@ void ASCharacter::DealPickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 	}
 	else
 	{
-		WeaponToExchange->Destroy(true);
+		//如果发生了交换而不是单方面拾取，把旧武器信息广播出去，可用于和地上可拾取武器的信息互换
+		OnExchangeWeapon.Broadcast(WeaponToExchange->GetWeaponPickUpInfo());
+		
+		WeaponToExchange->Destroy();
 		WeaponToExchange = SpawnAndAttachWeapon(WeaponInfo);
-		if(!CurrentWeapon)  //如果当前武器类型和要拾取的类型相同，则销毁后CurrentWeapon会为空，此时执行交换逻辑正好
+		if(!IsValid(CurrentWeapon)) //如果当前武器类型和要拾取的类型相同，则销毁后CurrentWeapon会无效(不为nullptr)，此时执行交换逻辑正好
 		{
 			StartSwapWeapon(WeaponToExchange->GetWeaponEquipType(), true);
 		}
-	}*/
-	//以上两段代码可继续简化为如下
-	WeaponToExchange->Destroy(true);
-	WeaponToExchange = SpawnAndAttachWeapon(WeaponInfo);
-	if(!CurrentWeapon || CurrentWeapon->GetWeaponEquipType() == EWeaponEquipType::MeleeWeapon || CurrentWeapon->GetWeaponEquipType() == EWeaponEquipType::ThrowableWeapon)
-	{
-		StartSwapWeapon(WeaponToExchange->GetWeaponEquipType(), true);
 	}
 }
 
@@ -741,6 +741,12 @@ void ASCharacter::StopReload()
 void ASCharacter::StartSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately)
 {
 	if(bDisableGamePlayInput) return;
+
+	//若要切换位置的武器已经被装备为当前武器则无事发生
+	if(CurrentWeapon == GetWeaponByEquipType(NewWeaponEquipType))
+	{
+		return;
+	}
 	if(GetWeaponByEquipType(NewWeaponEquipType))
 	{
 		SwapWeapon(NewWeaponEquipType, Immediately);
@@ -766,6 +772,12 @@ void ASCharacter::StopSwapWeapon()
 
 void ASCharacter::SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately)
 {
+	//若要切换位置的武器已经被装备为当前武器则无事发生
+	if(CurrentWeapon == GetWeaponByEquipType(NewWeaponEquipType))
+	{
+		return;
+	}
+	
 	StopFire();
 	StopReload();
 	
@@ -785,7 +797,7 @@ void ASCharacter::LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipTy
 	DealPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
 }
 
-void ASCharacter::ServerSwapWeapon_Implementation(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately)
+void ASCharacter::ServerSwapWeapon_Implementation(EWeaponEquipType NewWeaponEquipType, bool Immediately)
 {
 	SwapWeapon(NewWeaponEquipType, Immediately);
 }
@@ -806,7 +818,7 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 		float MontagePlayTime = SwapAnim && SwapAnimPlayRate>0.f ? SwapAnim->SequenceLength/SwapAnimPlayRate : 0.f ;
 		
 		//如果上次切换动画播到一半又想切回原武器，只需反播当前动画
-		if(bIsSwappingWeapon && NewWeaponEquipType == CurrentWeapon->GetWeaponEquipType())
+		if(bIsSwappingWeapon && CurrentSwapWeaponAnim && NewWeaponEquipType == CurrentWeapon->GetWeaponEquipType())
 		{
 			SwapAnim = CurrentSwapWeaponAnim;
 			
@@ -820,24 +832,29 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 		{
 			if(MontagePlayTime > 0)
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 5 ,FColor::Red, FString::Printf(TEXT(" MontagePlayTime ： %f "), MontagePlayTime));
 				CurrentSwapWeaponAnim = SwapAnim;
 				
 				PlayAnimMontage(SwapAnim, SwapAnimPlayRate);
+
+				FTimerDelegate STD;  //SwapWeaponTimerDelegate
+				//注意Lambda表达式的捕获方式如果为&则可能导致当前作用域内变量到生命周期之后再执行Timer时获取不到值而无法执行Lambda方法
+				STD.BindWeakLambda(this,[=]
+				{
+					StopAnimMontage(CurrentSwapWeaponAnim);
+					if(SwapAnimPlayRate > 0)
+					{
+						if(HasAuthority())  //客户端只播放动画
+						{
+							DealSwapWeaponAttachment(NewWeaponEquipType);
+						}
+					}
+					//如果SwapAnimPlayRate < 0说明在反向播放，之前的武器还没切换完成，不需要实际地切换Attachment
+				});
 				
 				GetWorldTimerManager().SetTimer(
 					SwapWeaponTimer,
-					[this,&]()
-					{
-						StopAnimMontage(CurrentSwapWeaponAnim);
-						if(SwapAnimPlayRate > 0)
-						{
-							if(HasAuthority())  //客户端只播放动画
-							{
-								DealSwapWeaponAttachment(NewWeaponEquipType);
-							}
-						}
-						//如果SwapAnimPlayRate < 0说明在反向播放，之前的武器还没切换完成，不需要实际地切换Attachment
-					},
+					STD,
 					MontagePlayTime*0.8,
 					false);
 			}
@@ -845,17 +862,27 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 			{
 				const UEnum* TestEnumPtr = StaticEnum<EWeaponEquipType>();
 				GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red,
-					FString::Printf(TEXT("Swap%sAnim蒙太奇不存在！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
-				
+					FString::Printf(TEXT("%s的 SwapAnimPlayRate < 0 ！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
+			
 				if(HasAuthority())  //客户端只播放动画
 				{
 					DealSwapWeaponAttachment(NewWeaponEquipType);
 				}
 			}
 		}
+		else
+		{
+			const UEnum* TestEnumPtr = StaticEnum<EWeaponEquipType>();
+			GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red,
+				FString::Printf(TEXT("Swap%sAnim蒙太奇不存在！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
+				
+			if(HasAuthority())  //客户端只播放动画
+			{
+				DealSwapWeaponAttachment(NewWeaponEquipType);
+			}
+		}
 	}
 }
-
 
 void ASCharacter::SetPlayerControllerRotation_Implementation()
 {
@@ -991,15 +1018,6 @@ void ASCharacter::SyncAimOffset_Implementation()
 	
 	AimOffset_Y = TargetRotator.Pitch;
 	AimOffset_Z = 0;
-}
-
-FWeaponPickUpInfo ASCharacter::GetWeaponPickUpInfo()
-{
-	if(CurrentWeapon)
-	{
-		return CurrentWeapon->GetWeaponPickUpInfo();
-	}
-	return FWeaponPickUpInfo();
 }
 
 //一个模板

@@ -19,7 +19,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);  //对于不需要长按
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyUp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyLongPressed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FPlayerDead, AController*, InstigatedBy, AActor*, DamageCauser,const UDamageType*, DamageType);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickUpWeapon, FWeaponPickUpInfo, OldWeaponInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExchangeWeapon, FWeaponPickUpInfo, OldWeaponInfo);
 
 UCLASS()
 class TPSGAME_API ASCharacter : public ACharacter, public IMyInterfaceTest
@@ -113,15 +113,15 @@ public:
 	
 	bool GetIsReloading()  const { return bIsReloading; }
 	void SetIsReloading(const bool& IsReloading){ bIsReloading = IsReloading; }
+
+	bool GetIsSwappingWeapon()  const { return bIsSwappingWeapon; }
+	void SetIsSwappingWeapon(const bool& IsSwappingWeapon){ bIsSwappingWeapon = IsSwappingWeapon; }
 	
 	float GetAimOffset_Y() const { return AimOffset_Y; }
 	float GetAimOffset_Z() const { return AimOffset_Z; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetSpringArmLength(){ return SpringArmComponent ? SpringArmComponent->TargetArmLength : 0 ; }
-	
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
-	FWeaponPickUpInfo GetWeaponPickUpInfo();
 	
 	UFUNCTION()
 	void OnMatchEnd(int NewWinnerID, ETeam NewWinningTeam);
@@ -152,8 +152,8 @@ protected:
 	void LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
 	void DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
 
-	UFUNCTION(Server, Reliable)
-	void ServerSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+	UFUNCTION(Server, Reliable)  //标记Server等RPC方法后不让TEnumAsByte做参数？(TEnumAsByte标记后，将值包装为了一个结构体)
+	void ServerSwapWeapon(EWeaponEquipType NewWeaponEquipType, bool Immediately);
 	
 	//根据是否开镜设置人物的移动类型
 	UFUNCTION(BlueprintNativeEvent)
@@ -170,6 +170,14 @@ protected:
 	//武器在服务器生成后复制到客户端有延迟，需要复制完成后再调用委托做一些初始化操作
 	UFUNCTION()
 	void OnRep_CurrentWeapon();
+	/*UFUNCTION()
+	void OnRep_MainWeapon();
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
+	UFUNCTION()
+	void OnRep_MeleeWeapon();
+	UFUNCTION()
+	void OnRep_ThrowableWeapon();*/
 
 	//角色死亡后做的一些操作
 	UFUNCTION()
@@ -236,7 +244,7 @@ public:
 	FPlayerDead OnPlayerDead;
 
 	UPROPERTY(BlueprintAssignable)
-	FOnPickUpWeapon OnPickUpWeapon;
+	FOnExchangeWeapon OnExchangeWeapon;
 
 	UPROPERTY(BlueprintAssignable)  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件
 	FOnInteractKeyUp OnInteractKeyDown;

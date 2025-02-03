@@ -113,7 +113,7 @@ public:
 	void ClientChangeCurrentAmmo(int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
 
 	UFUNCTION(BlueprintCallable)
-	bool CheckIsMeleeWeapon() const { return GetWeaponType() == Knife; }
+	bool CheckIsMeleeWeapon() const { return GetWeaponType() == EWeaponType::Knife || GetWeaponType() == EWeaponType::Fist; }
 
 	UFUNCTION(BlueprintCallable)
 	bool GetWeaponCanDropDown() const { return bCanDropDown; }
