@@ -11,4 +11,15 @@ enum EWeaponType
 	MachineGun,
 	SniperRifle,
 	ThrowGrenade,
+	Fist,  //空手，拳头
+	Knife,
+};
+
+UENUM(BlueprintType)
+enum EWeaponEquipType
+{
+	MainWeapon,
+	SecondaryWeapon,
+	MeleeWeapon,
+	ThrowableWeapon,
 };

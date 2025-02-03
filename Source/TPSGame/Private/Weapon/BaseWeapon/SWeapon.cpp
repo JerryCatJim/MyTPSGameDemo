@@ -83,12 +83,7 @@ void ASWeapon::BeginPlay()
 
 	if(HasAuthority())
 	{
-		WeaponPickUpInfo.Owner = MyOwner;
-		WeaponPickUpInfo.WeaponClass = GetClass();
-		WeaponPickUpInfo.WeaponMesh = GetWeaponMeshComp()->SkeletalMesh;
-		WeaponPickUpInfo.CurrentAmmo = CurrentAmmoNum;
-		WeaponPickUpInfo.BackUpAmmo = BackUpAmmoNum;
-		WeaponPickUpInfo.WeaponName = WeaponName;
+		WeaponPickUpInfo = FWeaponPickUpInfo(MyOwner,GetWeaponMeshComp()->SkeletalMesh,GetClass(),CurrentAmmoNum,BackUpAmmoNum,WeaponName,WeaponEquipType);
 	}
 }
 
@@ -901,6 +896,7 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, bIsBackUpAmmoInfinity);
 	DOREPLIFETIME(ASWeapon, WeaponName);
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
+	DOREPLIFETIME(ASWeapon, bCanDropDown);
 }
 
 

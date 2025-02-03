@@ -65,6 +65,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
 	void StopReload();
 
+	//将CurrentWeapon交换为指定类型的已装备的武器
+	UFUNCTION(BlueprintCallable, Category= WeaponSwap)
+	void StartSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately = false);
+	UFUNCTION(BlueprintCallable, Category= WeaponSwap)
+	void StopSwapWeapon();
+
 	//设置是否开镜
 	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
 	void SetWeaponZoom();
@@ -141,6 +147,13 @@ protected:
 	
 	void BeginCrouch();
 	void EndCrouch();
+
+	void SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+	void LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+	void DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
 	
 	//根据是否开镜设置人物的移动类型
 	UFUNCTION(BlueprintNativeEvent)
@@ -168,6 +181,8 @@ protected:
 	void OnRep_IsFiring(){ if(IsLocallyControlled()) bIsFiring = bIsFiringLocally; }
 	UFUNCTION()//原理同上
 	void OnRep_IsReloading(){ if(IsLocallyControlled()) bIsReloading = bIsReloadingLocally; }
+	UFUNCTION()//原理同上
+	void OnRep_IsSwappingWeapon(){ if(IsLocallyControlled()) bIsSwappingWeapon = bIsSwappingWeaponLocally; }
 
 	UFUNCTION(Server, Reliable)
 	void DealPickUpWeapon(FWeaponPickUpInfo WeaponInfo);
@@ -179,19 +194,33 @@ private:
 
 	UFUNCTION()
 	void OnRep_PlayerTeam(){ SetBodyColor(PlayerTeam); }
+
+	ASWeapon* SpawnAndAttachWeapon(FWeaponPickUpInfo WeaponToSpawn, bool RefreshWeaponInfo = true);
+	TSubclassOf<ASWeapon> GetWeaponSpawnClass(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+	FName GetWeaponSocketName(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+	ASWeapon*& GetWeaponByEquipType(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+	UAnimMontage* GetSwapWeaponAnim(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+	float GetSwapWeaponAnimRate(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+
+	void DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
 	
 public:	
 	//当前武器
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, ReplicatedUsing = OnRep_CurrentWeapon)  //Replicated : 网络复制
 	class ASWeapon* CurrentWeapon;
 
-	//武器1
+	//主武器
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
-	class ASWeapon* FirstWeapon;
-
-	//武器2
+	ASWeapon* MainWeapon;
+	//副武器 例如手枪
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
-	class ASWeapon* SecondWeapon;
+	ASWeapon* SecondaryWeapon;
+	//近战武器 例如刀
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
+	ASWeapon* MeleeWeapon;
+	//投掷道具，例如手雷，烟雾弹
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
+	ASWeapon* ThrowableWeapon;
 
 	UPROPERTY(EditAnywhere)
 	float DistanceToHideCharacter = 100;
@@ -243,13 +272,25 @@ protected:
 	bool bIsReloading = false;
 	//记录客户端本地的装弹状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
 	bool bIsReloadingLocally;
+
+	//当前武器是否正在交换武器
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsSwappingWeapon, Category= Weapon)
+	bool bIsSwappingWeapon = false;
+	//记录客户端本地的交换武器状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
+	bool bIsSwappingWeaponLocally;
 	
 	//默认视野范围
 	float DefaultFOV;
 
 	//为玩家生成武器
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<ASWeapon> CurrentWeaponClass;
+	TSubclassOf<ASWeapon> MainWeaponClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	TSubclassOf<ASWeapon> SecondaryWeaponClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	TSubclassOf<ASWeapon> MeleeWeaponClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	TSubclassOf<ASWeapon> ThrowableWeaponClass;
 
 	//玩家死亡时掉落的可拾取武器类
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
@@ -257,7 +298,15 @@ protected:
 
 	//武器插槽名称
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	FName WeaponSocketName;
+	FName CurrentWeaponSocketName;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	FName MainWeaponSocketName;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	FName SecondaryWeaponSocketName;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	FName MeleeWeaponSocketName;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	FName ThrowableWeaponSocketName;
 
 	//生命值组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
@@ -307,6 +356,30 @@ protected:
 	//按X秒完成长按
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
 	float InteractKeyLongPressFinishSecond = 2.f;
+
+	//角色切换武器时的动画
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
+	UAnimMontage* SwapMainWeaponAnim;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
+	UAnimMontage* SwapSecondaryWeaponAnim;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
+	UAnimMontage* SwapMeleeWeaponAnim;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
+	UAnimMontage* SwapThrowableWeaponAnim;
+	UPROPERTY()
+	UAnimMontage* CurrentSwapWeaponAnim; //记录当前正在播放的切换动画，如果切换过程中又想切换回原武器，则反播此动画即可
+	
+	//切换武器动画的播放速率
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
+	float SwapMainWeaponRate = 1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
+	float SwapSecondaryWeaponRate = 1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
+	float SwapMeleeWeaponRate = 1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
+	float SwapThrowableWeaponRate = 1.f;
+	//切换武器动画计时器
+	FTimerHandle SwapWeaponTimer;
 	
 private:
 	bool bPlayerLeftGame = false;

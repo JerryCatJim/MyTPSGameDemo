@@ -32,9 +32,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName WeaponName;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TEnumAsByte<EWeaponEquipType> WeaponEquipType;
+
 	FWeaponPickUpInfo(){};
 	
-	FWeaponPickUpInfo(ASCharacter* NewOwner, USkeletalMesh* NewWeaponMesh, TSubclassOf<ASWeapon> NewWeaponClass, int NewCurrentAmmo, int NewBackUpAmmo, FName NewWeaponName)
+	FWeaponPickUpInfo(ASCharacter* NewOwner, USkeletalMesh* NewWeaponMesh, TSubclassOf<ASWeapon> NewWeaponClass, int NewCurrentAmmo, int NewBackUpAmmo, FName NewWeaponName, TEnumAsByte<EWeaponEquipType> NewWeaponEquipType)
 	{
 		Owner = NewOwner;
 		WeaponMesh = NewWeaponMesh;
@@ -42,6 +45,7 @@ public:
 		CurrentAmmo = NewCurrentAmmo;
 		BackUpAmmo = NewBackUpAmmo;
 		WeaponName = NewWeaponName;
+		WeaponEquipType = NewWeaponEquipType;
 	};
 };
 
@@ -89,6 +93,7 @@ public:
 	TSubclassOf<UDamageType> GetWeaponDamageType() const { return DamageType; }
 
 	EWeaponType GetWeaponType() const { return WeaponType; }
+	EWeaponEquipType GetWeaponEquipType() const { return WeaponEquipType; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetCurrentAimingPoint(bool bUseSpread = true);
@@ -106,6 +111,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Client, Reliable)  //直接改变子弹数，不修正AmmoSequence
 	void ClientChangeCurrentAmmo(int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
+
+	UFUNCTION(BlueprintCallable)
+	bool CheckIsMeleeWeapon() const { return GetWeaponType() == Knife; }
+
+	UFUNCTION(BlueprintCallable)
+	bool GetWeaponCanDropDown() const { return bCanDropDown; }
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponCanDropDown(bool NewCanDropDown) { bCanDropDown = NewCanDropDown; }
 	
 protected:
 	// Called when the game starts or when spawned
@@ -146,13 +159,11 @@ protected:
 	//Server服务器端开火函数(客户端client发出请求到服务器执行)
 	UFUNCTION(Server, Reliable, WithValidation) //服务器，可靠链接，进行验证 （RPC函数）
 	void ServerFire();
-
 	UFUNCTION(Server, Reliable) //服务器，可靠链接
 	void ServerStopFire();
 	
 	UFUNCTION(Server, Reliable) //服务器，可靠链接，进行验证 （RPC函数）
 	void ServerReload(bool isAutoReload);
-
 	UFUNCTION(Server, Reliable) //服务器，可靠链接，进行验证 （RPC函数）
 	void ServerStopReload();
 	
@@ -276,6 +287,8 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Rifle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
+	TEnumAsByte<EWeaponEquipType> WeaponEquipType;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Component")
 	class USkeletalMeshComponent* MeshComponent;
@@ -294,7 +307,7 @@ protected:
 	//枪口插槽名称
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	FName MuzzleSocketName;
-
+	
 	//要设置长度的粒子特效的变量名称(?)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Weapon")
 	FName TraceTargetName;
@@ -401,6 +414,9 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon, Replicated)
+	bool bCanDropDown = true;  //武器是否可以丢弃或者掉落
 	
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponPickUpInfo)
