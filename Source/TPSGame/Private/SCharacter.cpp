@@ -832,7 +832,6 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 		{
 			if(MontagePlayTime > 0)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 5 ,FColor::Red, FString::Printf(TEXT(" MontagePlayTime ： %f "), MontagePlayTime));
 				CurrentSwapWeaponAnim = SwapAnim;
 				
 				PlayAnimMontage(SwapAnim, SwapAnimPlayRate);
@@ -861,7 +860,7 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 			else
 			{
 				const UEnum* TestEnumPtr = StaticEnum<EWeaponEquipType>();
-				GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red,
+				GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
 					FString::Printf(TEXT("%s的 SwapAnimPlayRate < 0 ！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
 			
 				if(HasAuthority())  //客户端只播放动画
@@ -873,7 +872,7 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 		else
 		{
 			const UEnum* TestEnumPtr = StaticEnum<EWeaponEquipType>();
-			GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red,
+			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red,
 				FString::Printf(TEXT("Swap%sAnim蒙太奇不存在！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
 				
 			if(HasAuthority())  //客户端只播放动画
