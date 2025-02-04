@@ -251,6 +251,22 @@ void ASWeapon::DealFire()
 
 void ASWeapon::Fire()
 {
+	if(!CheckOwnerValidAndAlive() || (MyOwner && MyOwner->GetIsSwappingWeapon()))
+	{
+		//射击时被人打死或者高延迟下导致了先切枪后射击，如果不调用StopFire()会一直尝试射击
+		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
+		MyOwner->SetIsFiring(false);
+		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+		return;
+	}
+	
+	if(!HasAuthority())  //本地只处理一些表现效果，权威端在服务器
+	{
+		ServerFire();
+		LocalFire();
+		return;
+	}
+	
 	if(!CheckCanFire())
 	{
 		if(!(CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
@@ -260,17 +276,7 @@ void ASWeapon::Fire()
 			MyOwner->SetIsFiring(false);
 			return;
 		}
-		//射击时被人打死或者高延迟下导致了先切枪后射击，如果不调用StopFire()会一直尝试射击
-		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
-		MyOwner->SetIsFiring(false);
-		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot); 
-		return;
-	}
-	
-	if(!HasAuthority())  //本地只处理一些表现效果，权威端在服务器
-	{
-		ServerFire();
-		LocalFire();
+		//
 		return;
 	}
 	
@@ -448,7 +454,7 @@ void ASWeapon::Reload(bool IsAutoReload)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("Reload蒙太奇不存在！")));
 	}
-
+	
 	//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
 	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
 	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){ReloadFinished();}, MontagePlayTime, false);
@@ -490,7 +496,7 @@ void ASWeapon::ReloadFinished()
 	}
 	
 	StopReloadAnimAndTimer();
-
+	
 	float IncreaseAmmo;
 	if(CurrentAmmoNum < OnePackageAmmoNum)
 	{
@@ -511,9 +517,9 @@ void ASWeapon::ReloadFinished()
 		return;
 	}
 		
-	//刷新客户端当前子弹数
+	//同步客户端当前子弹数
 	ClientSyncCurrentAmmo(CurrentAmmoNum, IncreaseAmmo);
-
+	
 	if(HasAuthority())
 	{
 		//广播Reload事件，可用于更新子弹数UI等，C++服务器端手动调用一下子弹数更新委托
@@ -550,12 +556,12 @@ void ASWeapon::LocalReloadFinished()
 		AmmoSequence += ReloadedNum;
 	}
 	else if(CurrentAmmoNum == OnePackageAmmoNum && CanOverloadAmmo) //弹匣满了就只上一发子弹
-		{
+	{
 		//等待网络复制
 		//BackUpAmmoNum = bIsBackUpAmmoInfinity ? BackUpAmmoNum : BackUpAmmoNum - 1;
 		++CurrentAmmoNum;
 		++AmmoSequence;
-		}
+	}
 	else
 	{
 		return;
