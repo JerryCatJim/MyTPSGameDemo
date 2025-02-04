@@ -69,7 +69,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category= WeaponSwap)
 	void StartSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately = false);
 	UFUNCTION(BlueprintCallable, Category= WeaponSwap)
-	void StopSwapWeapon();
+	void StopSwapWeapon(bool bWaitCurrentWeaponReplicated);
 
 	//设置是否开镜
 	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
@@ -113,6 +113,7 @@ public:
 	
 	bool GetIsReloading()  const { return bIsReloading; }
 	void SetIsReloading(const bool& IsReloading){ bIsReloading = IsReloading; }
+	void SetIsReloadingLocally(const bool& IsReloading){ bIsReloadingLocally = IsReloading; }
 
 	bool GetIsSwappingWeapon()  const { return bIsSwappingWeapon; }
 	void SetIsSwappingWeapon(const bool& IsSwappingWeapon){ bIsSwappingWeapon = IsSwappingWeapon; }

@@ -100,6 +100,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	bool CheckCanFire();
+	UFUNCTION(BlueprintCallable)
+	bool CheckCanReload();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = Weapon)
 	FWeaponPickUpInfo GetWeaponPickUpInfo();

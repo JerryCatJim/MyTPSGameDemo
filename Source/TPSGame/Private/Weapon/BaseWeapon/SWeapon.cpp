@@ -105,7 +105,12 @@ bool ASWeapon::IsProjectileWeapon()
 
 bool ASWeapon::CheckCanFire()
 {
-	return CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity;
+	return CheckOwnerValidAndAlive() && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity) && !MyOwner->GetIsSwappingWeapon();
+}
+
+bool ASWeapon::CheckCanReload()
+{
+	return CheckOwnerValidAndAlive() && !(MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity || MyOwner->GetIsSwappingWeapon());
 }
 
 //不想每次子弹变化都更新Info,因为要网络同步,所以在Get时才更新
@@ -221,7 +226,7 @@ void ASWeapon::StopReloadAnimAndTimer()
 	{
 		return;
 	}
-
+	
 	MyOwner->SetIsReloading(false);
 	
 	GetWorldTimerManager().ClearTimer(ReloadTimer);
@@ -246,9 +251,19 @@ void ASWeapon::DealFire()
 
 void ASWeapon::Fire()
 {
-	if(!CheckOwnerValidAndAlive())
+	if(!CheckCanFire())
 	{
-		StopFire();  //不调用StopFire()会一直尝试射击，所以停掉Timer
+		if(!(CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
+		{
+			//没子弹了还一直按着射击，就一直广播，用于更新子弹数UI，例如把当前子弹数颜色变成红色等
+			OnCurrentAmmoChanged.Broadcast(0, true);
+			MyOwner->SetIsFiring(false);
+			return;
+		}
+		//射击时被人打死或者高延迟下导致了先切枪后射击，如果不调用StopFire()会一直尝试射击
+		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
+		MyOwner->SetIsFiring(false);
+		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot); 
 		return;
 	}
 	
@@ -259,18 +274,10 @@ void ASWeapon::Fire()
 		return;
 	}
 	
-	if(!CheckCanFire())
-	{
-		//没子弹了还一直按着射击，就一直广播，用于更新子弹数UI，例如把当前子弹数颜色变成红色等
-		OnCurrentAmmoChanged.Broadcast(0, true);
-		MyOwner->SetIsFiring(false);
-		return;
-	}
-	
 	if(CheckCanFire())
 	{
-		//正在装弹时触发了无限子弹BUFF时在换弹，再射击时打断换弹
-		if(MyOwner->GetIsReloading() && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
+		//正在装弹时射击会打断换弹
+		if(MyOwner->GetIsReloading())
 		{
 			StopReload();
 		}
@@ -318,22 +325,29 @@ void ASWeapon::Fire()
 
 void ASWeapon::LocalFire()
 {
-	if(!CheckOwnerValidAndAlive() || HasAuthority())
+	if(HasAuthority())
 	{
 		return;
 	}
 
 	if(!CheckCanFire())
 	{
-		//没子弹了还一直按着射击，就一直广播，用于更新子弹数UI，例如把当前子弹数颜色变成红色等
-		OnCurrentAmmoChanged.Broadcast(0, true);
+		if(!(CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
+		{
+			//没子弹了还一直按着射击，就一直广播，用于更新子弹数UI，例如把当前子弹数颜色变成红色等
+			OnCurrentAmmoChanged.Broadcast(0, true);
+			MyOwner->SetIsFiring(false);
+			return;
+		}
+		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
 		MyOwner->SetIsFiring(false);
+		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot); 
 		return;
 	}
 	
 	if(CheckCanFire())
 	{
-		if(MyOwner->GetIsReloading() && (CurrentAmmoNum > 0 || bIsCurrentAmmoInfinity))
+		if(MyOwner->GetIsReloading())
 		{
 			LocalStopReload();
 		}
@@ -407,7 +421,7 @@ void ASWeapon::StartReload()
 
 void ASWeapon::Reload(bool IsAutoReload)
 {
-	if(!CheckOwnerValidAndAlive())
+	if(!CheckCanReload())
 	{
 		return;
 	}
@@ -416,11 +430,6 @@ void ASWeapon::Reload(bool IsAutoReload)
 	{
 		ServerReload(IsAutoReload);
 		LocalReload(IsAutoReload);
-		return;
-	}
-	
-	if(MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
-	{
 		return;
 	}
 
@@ -450,12 +459,7 @@ void ASWeapon::Reload(bool IsAutoReload)
 
 void ASWeapon::LocalReload(bool IsAutoReload)
 {
-	if(!CheckOwnerValidAndAlive() || HasAuthority())
-	{
-		return;
-	}
-	
-	if(MyOwner->GetIsReloading() || MyOwner->GetIsFiring() || CheckIsFullAmmo() || bIsCurrentAmmoInfinity)
+	if(!CheckCanReload() || HasAuthority())
 	{
 		return;
 	}

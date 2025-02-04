@@ -334,7 +334,7 @@ UAnimMontage* ASCharacter::GetSwapWeaponAnim(TEnumAsByte<EWeaponEquipType> Weapo
 
 float ASCharacter::GetSwapWeaponAnimRate(TEnumAsByte<EWeaponEquipType> WeaponEquipType)
 {
-	float SwapRate = 0.f;
+	float SwapRate = 1.f;
 	switch(WeaponEquipType)
 	{
 	case EWeaponEquipType::MainWeapon:
@@ -357,26 +357,30 @@ float ASCharacter::GetSwapWeaponAnimRate(TEnumAsByte<EWeaponEquipType> WeaponEqu
 
 void ASCharacter::DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipType> WeaponEquipType)
 {
-	if(!HasAuthority()) return; //只有服务器做实质性逻辑
-	
-	CurrentSwapWeaponAnim = nullptr;
-	bIsSwappingWeapon = false;
-
 	//若要切换位置的武器已经被装备为当前武器则无事发生
 	if(CurrentWeapon == GetWeaponByEquipType(WeaponEquipType))
 	{
+		StopSwapWeapon(false);
 		return;
 	}
 	
-	ASWeapon* LastWeapon = CurrentWeapon;
-	CurrentWeapon = GetWeaponByEquipType(WeaponEquipType);
+	//可以先将武器交换吸附这种纯表现的逻辑在双端都进行，但是实际更改CurrentWeapon赋值的行为只在服务器进行
+	GetWeaponByEquipType(WeaponEquipType)->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
+	CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, GetWeaponSocketName(CurrentWeapon->GetWeaponEquipType()));
+	
+	if(!HasAuthority())
+	{
+		//客户端需等待服务器完成判断，在此之前本地虽结束了动画播放和计时器，但bIsSwapping状态仍为true，以禁止当前武器开火
+		StopSwapWeapon(true);
+		return;
+	}
+
 	if(HasAuthority())
 	{
+		CurrentWeapon = GetWeaponByEquipType(WeaponEquipType);
+		//OnRep中会调用StopSwapWeapon(false)将bIsSwappingWeapon变为false
 		OnRep_CurrentWeapon();
 	}
-	CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
-	LastWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, GetWeaponSocketName(LastWeapon->GetWeaponEquipType()));
-	
 }
 
 void ASCharacter::LookUp(float Value)
@@ -687,11 +691,12 @@ void ASCharacter::StartFire()
 	if(CurrentWeapon)
 	{
 		//有子弹或者无限子弹才设置为开火状态，防止一按开火人物就瞬间面对正前方
+		bool PreCheckRes = CurrentWeapon->CheckCanFire();
 		CurrentWeapon->StartFire();
 		if(IsLocallyControlled())
 		{
-			bIsFiring = true;
-			bIsFiringLocally = true;
+			bIsFiring        = PreCheckRes;
+			bIsFiringLocally = PreCheckRes;
 		}
 	}
 }
@@ -699,7 +704,7 @@ void ASCharacter::StartFire()
 void ASCharacter::StopFire()
 {
 	//if(bDisableGamePlayInput) return;
-	if(CurrentWeapon)
+	if(CurrentWeapon && !GetIsSwappingWeapon())
 	{
 		CurrentWeapon->StopFire();
 		if(IsLocallyControlled())
@@ -715,11 +720,13 @@ void ASCharacter::StartReload()
 	if(bDisableGamePlayInput) return;
 	if(CurrentWeapon)
 	{
+		bool PreCheckRes = CurrentWeapon->CheckCanReload();
 		CurrentWeapon->StartReload();
 		if(IsLocallyControlled())
 		{
-			bIsReloading = true;
-			bIsReloadingLocally = true;
+			//正在换弹时再按换弹不会打断换单操作，且仍为换弹状态
+			bIsReloading        = PreCheckRes || GetIsReloading();
+			bIsReloadingLocally = PreCheckRes || GetIsReloading();
 		}
 	}
 }
@@ -742,38 +749,45 @@ void ASCharacter::StartSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipTy
 {
 	if(bDisableGamePlayInput) return;
 
-	//若要切换位置的武器已经被装备为当前武器则无事发生
-	if(CurrentWeapon == GetWeaponByEquipType(NewWeaponEquipType))
+	if(!IsValid(GetWeaponByEquipType(NewWeaponEquipType)) || (CurrentWeapon == GetWeaponByEquipType(NewWeaponEquipType) && !GetIsSwappingWeapon()))
 	{
 		return;
 	}
-	if(GetWeaponByEquipType(NewWeaponEquipType))
+	
+	//如果刚切枪到一半(此时还未完成交换)时又按了一下想切回原武器则允许交换，最终进入DealPlaySwapWeaponAnim的反播动画部分
+	SwapWeapon(NewWeaponEquipType, Immediately);
+	if(IsLocallyControlled())
 	{
-		SwapWeapon(NewWeaponEquipType, Immediately);
-		if(IsLocallyControlled())
-		{
-			bIsSwappingWeapon = !Immediately;
-			bIsSwappingWeaponLocally = !Immediately;
-		}
+		bIsSwappingWeapon = !Immediately;
+		bIsSwappingWeaponLocally = !Immediately;
 	}
 }
 
-void ASCharacter::StopSwapWeapon()
+void ASCharacter::StopSwapWeapon(bool bWaitCurrentWeaponReplicated)
 {
 	GetWorldTimerManager().ClearTimer(SwapWeaponTimer);
 	StopAnimMontage(CurrentSwapWeaponAnim);
-	
-	if(IsLocallyControlled())
+	CurrentSwapWeaponAnim = nullptr;
+
+	if(HasAuthority())
 	{
 		bIsSwappingWeapon = false;
 		bIsSwappingWeaponLocally = false;
+		return;
+	}
+	
+	if(IsLocallyControlled())
+	{
+		//客户端需等待武器真正完成复制后才算完成交换(未实际交换时bWaitCurrentWeaponReplicated会填入false)
+		bIsSwappingWeapon = bWaitCurrentWeaponReplicated;
+		bIsSwappingWeaponLocally = bWaitCurrentWeaponReplicated;
 	}
 }
 
 void ASCharacter::SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately)
 {
-	//若要切换位置的武器已经被装备为当前武器则无事发生
-	if(CurrentWeapon == GetWeaponByEquipType(NewWeaponEquipType))
+	//如果刚切枪到一半(此时还未完成交换)时又按了一下想切回原武器则允许交换，最终进入DealPlaySwapWeaponAnim的反播动画部分
+	if(CurrentWeapon == GetWeaponByEquipType(NewWeaponEquipType) && !GetIsSwappingWeapon())
 	{
 		return;
 	}
@@ -789,11 +803,13 @@ void ASCharacter::SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, b
 		return;
 	}
 	
+	bIsSwappingWeapon = true;
 	DealPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
 }
 
 void ASCharacter::LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately)
 {
+	//本地会预测结果，所以把bIsSwappingWeapon = true;从DealPlaySwapWeaponAnim中剥离到Server
 	DealPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
 }
 
@@ -818,13 +834,12 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 		float MontagePlayTime = SwapAnim && SwapAnimPlayRate>0.f ? SwapAnim->SequenceLength/SwapAnimPlayRate : 0.f ;
 		
 		//如果上次切换动画播到一半又想切回原武器，只需反播当前动画
-		if(bIsSwappingWeapon && CurrentSwapWeaponAnim && NewWeaponEquipType == CurrentWeapon->GetWeaponEquipType())
+		if(GetIsSwappingWeapon() && CurrentSwapWeaponAnim && NewWeaponEquipType == CurrentWeapon->GetWeaponEquipType())
 		{
 			SwapAnim = CurrentSwapWeaponAnim;
 			
 			const UAnimInstance* AnimIns = GetMesh()->GetAnimInstance();
-			MontagePlayTime = (SwapAnim->SequenceLength - AnimIns->Montage_GetPosition(SwapAnim))/SwapAnimPlayRate;
-			
+			MontagePlayTime = AnimIns->Montage_GetPosition(SwapAnim)/SwapAnimPlayRate;
 			//播放速率变为复数即为反着播放(?)
 			SwapAnimPlayRate = SwapAnimPlayRate * -1.f;
 		}
@@ -834,27 +849,23 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 			{
 				CurrentSwapWeaponAnim = SwapAnim;
 				
-				PlayAnimMontage(SwapAnim, SwapAnimPlayRate);
+				PlayAnimMontage(CurrentSwapWeaponAnim, SwapAnimPlayRate);
 
 				FTimerDelegate STD;  //SwapWeaponTimerDelegate
 				//注意Lambda表达式的捕获方式如果为&则可能导致当前作用域内变量到生命周期之后再执行Timer时获取不到值而无法执行Lambda方法
 				STD.BindWeakLambda(this,[=]
 				{
-					StopAnimMontage(CurrentSwapWeaponAnim);
-					if(SwapAnimPlayRate > 0)
-					{
-						if(HasAuthority())  //客户端只播放动画
-						{
-							DealSwapWeaponAttachment(NewWeaponEquipType);
-						}
-					}
-					//如果SwapAnimPlayRate < 0说明在反向播放，之前的武器还没切换完成，不需要实际地切换Attachment
+					//无论正反播放动画都可以走进交换武器逻辑
+					//只不过反向播放时CurrentWeapon还没有完成替换，会卡在DealSwapWeaponAttachment的判断那步，自然就不会完成切换
+					DealSwapWeaponAttachment(NewWeaponEquipType);
 				});
 				
+				float TimerRate = SwapAnimPlayRate > 0 ? 0.8 : 0.7;//反播动画时候稍微快点结束
+				//GetWorldTimerManager().ClearTimer(SwapWeaponTimer);  //Set已存在的Timer会自动先Clear
 				GetWorldTimerManager().SetTimer(
 					SwapWeaponTimer,
 					STD,
-					MontagePlayTime*0.8,
+					MontagePlayTime* TimerRate,
 					false);
 			}
 			else
@@ -911,6 +922,9 @@ void ASCharacter::OnRep_CurrentWeapon()
 	{
 		MyController->ResetCrossHair();
 	}
+
+	//服务器调用OnRep时会立刻将bIsSwappingWeapon赋值为false，客户端需等待OnRep完成复制时才改为false以保持同步
+	StopSwapWeapon(false);
 	
 	OnCurrentWeaponChanged.Broadcast();
 }
@@ -926,7 +940,7 @@ void ASCharacter::OnRep_Died()
 	
 	StopFire();
 	StopReload();
-	StopSwapWeapon();
+	StopSwapWeapon(false);
 
 	if(HasAuthority())
 	{
