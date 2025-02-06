@@ -75,7 +75,6 @@ void APickUpWeapon::BeginPlay()
 		{
 			//让武器模拟物理，达到可以落在地上的效果
 			MeshComponent->SetSimulatePhysics(bCanMeshDropOnTheGround);
-			GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red, FString::Printf(TEXT("HasAuthority  %d"),HasAuthority()));
 		}
 	}
 	if(!WeaponPickUpInfo.IsWeaponValid)
