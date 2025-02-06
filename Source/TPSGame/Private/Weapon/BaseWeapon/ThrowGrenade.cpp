@@ -20,4 +20,6 @@ AThrowGrenade::AThrowGrenade()
 
 	bIsFullAutomaticWeapon = false;
 	CanOverloadAmmo = false;
+
+	bCanManuallyDiscard = false;
 }

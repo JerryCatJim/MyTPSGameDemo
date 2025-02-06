@@ -15,6 +15,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Weapon/PickUpWeapon.h"
 #include "Net/UnrealNetwork.h"
 
 int32 DebugWeaponDrawing = 0;
@@ -81,6 +82,10 @@ void ASWeapon::BeginPlay()
 	//Owner在构造函数里拿不到，在BeginPlay里就拿到了(?)
 	MyOwner = Cast<ASCharacter>(GetOwner());
 
+	//从C++中获取蓝图类
+	const FString PickUpWeaponClassLoadPath = FString(TEXT("/Game/BP_Weapon/PickUpWeapon/BP_PickUpWeaponBase.BP_PickUpWeaponBase_C"));//蓝图一定要加_C这个后缀名
+	PickUpWeaponClass = LoadClass<APickUpWeapon>(nullptr, *PickUpWeaponClassLoadPath);
+	
 	if(HasAuthority())
 	{
 		WeaponPickUpInfo = FWeaponPickUpInfo(MyOwner,GetWeaponMeshComp()->SkeletalMesh,GetClass(),CurrentAmmoNum,BackUpAmmoNum,WeaponName,WeaponEquipType);

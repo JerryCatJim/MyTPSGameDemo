@@ -8,6 +8,8 @@
 #include "WeaponAndBulletType/BulletType.h"
 #include "SWeapon.generated.h"
 
+class APickUpWeapon;
+
 USTRUCT(BlueprintType)
 struct FWeaponPickUpInfo
 {
@@ -35,9 +37,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TEnumAsByte<EWeaponEquipType> WeaponEquipType;
 
-	FWeaponPickUpInfo(){};
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsWeaponValid = true;
+
+	FWeaponPickUpInfo(){ IsWeaponValid = false; };
 	
-	FWeaponPickUpInfo(ASCharacter* NewOwner, USkeletalMesh* NewWeaponMesh, TSubclassOf<ASWeapon> NewWeaponClass, int NewCurrentAmmo, int NewBackUpAmmo, FName NewWeaponName, TEnumAsByte<EWeaponEquipType> NewWeaponEquipType)
+	FWeaponPickUpInfo(ASCharacter* NewOwner, USkeletalMesh* NewWeaponMesh, TSubclassOf<ASWeapon> NewWeaponClass, int NewCurrentAmmo, int NewBackUpAmmo, FName NewWeaponName,
+		TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool IsValidWeapon = true)
 	{
 		Owner = NewOwner;
 		WeaponMesh = NewWeaponMesh;
@@ -46,6 +52,7 @@ public:
 		BackUpAmmo = NewBackUpAmmo;
 		WeaponName = NewWeaponName;
 		WeaponEquipType = NewWeaponEquipType;
+		IsWeaponValid = IsValidWeapon;
 	};
 };
 
@@ -92,6 +99,9 @@ public:
 
 	TSubclassOf<UDamageType> GetWeaponDamageType() const { return DamageType; }
 
+	UFUNCTION(BlueprintCallable)
+	TSubclassOf<APickUpWeapon> GetPickUpWeaponClass() const { return PickUpWeaponClass; }
+	
 	EWeaponType GetWeaponType() const { return WeaponType; }
 	EWeaponEquipType GetWeaponEquipType() const { return WeaponEquipType; }
 
@@ -121,6 +131,10 @@ public:
 	bool GetWeaponCanDropDown() const { return bCanDropDown; }
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponCanDropDown(bool NewCanDropDown) { bCanDropDown = NewCanDropDown; }
+	UFUNCTION(BlueprintCallable)
+	bool GetWeaponCanManuallyDiscard() const { return bCanManuallyDiscard; }
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponCanManuallyDiscard(bool NewCanManuallyDiscard) { bCanManuallyDiscard = NewCanManuallyDiscard; }
 	
 protected:
 	// Called when the game starts or when spawned
@@ -418,7 +432,12 @@ protected:
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon, Replicated)
-	bool bCanDropDown = true;  //武器是否可以丢弃或者掉落
+	bool bCanDropDown = true;  //武器是否可以死后掉落
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon, Replicated)
+	bool bCanManuallyDiscard = true;  //武器是否可以手动丢弃
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
+	TSubclassOf<APickUpWeapon> PickUpWeaponClass;
 	
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponPickUpInfo)

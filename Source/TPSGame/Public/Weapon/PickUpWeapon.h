@@ -56,6 +56,9 @@ protected:
 	void OnInteractKeyDown();
 	UFUNCTION()
 	void OnInteractKeyLongPressed();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ThrowAfterSpawn();
 	
 public:
 	UPROPERTY(EditAnywhere, Category=Component)
@@ -67,8 +70,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Component)
 	UWidgetComponent* WidgetComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<ASWeapon> WeaponClass;
+	//蓝图中提前设置的要生成的武器类，动态生成的话不需要设定
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	TSubclassOf<ASWeapon> DefaultEditWeaponClass;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;
@@ -84,8 +88,12 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	bool bCanInteractKeyLongPress = true;  //写在Protected里然后Public用Getter Setter更好，这里懒了就不做了
-protected:
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
+	bool bThrowAfterSpawn = false;
+	
+protected:
+	
 private:
 	//同一时间只能有一个可拾取武器发生重叠时间，记录正在发生重叠的武器是不是此武器自己
 	bool bIsThisTheOverlapOne = false;

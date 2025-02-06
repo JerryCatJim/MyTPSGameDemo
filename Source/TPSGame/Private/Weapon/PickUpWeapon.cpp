@@ -21,8 +21,9 @@ APickUpWeapon::APickUpWeapon()
 	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 
-	SetRootComponent(CapsuleComponent);
-	MeshComponent->SetupAttachment(RootComponent);
+	SetRootComponent(MeshComponent);
+	//RootComponent = MeshComponent;
+	CapsuleComponent->SetupAttachment(RootComponent);
 	WidgetComponent->SetupAttachment(RootComponent);
 	
 	CapsuleComponent->SetCapsuleRadius(44);
@@ -45,13 +46,16 @@ void APickUpWeapon::BeginPlay()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Owner = this;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
+
+	if(DefaultEditWeaponClass != nullptr )
+	{
+		ASWeapon* CurWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultEditWeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
+		WeaponPickUpInfo = CurWeapon->GetWeaponPickUpInfo();
+		CurWeapon->Destroy();
+	}
 	
-	ASWeapon* CurWeapon = GetWorld()->SpawnActor<ASWeapon>(WeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
-	WeaponPickUpInfo = CurWeapon->GetWeaponPickUpInfo();
 	//记录原始武器信息
 	OriginalWeaponInfo = WeaponPickUpInfo;
-
-	CurWeapon->Destroy();
 
 	//从C++中获取蓝图类
 	const FString WidgetClassLoadPath = FString(TEXT("/Game/UI/WBP_ItemPickUpTip.WBP_ItemPickUpTip_C"));//蓝图一定要加_C这个后缀名
@@ -64,17 +68,27 @@ void APickUpWeapon::BeginPlay()
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APickUpWeapon::OnCapsuleComponentBeginOverlap);
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APickUpWeapon::OnCapsuleComponentEndOverlap);
 
-	if(IsValid(WeaponPickUpInfo.WeaponMesh))
+	if(WeaponPickUpInfo.IsWeaponValid && IsValid(WeaponPickUpInfo.WeaponMesh))
 	{
 		MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
 		if(MeshComponent->SkeletalMesh)
 		{
 			//让武器模拟物理，达到可以落在地上的效果
 			MeshComponent->SetSimulatePhysics(bCanMeshDropOnTheGround);
+			GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red, FString::Printf(TEXT("HasAuthority  %d"),HasAuthority()));
 		}
+	}
+	if(!WeaponPickUpInfo.IsWeaponValid)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5 ,FColor::Red, TEXT("PickUpWeapon的WeaponClass不存在!"));
 	}
 	
 	ShowTipWidget(false);
+
+	if(HasAuthority() && bThrowAfterSpawn)
+	{
+		ThrowAfterSpawn();
+	}
 }
 
 // Called every frame
@@ -122,9 +136,23 @@ void APickUpWeapon::TryPickUpWeapon()
 
 void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInfo NewInfo)
 {
-	WeaponPickUpInfo = NewInfo;
+	if(!bCanInteractKeyLongPress && !NewInfo.IsWeaponValid)  //不可被刷新的武器被拾取(传过来的IsWeaponValid为false)而不是切换则销毁
+	{
+		Destroy();
+		return;
+	}
+	
 	if(HasAuthority())
 	{
+		if(NewInfo.IsWeaponValid)
+		{
+			WeaponPickUpInfo = NewInfo;
+		}
+		else
+		{
+			//如果FWeaponPickUpInfo结构体中的指针在传过来是就为nullptr，赋值时不会保留指针而是直接回收，导致连WeaponPickUpInfo.WeaponMesh/WeaponClass都会直接报错导致程序崩溃
+			WeaponPickUpInfo.IsWeaponValid = NewInfo.IsWeaponValid;
+		}
 		OnRep_WeaponPickUpInfo();
 	}
 }
@@ -132,16 +160,26 @@ void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInf
 void APickUpWeapon::OnRep_WeaponPickUpInfo()
 {
 	//拾取武器后 地上武器的提示文字名字和Mesh没改为被换下来的武器，手动刷新一下
-	if(IsValid(WeaponPickUpInfo.WeaponMesh))
+	if(WeaponPickUpInfo.IsWeaponValid)
 	{
+		//如果FWeaponPickUpInfo结构体中的指针在传过来是就为nullptr，赋值时不会保留指针而是直接回收，导致连WeaponPickUpInfo.WeaponMesh/WeaponClass都会直接报错导致程序崩溃
 		MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
 	}
 	else
 	{
 		MeshComponent->SetSkeletalMesh(OriginalWeaponInfo.WeaponMesh);
-		GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("当前角色替换下来的武器为空，将可拾取武器刷新为原始武器"));
 	}
 	ShowTipWidgetOnOwningClient();
+}
+
+void APickUpWeapon::ThrowAfterSpawn_Implementation()
+{
+	if(!GetOwner()) return;
+	
+	float ThrowPowerSpeed = 300.f;
+	const FVector ThrowVelocity = (GetOwner()->GetActorForwardVector() + FVector(0, 0, 1)) * ThrowPowerSpeed;
+	MeshComponent->SetPhysicsLinearVelocity(ThrowVelocity);
+	//MeshComponent->AddForceToAllBodiesBelow(ThrowVelocity*100);
 }
 
 void APickUpWeapon::OnCapsuleComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -286,4 +324,6 @@ void APickUpWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(APickUpWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(APickUpWeapon, bCanMeshDropOnTheGround);
 	DOREPLIFETIME(APickUpWeapon, bCanInteractKeyLongPress);
+	DOREPLIFETIME(APickUpWeapon, DefaultEditWeaponClass);
+	DOREPLIFETIME(APickUpWeapon, bThrowAfterSpawn);
 }

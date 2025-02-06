@@ -48,9 +48,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 
-	//死亡时掉落武器
-	UFUNCTION(BlueprintCallable, Server, Reliable, Category = Weapon)
-	void DropWeapon();
+	//主动丢弃武器或者死亡时掉落武器,如果是手动丢弃则会施加扔出去的力，并将CurrentWeapon切换为下一把武器
+	UFUNCTION(BlueprintCallable, Category = Weapon)
+	void StartDropWeapon(bool ManuallyDiscard);
 	
 	//控制武器开火
 	UFUNCTION(BlueprintCallable, Category= WeaponFire)
@@ -194,6 +194,9 @@ protected:
 	void OnRep_IsSwappingWeapon(){ if(IsLocallyControlled()) bIsSwappingWeapon = bIsSwappingWeaponLocally; }
 
 	UFUNCTION(Server, Reliable)
+	void DealDropWeapon(bool ManuallyDiscard);
+	
+	UFUNCTION(Server, Reliable)
 	void DealPickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 	
 private:
@@ -212,6 +215,8 @@ private:
 	float GetSwapWeaponAnimRate(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
 
 	void DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+
+	void SwapToNextAvailableWeapon(TEnumAsByte<EWeaponEquipType> CurrentWeaponEquipType);
 	
 public:	
 	//当前武器
@@ -300,10 +305,6 @@ protected:
 	TSubclassOf<ASWeapon> MeleeWeaponClass;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<ASWeapon> ThrowableWeaponClass;
-
-	//玩家死亡时掉落的可拾取武器类
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<class APickUpWeapon> PickUpWeaponClass;
 
 	//武器插槽名称
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
@@ -395,6 +396,14 @@ private:
 	
 	FTimerHandle FGetPlayerStateHandle;
 	int TryGetPlayerStateTimes = 0;  //超过5次还没成功就停止计时器
+
+	UPROPERTY()
+	TArray<TEnumAsByte<EWeaponEquipType>> WeaponEquipTypeList = {
+		EWeaponEquipType::MainWeapon,
+		EWeaponEquipType::SecondaryWeapon,
+		EWeaponEquipType::MeleeWeapon,
+		EWeaponEquipType::ThrowableWeapon
+	};
 	
 //临时测试接口的区域
 public:
