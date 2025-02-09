@@ -270,13 +270,13 @@ protected:
 	USpringArmComponent* SpringArmComponent;
 	
 	//是否正在开镜变焦
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_IsAiming, Category= Weapon)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsAiming, Category= Weapon)
 	bool bIsAiming;
 	//记录客户端本地的瞄准状态，以修正延迟较高时快速瞄准又退出时被服务器覆盖了旧时间的状态
 	bool bIsAimingLocally;
 
 	//是否正在射击
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, ReplicatedUsing = OnRep_IsFiring, Category= Weapon)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsFiring, Category= Weapon)
 	bool bIsFiring;
 	//记录客户端本地的射击状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
 	bool bIsFiringLocally;
