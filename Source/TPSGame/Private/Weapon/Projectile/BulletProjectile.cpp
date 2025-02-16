@@ -12,13 +12,23 @@ ABulletProjectile::ABulletProjectile()
 	BulletMovementComponent = CreateDefaultSubobject<UBulletMovementComponent>(TEXT("BulletMovementComponent"));
 	BulletMovementComponent->bRotationFollowsVelocity = true;
 	BulletMovementComponent->SetIsReplicated(true);
+	
+	BulletMovementComponent->InitialSpeed = WasOverrideFromWeapon ? InitialSpeed : 15000.f;
+	BulletMovementComponent->MaxSpeed = WasOverrideFromWeapon ? MaxSpeed : 15000.f;
+	BulletMovementComponent->ProjectileGravityScale = WasOverrideFromWeapon ? GravityZScale : 1.f;
+}
 
-	BulletMovementComponent->InitialSpeed = 15000.f;
-	BulletMovementComponent->MaxSpeed = 15000.f;
+void ABulletProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	BulletMovementComponent->InitialSpeed = WasOverrideFromWeapon ? InitialSpeed : 15000.f;
+	BulletMovementComponent->MaxSpeed = WasOverrideFromWeapon ? MaxSpeed : 15000.f;
+	BulletMovementComponent->ProjectileGravityScale = WasOverrideFromWeapon ? GravityZScale : 1.f;
 }
 
 void ABulletProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	FVector NormalImpulse, const FHitResult& Hit)
+                              FVector NormalImpulse, const FHitResult& Hit)
 {
 	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
 	

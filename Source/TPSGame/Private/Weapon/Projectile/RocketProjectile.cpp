@@ -19,10 +19,10 @@ ARocketProjectile::ARocketProjectile()
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
 	RocketMovementComponent->bRotationFollowsVelocity = true;
 	RocketMovementComponent->SetIsReplicated(true);
-	RocketMovementComponent->ProjectileGravityScale = 0.f;
 
-	RocketMovementComponent->InitialSpeed = 2000.f;
-	RocketMovementComponent->MaxSpeed = 2000.f;
+	RocketMovementComponent->InitialSpeed = WasOverrideFromWeapon ? InitialSpeed : 2000.f;
+	RocketMovementComponent->MaxSpeed = WasOverrideFromWeapon ? MaxSpeed : 2000.f;
+	RocketMovementComponent->ProjectileGravityScale = WasOverrideFromWeapon ? GravityZScale : 0.f;
 
 	//命中后需要延迟销毁火箭弹以造成烟雾逐渐散去的效果(效果不好，现在改成0立刻销毁了)
 	OnHitDestroyTime = 0.f;
@@ -31,6 +31,10 @@ ARocketProjectile::ARocketProjectile()
 void ARocketProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	RocketMovementComponent->InitialSpeed = WasOverrideFromWeapon ? InitialSpeed : 2000.f;
+	RocketMovementComponent->MaxSpeed = WasOverrideFromWeapon ? MaxSpeed : 2000.f;
+	RocketMovementComponent->ProjectileGravityScale = WasOverrideFromWeapon ? GravityZScale : 0.f;
 	
 	if(ProjectileLoop && LoopingSoundAttenuation)
 	{

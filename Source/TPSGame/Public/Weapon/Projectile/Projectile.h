@@ -49,6 +49,15 @@ private:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Damage = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
+	float GravityZScale = 1.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
+	float InitialSpeed = 50.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
+	float MaxSpeed = 50.f;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile) //子弹的速度 重力系数是否被武器中的数值覆盖
+	bool WasOverrideFromWeapon = false;
 	
 protected:
 	UPROPERTY(EditAnywhere)

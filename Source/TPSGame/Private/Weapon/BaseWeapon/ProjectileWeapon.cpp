@@ -32,18 +32,27 @@ void AProjectileWeapon::DealFire()
 	FRotator TargetRotation = ToTarget.Rotation();
 	if(ProjectileClass && InstigatorPawn)
 	{
-		FActorSpawnParameters SpawnParameters;
-		SpawnParameters.Owner = this;
-		SpawnParameters.Instigator = InstigatorPawn;
 		UWorld* World = GetWorld();
 		if(World)
 		{
-			World->SpawnActor<AProjectile>(
+			FTransform SpawnTransform = FTransform(TargetRotation,SocketTransform.GetLocation());
+			AProjectile* SpawnProjectile = World->SpawnActorDeferred<AProjectile>(
 				ProjectileClass,
-				SocketTransform.GetLocation(),
-				TargetRotation,
-				SpawnParameters
+				SpawnTransform,
+				this,
+				InstigatorPawn
 			);
+			if(SpawnProjectile)
+			{
+				if(OverrideProjectileDefaultData)
+				{
+					SpawnProjectile->GravityZScale = ProjectileGravityZScale;
+					SpawnProjectile->InitialSpeed = ProjectileInitialSpeed;
+					SpawnProjectile->MaxSpeed = ProjectileMaxSpeed;
+					SpawnProjectile->WasOverrideFromWeapon = true;
+				}
+				SpawnProjectile->FinishSpawning(SpawnTransform);
+			}
 		}
 	}
 

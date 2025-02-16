@@ -20,11 +20,11 @@ AGrenadeProjectile::AGrenadeProjectile()
 	GrenadeMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("GrenadeMovementComponent"));
 	GrenadeMovementComponent->bRotationFollowsVelocity = true;
 	GrenadeMovementComponent->SetIsReplicated(true);
-	GrenadeMovementComponent->ProjectileGravityScale = 0.5f;
-
-	GrenadeMovementComponent->InitialSpeed = 1500.f;
-	GrenadeMovementComponent->MaxSpeed = 1500.f;
-
+	
+	GrenadeMovementComponent->InitialSpeed = WasOverrideFromWeapon ? InitialSpeed : 1500.f;
+	GrenadeMovementComponent->MaxSpeed = WasOverrideFromWeapon ? MaxSpeed : 1500.f;
+	GrenadeMovementComponent->ProjectileGravityScale = WasOverrideFromWeapon ? GravityZScale : 0.5f;
+	
 	GrenadeMovementComponent->bShouldBounce = true;
 
 	//命中后需要延迟销毁榴弹以造成烟雾逐渐散去的效果(效果不好，现在改成0立刻销毁了)
@@ -36,7 +36,11 @@ AGrenadeProjectile::AGrenadeProjectile()
 void AGrenadeProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
+	GrenadeMovementComponent->InitialSpeed = WasOverrideFromWeapon ? InitialSpeed : 1500.f;
+	GrenadeMovementComponent->MaxSpeed = WasOverrideFromWeapon ? MaxSpeed : 1500.f;
+	GrenadeMovementComponent->ProjectileGravityScale = WasOverrideFromWeapon ? GravityZScale : 0.5f;
+	
 	GrenadeMovementComponent->OnProjectileBounce.AddDynamic(this, &AGrenadeProjectile::OnBounce);
 }
 
