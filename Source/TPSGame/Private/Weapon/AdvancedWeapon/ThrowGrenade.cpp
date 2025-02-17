@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Weapon/BaseWeapon/ThrowGrenade.h"
+#include "Weapon/AdvancedWeapon/ThrowGrenade.h"
 
 AThrowGrenade::AThrowGrenade()
 {
