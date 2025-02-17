@@ -862,6 +862,11 @@ void ASCharacter::SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, b
 	
 	bIsSwappingWeapon = true;
 	DealPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
+	//因为双端分别执行Swap没用Multi，所以如果是服务器主控玩家，则需要同步播放Swap动画等表现到客户端
+	if(HasAuthority() && IsLocallyControlled())
+	{
+		Multi_ClientSyncPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
+	}
 }
 
 void ASCharacter::LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately)
@@ -949,6 +954,15 @@ void ASCharacter::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeapon
 			}
 		}
 	}
+}
+
+void ASCharacter::Multi_ClientSyncPlaySwapWeaponAnim_Implementation(EWeaponEquipType NewWeaponEquipType, bool Immediately)
+{
+	if(HasAuthority() && IsLocallyControlled())
+	{
+		return;
+	}
+	DealPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
 }
 
 void ASCharacter::SetPlayerControllerRotation_Implementation()

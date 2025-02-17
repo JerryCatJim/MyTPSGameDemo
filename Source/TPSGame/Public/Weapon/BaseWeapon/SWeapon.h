@@ -202,6 +202,8 @@ protected:
 	
 	//UFUNCTION(NetMulticast, Reliable)
 	void PlayReloadAnimAndSound();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ClientSyncPlayReloadAnimAndSound();
 	
 	UFUNCTION(Client, Reliable)  //只作为验证函数，若想直接改变数值则调用ClientChangeCurrentAmmo()
 	void ClientSyncCurrentAmmo(int ServerAmmo, int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
@@ -221,10 +223,6 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnRep_WeaponPickUpInfo();
 
-	//播放武器开火特效
-	//UFUNCTION(NetMulticast, Unreliable)
-	void PlayFireEffectsAndSounds();
-
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
 	UFUNCTION(NetMulticast, Reliable)
@@ -232,6 +230,9 @@ protected:
 	virtual void DealPlayTraceEffect(FVector TraceEnd);  //不要重写Multi函数，会导致客户端多次触发，把要重写的部分抽象出来单做一个函数
 	virtual void DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVector ImpactPoint);
 	
+	//播放武器开火特效
+	//UFUNCTION(NetMulticast, Unreliable)
+	void PlayFireEffectsAndSounds();
 	//播放射击动画
 	//UFUNCTION(NetMulticast, Reliable)
 	void PlayFireAnim();
@@ -241,6 +242,9 @@ protected:
 	//停止装弹动画和计时器
 	//UFUNCTION(NetMulticast, Reliable)
 	void StopReloadAnimAndTimer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ClientSyncFireAnimAndEffectsAndSounds();
 
 	//获取开枪起始位置
 	FVector GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRotation);

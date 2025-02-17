@@ -304,8 +304,6 @@ void ASWeapon::Fire()
 		//处理射击判定和应用伤害的函数
 		DealFire();
 		
-		//播放特效
-		PlayFireEffectsAndSounds();
 		if(WeaponType != EWeaponType::ShotGun)
 		{
 			//霰弹枪一次可以射出多发弹丸，在其重写的DealFire()中描绘轨迹，独头霰弹枪也是
@@ -325,9 +323,16 @@ void ASWeapon::Fire()
 			//绘制射线
 			DrawDebugLine(GetWorld(), EyeLocation, ShotTraceEnd, FColor::Red, false, 1.0f, 0,1.0f);
 		}
-
-		//播放射击动画
+		
+		//客户端射击时也会立刻播放动画和特效，所以不用Multi
 		PlayFireAnim();
+		PlayFireEffectsAndSounds();
+		
+		//因为双端分别执行Fire没用Multi，所以如果是服务器主控玩家，则需要同步播放开火特效等表现到客户端
+		if(HasAuthority() && MyOwner->IsLocallyControlled())
+		{
+			Multi_ClientSyncFireAnimAndEffectsAndSounds();
+		}
 		
 		//要处理啥，留个接口出来
 		PostFire();
@@ -451,9 +456,14 @@ void ASWeapon::Reload(bool IsAutoReload)
 		OnBackUpAmmoChanged.Broadcast(0, !IsAutoReload);
 		return;
 	}
-
+	
 	//客户端换弹时也会立刻播放动画，所以不用Multi
 	PlayReloadAnimAndSound();
+	//因为双端分别执行Reload没用Multi，所以如果是服务器主控玩家，则需要同步播放换弹动画等表现到客户端
+	if(HasAuthority() && MyOwner->IsLocallyControlled())
+	{
+		Multi_ClientSyncPlayReloadAnimAndSound();
+	}
 	
 	if(!ReloadMontage)
 	{
@@ -680,40 +690,6 @@ void ASWeapon::OnRep_BackUpAmmoNum()
 	OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum,true);
 }
 
-void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
-{
-	if(!HasAuthority())
-	{
-		//本地预测,防止延迟过高时开枪声音触发次数大于了当前子弹数
-		if(!CheckCanFire()) return;
-	}
-	
-	if(MuzzleEffect && bShowMuzzleFlash)
-	{
-		//武器开火特效
-		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComponent, MuzzleSocketName);
-	}
-
-	if(FireSound)
-	{
-		WeaponSoundAudio->SetSound(FireSound);
-		WeaponSoundAudio->Play();
-	}
-
-	//获得武器持有者owner
-	//APawn* MyOwner = Cast<APawn>(GetOwner());
-	if(MyOwner && MyOwner->IsLocallyControlled())
-	{
-		//获得玩家控制器
-		APlayerController* PC = Cast<APlayerController>(MyOwner->GetController());
-		if(PC)
-		{
-			//调用PlayerController.h cpp中的摄像机抖动函数
-			PC->ClientStartCameraShake(FireCameraShake);
-		}
-	}
-}
-
 void ASWeapon::PlayTraceEffect_Implementation(FVector TraceEnd)
 {
 	DealPlayTraceEffect(TraceEnd);
@@ -781,9 +757,39 @@ void ASWeapon::DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVec
 	}
 }
 
+void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
+{
+	if(!CheckCanFire()) return;
+	
+	if(MuzzleEffect && bShowMuzzleFlash)
+	{
+		//武器开火特效
+		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, MeshComponent, MuzzleSocketName);
+	}
+
+	if(FireSound)
+	{
+		WeaponSoundAudio->SetSound(FireSound);
+		WeaponSoundAudio->Play();
+	}
+
+	//获得武器持有者owner
+	//APawn* MyOwner = Cast<APawn>(GetOwner());
+	if(MyOwner && MyOwner->IsLocallyControlled())
+	{
+		//获得玩家控制器
+		APlayerController* PC = Cast<APlayerController>(MyOwner->GetController());
+		if(PC)
+		{
+			//调用PlayerController.h cpp中的摄像机抖动函数
+			PC->ClientStartCameraShake(FireCameraShake);
+		}
+	}
+}
+
 void ASWeapon::PlayFireAnim()//_Implementation()
 {
-	if(!CheckOwnerValidAndAlive())
+	if(!CheckCanFire())
 	{
 		return;
 	}
@@ -802,14 +808,59 @@ void ASWeapon::PlayFireAnim()//_Implementation()
 	}
 }
 
+void ASWeapon::Multi_ClientSyncFireAnimAndEffectsAndSounds_Implementation()
+{
+	if(HasAuthority() && MyOwner->IsLocallyControlled())
+	{
+		return;
+	}
+	PlayFireAnim();
+	PlayFireEffectsAndSounds();
+}
+
 void ASWeapon::PlayReloadAnimAndSound()//_Implementation()
 {
-	if(!CheckOwnerValidAndAlive())
+	if(!CheckCanReload())
 	{
 		return;
 	}
 	
 	MyOwner->SetIsReloading(true);
+	
+	if(ReloadMontage)
+	{
+		MyOwner->PlayAnimMontage(ReloadMontage, ReloadPlayRate);
+		
+		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
+		GetWorldTimerManager().SetTimer(ReloadSoundTimer,
+		[this]()->void
+		{
+			if(ReloadSound)
+			{
+				WeaponSoundAudio->SetSound(ReloadSound);
+				WeaponSoundAudio->Play();
+			}
+		},
+		MontagePlayTime * 0.8f,
+		false
+			);
+	}
+}
+
+void ASWeapon::Multi_ClientSyncPlayReloadAnimAndSound_Implementation()
+{
+	if(HasAuthority() && MyOwner->IsLocallyControlled())
+	{
+		return;
+	}
+	
+	//注意不要CheckCanReload，就算0延迟的服务器同步到客户端也比SCharacter中的StartReload后执行本地预测要慢，走到这里时已经GetIsReloading为true
+	if(!CheckOwnerValidAndAlive())
+	{
+		return;
+	}
+	
+	//MyOwner->SetIsReloading(true);
 	
 	if(ReloadMontage)
 	{

@@ -152,6 +152,8 @@ protected:
 	void SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
 	void LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
 	void DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ClientSyncPlaySwapWeaponAnim(EWeaponEquipType NewWeaponEquipType, bool Immediately);
 
 	UFUNCTION(Server, Reliable)  //标记Server等RPC方法后不让TEnumAsByte做参数？(TEnumAsByte标记后，将值包装为了一个结构体)
 	void ServerSwapWeapon(EWeaponEquipType NewWeaponEquipType, bool Immediately);
