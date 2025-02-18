@@ -668,15 +668,23 @@ void ASCharacter::DealPickUpWeapon_Implementation(FWeaponPickUpInfo WeaponInfo)
 
 void ASCharacter::StartDropWeapon(bool ManuallyDiscard)
 {
-	DealDropWeapon(ManuallyDiscard);
+	if(!HasAuthority())
+	{
+		//客户端提前预测，以停止当前行动等待服务器同步，提升客户端在高延迟下的观感，不保持也不影响最终的数据同步
+		if(!IsValid(CurrentWeapon) || (!ManuallyDiscard && !CurrentWeapon->GetWeaponCanDropDown())
+		|| (ManuallyDiscard && !CurrentWeapon->GetWeaponCanManuallyDiscard()))
+		{
+			return;
+		}
+		StopFire();
+		StopReload();
+		StopSwapWeapon(false);
+	}
+	DealDropWeapon(ManuallyDiscard);  //Server方法
 }
 
 void ASCharacter::DealDropWeapon_Implementation(bool ManuallyDiscard)
 {
-	if(!HasAuthority())  //客户端不要生成武器，等待服务端生成后复制
-	{
-		return;
-	}
 	if(!IsValid(CurrentWeapon) || (!ManuallyDiscard && !CurrentWeapon->GetWeaponCanDropDown())
 		|| (ManuallyDiscard && !CurrentWeapon->GetWeaponCanManuallyDiscard()))
 	{
@@ -728,7 +736,10 @@ void ASCharacter::DealDropWeapon_Implementation(bool ManuallyDiscard)
 
 			//完成SpawnActor
 			PickUpWeapon->FinishSpawning(FTransform(GetActorLocation() + GetActorForwardVector() *50));
-			
+
+			StopFire();
+			StopReload();
+			StopSwapWeapon(false);
 			//掉落武器后销毁当前武器并自动切换为下一把
 			const EWeaponEquipType CurType = CurrentWeapon->GetWeaponEquipType();
 			CurrentWeapon->Destroy();
