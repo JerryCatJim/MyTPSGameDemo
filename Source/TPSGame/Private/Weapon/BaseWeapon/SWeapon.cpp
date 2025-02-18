@@ -82,9 +82,12 @@ void ASWeapon::BeginPlay()
 	//Owner在构造函数里拿不到，在BeginPlay里就拿到了(?)
 	MyOwner = Cast<ASCharacter>(GetOwner());
 
-	//从C++中获取蓝图类
-	const FString PickUpWeaponClassLoadPath = FString(TEXT("/Game/BP_Weapon/PickUpWeapon/BP_PickUpWeaponBase.BP_PickUpWeaponBase_C"));//蓝图一定要加_C这个后缀名
-	PickUpWeaponClass = LoadClass<APickUpWeapon>(nullptr, *PickUpWeaponClassLoadPath);
+	if(!PickUpWeaponClass)
+	{
+		//从C++中获取蓝图类
+		const FString PickUpWeaponClassLoadPath = FString(TEXT("/Game/BP_Weapon/PickUpWeapon/BP_PickUpWeaponBase.BP_PickUpWeaponBase_C"));//蓝图一定要加_C这个后缀名
+		PickUpWeaponClass = LoadClass<APickUpWeapon>(nullptr, *PickUpWeaponClassLoadPath);
+	}
 	
 	if(HasAuthority())
 	{

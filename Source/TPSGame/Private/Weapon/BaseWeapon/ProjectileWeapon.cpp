@@ -79,6 +79,8 @@ void AProjectileWeapon::DrawMovementTrajectory()
 {
 	if(!CanShowMovementTrajectory || !IsValid(MyOwner) || MyOwner->GetIsDied()) return;
 
+	if(MyOwner->CurrentWeapon != this) return;
+	
 	if(DrawTrajectoryLocally && !MyOwner->IsLocallyControlled()) return;
 	
 	//没有MuzzleSocket的武器无法发射子弹

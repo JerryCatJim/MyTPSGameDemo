@@ -435,11 +435,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
 
+	//武器是否可以死后掉落
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon, Replicated)
-	bool bCanDropDown = true;  //武器是否可以死后掉落
+	bool bCanDropDown = true;
+	//武器是否可以手动丢弃
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon, Replicated)
-	bool bCanManuallyDiscard = true;  //武器是否可以手动丢弃
-
+	bool bCanManuallyDiscard = true;
+	//不填则在C++文件的BeginPlay中默认选择BP_PickUpWeaponBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<APickUpWeapon> PickUpWeaponClass;
 	

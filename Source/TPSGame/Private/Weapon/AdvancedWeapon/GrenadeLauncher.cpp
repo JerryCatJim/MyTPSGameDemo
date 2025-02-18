@@ -1,34 +1,33 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Weapon/AdvancedWeapon/ThrowGrenade.h"
+#include "Weapon/AdvancedWeapon/GrenadeLauncher.h"
 
-AThrowGrenade::AThrowGrenade()
+AGrenadeLauncher::AGrenadeLauncher()
 {
-	WeaponType = EWeaponType::ThrowGrenade;
+	WeaponType = EWeaponType::GrenadeLauncher;
 	WeaponBulletType = EWeaponBulletType::Projectile;
 	ZoomedFOV = 90.f;
-	RateOfShoot = 60.f;
+	RateOfShoot = 90.f;
 	BulletSpread = 0.f;  //指哪扔哪，不会抖动
 	
-	OnePackageAmmoNum = 1;
+	OnePackageAmmoNum = 12;
 	CurrentAmmoNum = OnePackageAmmoNum;
-	BackUpAmmoNum = 300;
-	OnceReloadAmmoNum = OnePackageAmmoNum;
+	BackUpAmmoNum = 36;
+	OnceReloadAmmoNum = 1;
 	
-	WeaponName = TEXT("默认手雷");
+	WeaponName = TEXT("默认榴弹发射器");
 
-	bIsFullAutomaticWeapon = false;
+	bIsFullAutomaticWeapon = true;
 	CanOverloadAmmo = false;
-
-	bCanManuallyDiscard = false;
+	bCanManuallyDiscard = true;
 
 	ProjectileGravityZScale = 0.5f;
 	ProjectileInitialSpeed = 1500.f;
 	ProjectileMaxSpeed = 1500.f;
 	OverrideProjectileDefaultData = true;
 	CanShowMovementTrajectory = true;
-	UpAngelOffset = 10.f;
+	UpAngelOffset = 8.f;
 	DrawFrequency = 50.f;
 	DrawTrajectoryTime = 2.f;
 	DrawTrajectoryLocally = true;
