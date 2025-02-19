@@ -16,6 +16,7 @@ void AProjectileWeapon::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	ClearMovementTrajectory();
 	DrawMovementTrajectory();
 }
 
@@ -99,16 +100,17 @@ void AProjectileWeapon::DrawMovementTrajectory()
 		return;
 	}
 	
-	if(MyOwner->GetIsAiming() && !MyOwner->GetIsReloading())
+	if((OnlyDrawTrajectoryWhenReloading && MyOwner->GetIsAiming() && !MyOwner->GetIsReloading())
+		|| !OnlyDrawTrajectoryWhenReloading )
 	{
 		FHitResult HitResult;
 		TArray<FVector> OutPoints;
 		FVector LastTraceDestination;
 		FVector StartPos = MuzzleSocket->GetSocketLocation(GetWeaponMeshComp());
-		FVector LaunchVelocity(((GetCurrentAimingPoint(false) - StartPos).Rotation()+FRotator(UpAngelOffset,0,0)).Vector().GetSafeNormal() * ProjectileInitialSpeed);
+		FVector LaunchVelocity(((GetCurrentAimingPoint(!KeepTrajectoryStable) - StartPos).Rotation()+FRotator(UpAngelOffset,0,0)).Vector().GetSafeNormal() * ProjectileInitialSpeed);
 		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 		ObjectTypes.Emplace(ECC_WorldStatic);
-		ObjectTypes.Emplace(ECC_WorldDynamic);
+		//ObjectTypes.Emplace(ECC_WorldDynamic);
 		ObjectTypes.Emplace(ECC_Pawn);
 		TArray<AActor*> ActorsToIgnore;
 		UGameplayStatics::Blueprint_PredictProjectilePath_ByObjectType(
@@ -129,5 +131,39 @@ void AProjectileWeapon::DrawMovementTrajectory()
 			DrawTrajectoryTime,
 			GetWorld()->GetWorldSettings()->WorldGravityZ * ProjectileGravityZScale
 			);
+
+		if(TrajectoryTargetPointClass)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red,
+				FString::Printf(TEXT("咋回事111")));
+			if(!TrajectoryTargetPointActor)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red,
+					FString::Printf(TEXT("咋回事222")));
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				SpawnParams.Owner = this;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
+				TrajectoryTargetPointActor = GetWorld()->SpawnActor<AActor>(TrajectoryTargetPointClass,FVector(),FRotator(),SpawnParams);
+			}
+			if(TrajectoryTargetPointActor && TrajectoryTargetPointActor->GetRootComponent() && !TrajectoryTargetPointActor->GetRootComponent()->IsVisible())
+			{
+				TrajectoryTargetPointActor->SetActorLocation(LastTraceDestination);
+				TrajectoryTargetPointActor->SetActorRotation(FRotator(0,0,0));
+				TrajectoryTargetPointActor->GetRootComponent()->SetVisibility(true,true);
+			}
+		}
 	}
+}
+
+void AProjectileWeapon::ClearMovementTrajectory()
+{
+	if(TrajectoryTargetPointActor && TrajectoryTargetPointActor->GetRootComponent() && TrajectoryTargetPointActor->GetRootComponent()->IsVisible())
+	{
+		TrajectoryTargetPointActor->GetRootComponent()->SetVisibility(false, true);
+	}
+}
+
+void AProjectileWeapon::Destroyed()
+{
+	ClearMovementTrajectory();
 }

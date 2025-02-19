@@ -16,6 +16,8 @@ class TPSGAME_API AProjectileWeapon : public ASWeapon
 
 public:
 	AProjectileWeapon();
+
+	virtual void Destroyed() override;
 	
 protected:
 	virtual void Tick(float DeltaSeconds) override;
@@ -26,8 +28,15 @@ protected:
 
 private:
 	void DrawMovementTrajectory();
+	void ClearMovementTrajectory();
 	
 public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //武器是否显示抛物线轨迹
+	bool CanShowMovementTrajectory = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //是否只在瞄准时显示轨迹，false的话为常驻显示(包括换弹时)
+	bool OnlyDrawTrajectoryWhenReloading = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //是否使轨迹保持不动(激光瞄准可能晃动)
+	bool KeepTrajectoryStable = true;
 	
 protected:
 	UPROPERTY(EditAnywhere, Category= "Weapon")
@@ -46,8 +55,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //如果子弹是AOE伤害，需传入内圈和外圈范围，从内圈范围向外会衰减伤害直到外圈范围
 	float ProjectileOuterRadius = 300;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //武器是否显示抛物线轨迹
-	bool CanShowMovementTrajectory = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //子弹生成时相对枪口上扬的角度
 	float UpAngelOffset = 0.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile, meta=(ClampMin = 1.f, ClampMax = 999.f))  //生成抛物线离散点的频率
@@ -61,6 +68,8 @@ private:
 	UPROPERTY()
 	const USkeletalMeshSocket* MuzzleSocket;
 
+	UPROPERTY(EditDefaultsOnly, Category=ProjectileTrajectory)
+	TSubclassOf<AActor> TrajectoryTargetPointClass;
 	UPROPERTY()
-	TArray<UParticleSystemComponent*> ParticleArray;
+	AActor* TrajectoryTargetPointActor = nullptr;
 };
