@@ -201,6 +201,7 @@ void AProjectileWeapon::ClearMovementTrajectory()
 	{
 		for(auto& Item : TrajectoryLineArray)
 		{
+			Item->UnregisterComponent();
 			Item->DestroyComponent();
 		}
 		TrajectoryLineArray.Empty();
