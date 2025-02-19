@@ -54,12 +54,17 @@ public:
 	FTestDelegate TestDelegate;
 protected:
 	//生命值
-	UPROPERTY(ReplicatedUsing= OnRep_Health, EditDefaultsOnly, BlueprintReadOnly, Category= HealthComponent)
+	UPROPERTY(ReplicatedUsing= OnRep_Health, EditAnywhere, BlueprintReadOnly, Category= HealthComponent)
 	float Health;
-
 	//默认生命值
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= HealthComponent)
 	float MaxHealth;
+	//无限生命
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= HealthComponent)
+	bool bIsInfinityHealth = false;
+	//无敌
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= HealthComponent)
+	bool bIsInvincible = false;
 
 	UPROPERTY()
 	APawn* MyOwnerPawn;

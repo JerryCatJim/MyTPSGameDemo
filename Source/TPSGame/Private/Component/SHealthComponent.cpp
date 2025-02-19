@@ -55,7 +55,7 @@ void USHealthComponent::HandleTakeAnyDamage_Implementation(AActor* DamagedActor,
 		return;
 	}
 	
-	float CurDamage = Damage;
+	float CurDamage = bIsInvincible? 0 : Damage;
 	ATPSGameMode* MyGameMode = GetWorld()->GetAuthGameMode<ATPSGameMode>();
 	if(MyGameMode)
 	{
@@ -63,7 +63,7 @@ void USHealthComponent::HandleTakeAnyDamage_Implementation(AActor* DamagedActor,
 		CurDamage = MyGameMode->CalculateDamage(InstigatedBy, OwnerController, Damage);
 	}
 	
-	Health = FMath::Clamp(Health - CurDamage, 0.f, MaxHealth);
+	Health = (bIsInvincible||bIsInfinityHealth) ? Health : FMath::Clamp(Health - CurDamage, 0.f, MaxHealth);
 
 	//在(例如血条UI等)蓝图中绑定好事件，通过广播可以接收
 	//OnHealthChanged.Broadcast(this, Health, -CurDamage, DamageType, InstigatedBy, DamageCauser);
