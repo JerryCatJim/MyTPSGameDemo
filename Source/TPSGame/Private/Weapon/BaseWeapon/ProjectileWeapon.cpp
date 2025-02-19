@@ -5,6 +5,8 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "DrawDebugHelpers.h"  //射线检测显示颜色
 #include "SCharacter.h"
+#include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 AProjectileWeapon::AProjectileWeapon()
@@ -125,7 +127,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 			ObjectTypes,
 			false,
 			ActorsToIgnore,
-			EDrawDebugTrace::ForOneFrame,
+			EDrawDebugTrace::None,
 			0,
 			DrawFrequency,
 			DrawTrajectoryTime,
@@ -134,12 +136,8 @@ void AProjectileWeapon::DrawMovementTrajectory()
 
 		if(TrajectoryTargetPointClass)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red,
-				FString::Printf(TEXT("咋回事111")));
 			if(!TrajectoryTargetPointActor)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red,
-					FString::Printf(TEXT("咋回事222")));
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 				SpawnParams.Owner = this;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
@@ -152,11 +150,61 @@ void AProjectileWeapon::DrawMovementTrajectory()
 				TrajectoryTargetPointActor->GetRootComponent()->SetVisibility(true,true);
 			}
 		}
+		if(TrajectoryLineMesh)
+		{
+			if(!SplineComponent)
+			{
+				SplineComponent = NewObject<USplineComponent>(this, TEXT("SplineComponent"));
+				//生成失败则返回
+				if(!SplineComponent) return;
+				
+				AddOwnedComponent(SplineComponent);
+				SplineComponent->SetupAttachment(GetRootComponent());
+				SplineComponent->RegisterComponent();
+			}
+			
+			for(int i = 0; i < OutPoints.Num(); i += 1)
+			{
+				SplineComponent->AddSplinePointAtIndex(OutPoints[i], i, ESplineCoordinateSpace::World);
+			}
+			SplineComponent->SetSplinePointType(OutPoints.Num()-1, ESplinePointType::CurveClamped);
+			
+			for(int i = 0; i < OutPoints.Num()-1 ; i += DrawTrajectoryJumpNum <= 0 ? 1 : DrawTrajectoryJumpNum)
+			{
+				USplineMeshComponent* Spl = NewObject<USplineMeshComponent>(this, TEXT("SplineMesh" + i));
+				Spl->RegisterComponent();
+				//默认生成的是Static
+				Spl->SetMobility(EComponentMobility::Movable);
+				Spl->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				Spl->SetStaticMesh(TrajectoryLineMesh);
+				Spl->SetForwardAxis(ESplineMeshAxis::Z);
+
+				FVector StartTangent = SplineComponent->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::World);
+				FVector EndTangent = SplineComponent->GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::World);
+				Spl->SetStartAndEnd(OutPoints[i],StartTangent,OutPoints[i+1],EndTangent);
+				Spl->SetStartScale(FVector2D(TrajectoryLineScale,TrajectoryLineScale));
+				Spl->SetEndScale(FVector2D(TrajectoryLineScale,TrajectoryLineScale));
+				
+				TrajectoryLineArray.Emplace(Spl);
+			}
+		}
 	}
 }
 
 void AProjectileWeapon::ClearMovementTrajectory()
 {
+	if(SplineComponent)
+	{
+		SplineComponent->ClearSplinePoints();
+	}
+	if(TrajectoryLineArray.Num() > 0)
+	{
+		for(auto& Item : TrajectoryLineArray)
+		{
+			Item->DestroyComponent();
+		}
+		TrajectoryLineArray.Empty();
+	}
 	if(TrajectoryTargetPointActor && TrajectoryTargetPointActor->GetRootComponent() && TrajectoryTargetPointActor->GetRootComponent()->IsVisible())
 	{
 		TrajectoryTargetPointActor->GetRootComponent()->SetVisibility(false, true);

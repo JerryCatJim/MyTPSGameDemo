@@ -42,6 +42,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category= "Weapon")
 	TSubclassOf<class AProjectile> ProjectileClass;
 
+	UPROPERTY(VisibleAnywhere, Category=Component)
+	class USplineComponent* SplineComponent;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
 	float ProjectileGravityZScale = 1.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
@@ -63,6 +66,8 @@ protected:
 	float DrawTrajectoryTime = 2.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //是否只在本地绘制而不同步到服务器
 	bool DrawTrajectoryLocally = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile, meta=(ClampMin = 0))  //绘制抛物线的间隔(隔几段绘制一次)
+	int DrawTrajectoryJumpNum = 0;
 	
 private:
 	UPROPERTY()
@@ -72,4 +77,12 @@ private:
 	TSubclassOf<AActor> TrajectoryTargetPointClass;
 	UPROPERTY()
 	AActor* TrajectoryTargetPointActor = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category=ProjectileTrajectory)
+	UStaticMesh* TrajectoryLineMesh;
+	UPROPERTY()
+	TArray<class USplineMeshComponent*> TrajectoryLineArray;
+
+	UPROPERTY(EditDefaultsOnly, Category=ProjectileTrajectory)
+	float TrajectoryLineScale = 1.0f;
 };
