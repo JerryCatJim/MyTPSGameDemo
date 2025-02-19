@@ -9,6 +9,7 @@
 #include "Component/InventoryDealUseItemClass.h"
 
 #include "Net/UnrealNetwork.h"
+#include "TPSGameType/CustomCollisionType.h"
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
@@ -372,19 +373,19 @@ void UInventoryComponent::FocusOnPickUpItem()
 
 	//碰撞查询
 	FCollisionQueryParams QueryParams;
-	//忽略武器自身和持有者的碰撞
+	//忽略玩家自身的碰撞
 	QueryParams.AddIgnoredActor(MyOwnerPawn);
 	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
 	//QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
 	
-    bool bIsTraceHit = GetWorld()->LineTraceSingleByObjectType(HitResult, EyeLocation, TraceEnd, ECC_WorldDynamic, QueryParams);
+    bool bIsTraceHit = GetWorld()->LineTraceSingleByObjectType(HitResult, EyeLocation, TraceEnd, Collision_InventoryItem, QueryParams);
 	if(bIsTraceHit)
 	{
 		AInventoryItemBase* TempFocusItem = Cast<AInventoryItemBase>(HitResult.GetActor());//Actor.Get();
 		if(TempFocusItem)  //物品被注视
 		{
 			CurrentFocusItem = TempFocusItem;
-			//别的玩家注视时也会触发广播，所以传入注视者加以区分
+			//别的玩家注视时也会触发广播，所以传入注视者加以区分(其实不用传入注视者,把整个函数改成限定IsLocallyControl就行了,懒得改)
 			CurrentFocusItem->OnItemFocused.Broadcast(MyController);
 		}
 		else if(CurrentFocusItem)  //物品离开注视

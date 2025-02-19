@@ -5,6 +5,7 @@
 #include "Components/WidgetComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Net/UnrealNetwork.h"
+#include "TPSGameType/CustomCollisionType.h"
 
 
 // Sets default values
@@ -55,7 +56,7 @@ AInventoryItemBase::AInventoryItemBase()
 	{
 		MeshComponent->SetSimulatePhysics(true);
 		MeshComponent->SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName);
-		MeshComponent->SetCollisionObjectType(ECC_WorldDynamic);
+		MeshComponent->SetCollisionObjectType(Collision_InventoryItem);
 		MeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
 		MeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	}
