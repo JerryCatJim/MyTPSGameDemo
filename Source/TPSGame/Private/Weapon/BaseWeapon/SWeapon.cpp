@@ -10,7 +10,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
-#include "../TPSGame.h"    //宏定义重命名
+#include "TPSGameType/CustomCollisionType.h"
+#include "TPSGameType/CustomSurfaceType.h"
 #include "TimerManager.h"  //定时器
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"

@@ -3,7 +3,8 @@
 
 #include "Weapon/BaseWeapon/HitScanWeapon.h"
 #include "SCharacter.h"
-#include "../TPSGame.h"
+#include "TPSGameType/CustomCollisionType.h"
+#include "TPSGameType/CustomSurfaceType.h"
 #include "Kismet/GameplayStatics.h"
 
 AHitScanWeapon::AHitScanWeapon()

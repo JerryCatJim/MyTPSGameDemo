@@ -15,6 +15,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/PickUpWeapon.h"
+#include "TPSGameType/CustomCollisionType.h"
 
 // Sets default values
 ASCharacter::ASCharacter()

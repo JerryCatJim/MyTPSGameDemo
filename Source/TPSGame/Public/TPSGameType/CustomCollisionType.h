@@ -1,0 +1,5 @@
+﻿#pragma once
+
+#define Collision_Weapon ECC_GameTraceChannel1
+#define Collision_Projectile ECC_GameTraceChannel2
+#define Collision_InventoryItem ECC_GameTraceChannel3

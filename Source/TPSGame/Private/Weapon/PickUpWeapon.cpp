@@ -4,7 +4,7 @@
 #include "Weapon/PickUpWeapon.h"
 
 #include "SCharacter.h"
-#include "../TPSGame.h"
+#include "TPSGameType/CustomCollisionType.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 

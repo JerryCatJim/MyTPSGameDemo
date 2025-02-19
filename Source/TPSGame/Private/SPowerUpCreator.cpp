@@ -7,7 +7,7 @@
 #include "SPowerUpActor.h"
 #include "Components/SphereComponent.h"
 #include "Components/DecalComponent.h"
-#include "../TPSGame.h"   //或者TPSGame/TPSGame.h
+#include "TPSGameType/CustomCollisionType.h"
 
 
 // Sets default values

@@ -3,9 +3,3 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-#define Surface_FleshDefault SurfaceType1
-#define Surface_FleshVulnerable SurfaceType2
-
-#define Collision_Weapon ECC_GameTraceChannel1
-#define Collision_Projectile ECC_GameTraceChannel2

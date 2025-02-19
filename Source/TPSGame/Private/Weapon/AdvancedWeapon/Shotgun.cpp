@@ -5,7 +5,8 @@
 #include "SCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "TPSGame/TPSGame.h"
+#include "TPSGameType/CustomCollisionType.h"
+#include "TPSGameType/CustomSurfaceType.h"
 
 AShotgun::AShotgun()
 {

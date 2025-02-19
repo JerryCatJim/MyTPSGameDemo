@@ -8,7 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "NiagaraFunctionLibrary.h"
-#include "TPSGame/TPSGame.h"
+#include "TPSGameType/CustomCollisionType.h"
+#include "TPSGameType/CustomSurfaceType.h"
 
 // Sets default values
 AProjectile::AProjectile()
