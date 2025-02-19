@@ -66,6 +66,8 @@ void AProjectileWeapon::DealFire()
 					SpawnProjectile->InitialSpeed = ProjectileInitialSpeed;
 					SpawnProjectile->MaxSpeed = ProjectileMaxSpeed;
 					SpawnProjectile->WasOverrideFromWeapon = true;
+					SpawnProjectile->InnerRadius = ProjectileInnerRadius;
+					SpawnProjectile->OuterRadius = ProjectileOuterRadius;
 				}
 				SpawnProjectile->FinishSpawning(SpawnTransform);
 			}

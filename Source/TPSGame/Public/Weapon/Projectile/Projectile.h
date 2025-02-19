@@ -59,6 +59,13 @@ public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile) //子弹的速度 重力系数是否被武器中的数值覆盖
 	bool WasOverrideFromWeapon = false;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //如果IsAoeDamage,应用高伤害的内部半径
+	float InnerRadius = 150.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //如果IsAoeDamage,抛开内部半径以外的应用衰减伤害的外部半径
+	float OuterRadius = 300.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //伤害可以衰减到的最小伤害
+	float MinDamage = 10.f;
+	
 protected:
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
