@@ -762,7 +762,7 @@ void ASWeapon::DealPlayImpactEffectsAndSounds(EPhysicalSurface SurfaceType, FVec
 
 void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
 {
-	if(!CheckCanFire()) return;
+	if(!CheckOwnerValidAndAlive()) return;
 	
 	if(MuzzleEffect && bShowMuzzleFlash)
 	{
@@ -792,7 +792,7 @@ void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
 
 void ASWeapon::PlayFireAnim()//_Implementation()
 {
-	if(!CheckCanFire())
+	if(!CheckOwnerValidAndAlive())
 	{
 		return;
 	}
