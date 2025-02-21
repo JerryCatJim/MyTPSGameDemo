@@ -73,6 +73,8 @@ public:
 	//蓝图中提前设置的要生成的武器类，动态生成的话不需要设定
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	TSubclassOf<ASWeapon> DefaultEditWeaponClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	USkeletalMesh* PreviewWeaponMesh;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_WeaponPickUpInfo)
 	FWeaponPickUpInfo WeaponPickUpInfo;

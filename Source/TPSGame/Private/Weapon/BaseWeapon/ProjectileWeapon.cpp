@@ -103,22 +103,26 @@ void AProjectileWeapon::DrawMovementTrajectory()
 	}
 	
 	if((OnlyDrawTrajectoryWhenAiming && MyOwner->GetIsAiming() && !MyOwner->GetIsReloading())
-		|| !OnlyDrawTrajectoryWhenAiming )
+		|| !OnlyDrawTrajectoryWhenAiming && !MyOwner->GetIsSwappingWeapon() )
 	{
 		FHitResult HitResult;
 		TArray<FVector> OutPoints;
 		FVector LastTraceDestination;
 		FVector StartPos = MuzzleSocket->GetSocketLocation(GetWeaponMeshComp());
+		
 		FVector LaunchVelocity(((GetCurrentAimingPoint(!KeepTrajectoryStable) - StartPos).Rotation()+FRotator(UpAngelOffset,0,0)).Vector().GetSafeNormal() * ProjectileInitialSpeed);
 		FVector WeaponSocketVelocity = MuzzleSocket->GetSocketTransform(GetWeaponMeshComp()).GetUnitAxis( EAxis::X ).GetSafeNormal()* ProjectileInitialSpeed;
 		//如果常驻显示轨迹，未瞄准时希望速度方向为枪口方向
-		LaunchVelocity = MyOwner->GetIsAiming() ? LaunchVelocity : WeaponSocketVelocity;
+		LaunchVelocity = MyOwner->GetIsAiming() || MyOwner->GetIsFiring() ? LaunchVelocity : WeaponSocketVelocity;
+		
 		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 		ObjectTypes.Emplace(ECC_WorldStatic);
 		//ObjectTypes.Emplace(ECC_WorldDynamic);
 		ObjectTypes.Emplace(ECC_Pawn);
+		
 		TArray<AActor*> ActorsToIgnore;
 		ActorsToIgnore.Emplace(MyOwner);
+		
 		//初速度太快则适当缩短预测距离
 		float RealDrawTrajectoryTime = ProjectileInitialSpeed >= 3000 ? DrawTrajectoryTime * 3000/ProjectileInitialSpeed : DrawTrajectoryTime;
 		

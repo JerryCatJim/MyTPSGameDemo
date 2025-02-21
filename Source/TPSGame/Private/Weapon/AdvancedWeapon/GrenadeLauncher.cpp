@@ -29,6 +29,8 @@ AGrenadeLauncher::AGrenadeLauncher()
 	ProjectileGravityZScale = 0.5f;
 	ProjectileInitialSpeed = 1500.f;
 	ProjectileMaxSpeed = 1500.f;
+	TrajectoryGravityZScale = ProjectileGravityZScale;
+	
 	OverrideProjectileDefaultData = true;
 	CanShowMovementTrajectory = true;
 	UpAngelOffset = 8.f;

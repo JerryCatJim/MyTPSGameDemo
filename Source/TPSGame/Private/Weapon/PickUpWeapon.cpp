@@ -36,6 +36,11 @@ APickUpWeapon::APickUpWeapon()
 	MeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	MeshComponent->SetCollisionObjectType(ECC_WorldStatic);
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+
+	if(MeshComponent && PreviewWeaponMesh)
+	{
+		MeshComponent->SetSkeletalMesh(PreviewWeaponMesh);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -52,6 +57,25 @@ void APickUpWeapon::BeginPlay()
 		ASWeapon* CurWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultEditWeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
 		WeaponPickUpInfo = CurWeapon->GetWeaponPickUpInfo();
 		CurWeapon->Destroy();
+
+		if(WeaponPickUpInfo.IsWeaponValid && IsValid(WeaponPickUpInfo.WeaponMesh))
+		{
+			MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+			if(MeshComponent->SkeletalMesh)
+			{
+				//让武器模拟物理，达到可以落在地上的效果
+				MeshComponent->SetSimulatePhysics(bCanMeshDropOnTheGround);
+			}
+		}
+		if(!WeaponPickUpInfo.IsWeaponValid)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5 ,FColor::Red, TEXT("PickUpWeapon的WeaponClass不存在!"));
+		}
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0, FColor::Red,
+					FString::Printf(TEXT("%s 未设置需生成的WeaponClass!"), *GetName()));
 	}
 	
 	//记录原始武器信息
@@ -67,20 +91,6 @@ void APickUpWeapon::BeginPlay()
 
 	CapsuleComponent->OnComponentBeginOverlap.AddDynamic(this, &APickUpWeapon::OnCapsuleComponentBeginOverlap);
 	CapsuleComponent->OnComponentEndOverlap.AddDynamic(this, &APickUpWeapon::OnCapsuleComponentEndOverlap);
-
-	if(WeaponPickUpInfo.IsWeaponValid && IsValid(WeaponPickUpInfo.WeaponMesh))
-	{
-		MeshComponent->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
-		if(MeshComponent->SkeletalMesh)
-		{
-			//让武器模拟物理，达到可以落在地上的效果
-			MeshComponent->SetSimulatePhysics(bCanMeshDropOnTheGround);
-		}
-	}
-	if(!WeaponPickUpInfo.IsWeaponValid)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5 ,FColor::Red, TEXT("PickUpWeapon的WeaponClass不存在!"));
-	}
 	
 	ShowTipWidget(false);
 

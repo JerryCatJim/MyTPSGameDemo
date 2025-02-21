@@ -903,7 +903,10 @@ void ASWeapon::OnRep_IsBackUpAmmoInfinity()
 void ASWeapon::OnRep_WeaponPickUpInfo()
 {
 	//服务端在生成新武器时就执行了RefreshWeaponInfo，此时客户端还未完成复制，所以复制完成后手动刷新下武器Mesh
-	GetWeaponMeshComp()->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+	if(WeaponPickUpInfo.IsWeaponValid)
+	{
+		GetWeaponMeshComp()->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+	}
 }
 
 //服务器开火函数(客户端发送开火请求，服务器调用真正的开火逻辑)

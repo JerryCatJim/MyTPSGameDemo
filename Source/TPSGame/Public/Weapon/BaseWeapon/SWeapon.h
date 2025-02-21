@@ -38,9 +38,9 @@ public:
 	TEnumAsByte<EWeaponEquipType> WeaponEquipType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool IsWeaponValid = true;
+	bool IsWeaponValid;
 
-	FWeaponPickUpInfo(){ IsWeaponValid = false; };
+	FWeaponPickUpInfo(){IsWeaponValid = false;};
 	
 	FWeaponPickUpInfo(ASCharacter* NewOwner, USkeletalMesh* NewWeaponMesh, TSubclassOf<ASWeapon> NewWeaponClass, int NewCurrentAmmo, int NewBackUpAmmo, FName NewWeaponName,
 		TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool IsValidWeapon = true)
