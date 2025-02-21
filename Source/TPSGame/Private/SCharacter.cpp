@@ -723,7 +723,10 @@ void ASCharacter::DealDropWeapon_Implementation(bool ManuallyDiscard)
 			GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
 				FString::Printf(TEXT("CurrentWeapon的PickUpWeaponClass不存在！会导致生成的可拾取武器不会刷新信息！")));
 		}
-		
+
+		//PickUpWeaponClass如果没有指定默认的SkeletalMesh(即默认为空指针)时,
+		//会导致其实例在BeginPlay中设置完Mesh后立刻SetSimulatePhysics(true)时触发断言而游戏崩溃,
+		//因为复制时Mesh还不存在而触发断言checkSlow(RootComponent->IsSimulatingPhysics())为false.
 		APickUpWeapon* PickUpWeapon = World->SpawnActorDeferred<APickUpWeapon>(
 			PickUpWeaponClass,
 			FTransform(GetActorLocation() + GetActorForwardVector() *50 )
