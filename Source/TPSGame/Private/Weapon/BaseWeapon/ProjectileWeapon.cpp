@@ -102,19 +102,26 @@ void AProjectileWeapon::DrawMovementTrajectory()
 		return;
 	}
 	
-	if((OnlyDrawTrajectoryWhenReloading && MyOwner->GetIsAiming() && !MyOwner->GetIsReloading())
-		|| !OnlyDrawTrajectoryWhenReloading )
+	if((OnlyDrawTrajectoryWhenAiming && MyOwner->GetIsAiming() && !MyOwner->GetIsReloading())
+		|| !OnlyDrawTrajectoryWhenAiming )
 	{
 		FHitResult HitResult;
 		TArray<FVector> OutPoints;
 		FVector LastTraceDestination;
 		FVector StartPos = MuzzleSocket->GetSocketLocation(GetWeaponMeshComp());
 		FVector LaunchVelocity(((GetCurrentAimingPoint(!KeepTrajectoryStable) - StartPos).Rotation()+FRotator(UpAngelOffset,0,0)).Vector().GetSafeNormal() * ProjectileInitialSpeed);
+		FVector WeaponSocketVelocity = MuzzleSocket->GetSocketTransform(GetWeaponMeshComp()).GetUnitAxis( EAxis::X ).GetSafeNormal()* ProjectileInitialSpeed;
+		//如果常驻显示轨迹，未瞄准时希望速度方向为枪口方向
+		LaunchVelocity = MyOwner->GetIsAiming() ? LaunchVelocity : WeaponSocketVelocity;
 		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 		ObjectTypes.Emplace(ECC_WorldStatic);
 		//ObjectTypes.Emplace(ECC_WorldDynamic);
 		ObjectTypes.Emplace(ECC_Pawn);
 		TArray<AActor*> ActorsToIgnore;
+		ActorsToIgnore.Emplace(MyOwner);
+		//初速度太快则适当缩短预测距离
+		float RealDrawTrajectoryTime = ProjectileInitialSpeed >= 3000 ? DrawTrajectoryTime * 3000/ProjectileInitialSpeed : DrawTrajectoryTime;
+		
 		UGameplayStatics::Blueprint_PredictProjectilePath_ByObjectType(
 			this,
 			HitResult,
@@ -130,8 +137,8 @@ void AProjectileWeapon::DrawMovementTrajectory()
 			EDrawDebugTrace::None,
 			0,
 			DrawFrequency,
-			DrawTrajectoryTime,
-			GetWorld()->GetWorldSettings()->WorldGravityZ * ProjectileGravityZScale
+			RealDrawTrajectoryTime,
+			GetWorld()->GetWorldSettings()->WorldGravityZ * TrajectoryGravityZScale
 			);
 
 		if(TrajectoryTargetPointClass)
@@ -201,7 +208,8 @@ void AProjectileWeapon::ClearMovementTrajectory()
 	{
 		for(auto& Item : TrajectoryLineArray)
 		{
-			Item->UnregisterComponent();
+			//DestoryComponent会自动调用UnregisterComponent()
+			//Item->UnregisterComponent();
 			Item->DestroyComponent();
 		}
 		TrajectoryLineArray.Empty();

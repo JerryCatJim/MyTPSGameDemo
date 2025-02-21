@@ -382,6 +382,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon)
 	float WeaponTraceRange = 10000;
 
+	UPROPERTY(BlueprintReadWrite, Category= Weapon, Replicated)
+	FVector EyeLocation_Rep;
+	UPROPERTY(BlueprintReadWrite, Category= Weapon, Replicated)
+	FRotator EyeRotation_Rep;
+	
 	//射击命中的位置
 	FVector ShotTraceEnd;
 	//射击时命中的物理表面类型

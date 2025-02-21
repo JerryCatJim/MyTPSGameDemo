@@ -181,13 +181,15 @@ FVector ASWeapon::GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRota
 
 FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 {
-	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
-	FVector EyeLocation;
-	FRotator EyeRotation;
-	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
+	//客户端主控取不到其他玩家的EyeLocation和EyeRotation，只能获得GetActorLocation和GetActorRotation，所以把其他玩家的值从服务器同步到客户端
+	if(HasAuthority() || (!HasAuthority() && MyOwner->IsLocallyControlled()))
+	{
+		//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
+		MyOwner->GetActorEyesViewPoint(EyeLocation_Rep,EyeRotation_Rep);
+	}
 	
 	//伤害效果射击方位
-	FVector ShotDirection = EyeRotation.Vector();
+	FVector ShotDirection = EyeRotation_Rep.Vector();
 	//Radian 弧度
 	//矫正武器枪口指向位置时不想应用散布导致偏移
 	float HalfRadian = bUseSpread ? FMath::DegreesToRadians(GetDynamicBulletSpread()) : 0;
@@ -195,7 +197,7 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	FVector NewShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 	
 	//射线检测的最远位置
-	const FVector EndPoint = EyeLocation + (NewShotDirection * WeaponTraceRange);
+	const FVector EndPoint = EyeLocation_Rep + (NewShotDirection * WeaponTraceRange);
 	//碰撞查询
 	FCollisionQueryParams QueryParams;
 	//忽略武器自身和持有者的碰撞
@@ -207,8 +209,9 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	FHitResult Hit;
 	//射线检测
 	bool bIsTraceHit;  //是否射线检测命中
-	FVector StartPoint = GetWeaponShootStartPoint(EyeLocation, EyeRotation);
+	FVector StartPoint = GetWeaponShootStartPoint(EyeLocation_Rep, EyeRotation_Rep);
 	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
+	
 	if(bIsTraceHit)
 	{
 		return Hit.ImpactPoint;
@@ -967,6 +970,8 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, WeaponName);
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
+	DOREPLIFETIME(ASWeapon, EyeLocation_Rep);
+	DOREPLIFETIME(ASWeapon, EyeRotation_Rep);
 }
 
 
