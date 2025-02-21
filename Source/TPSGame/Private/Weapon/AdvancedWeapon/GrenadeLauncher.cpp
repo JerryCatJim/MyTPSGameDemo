@@ -12,7 +12,7 @@ AGrenadeLauncher::AGrenadeLauncher()
 	RateOfShoot = 90.f;
 	BulletSpread = 0.f;  //指哪扔哪，不会抖动
 
-	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
+	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
 	SplineComponent->SetupAttachment(GetRootComponent());
 	
 	OnePackageAmmoNum = 12;
