@@ -2,7 +2,6 @@
 
 
 #include "Weapon/AdvancedWeapon/GrenadeLauncher.h"
-#include "Components/SplineComponent.h"
 
 AGrenadeLauncher::AGrenadeLauncher()
 {
@@ -11,9 +10,6 @@ AGrenadeLauncher::AGrenadeLauncher()
 	ZoomedFOV = 90.f;
 	RateOfShoot = 90.f;
 	BulletSpread = 0.f;  //指哪扔哪，不会抖动
-
-	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
-	SplineComponent->SetupAttachment(GetRootComponent());
 	
 	OnePackageAmmoNum = 12;
 	CurrentAmmoNum = OnePackageAmmoNum;

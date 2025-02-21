@@ -12,6 +12,13 @@
 AProjectileWeapon::AProjectileWeapon()
 {
 	WeaponBulletType = EWeaponBulletType::Projectile;
+	
+	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
+	SplineComponent->SetupAttachment(GetRootComponent());
+	if(SplineComponent)
+	{
+		SplineComponent->ClearSplinePoints();
+	}
 }
 
 void AProjectileWeapon::Tick(float DeltaSeconds)
@@ -27,6 +34,10 @@ void AProjectileWeapon::BeginPlay()
 	Super::BeginPlay();
 	
 	MuzzleSocket = GetWeaponMeshComp()->GetSocketByName(MuzzleSocketName);
+	if(SplineComponent)
+	{
+		SplineComponent->ClearSplinePoints();
+	}
 }
 
 void AProjectileWeapon::DealFire()
@@ -163,15 +174,20 @@ void AProjectileWeapon::DrawMovementTrajectory()
 		}
 		if(TrajectoryLineMesh)
 		{
-			if(!SplineComponent)
+			/*if(!SplineComponent)
 			{
-				SplineComponent = NewObject<USplineComponent>(this, TEXT("SplineComponent"));
+				SplineComponent = NewObject<USplineComponent>(this, TEXT("FUCKU"));
 				//生成失败则返回
 				if(!SplineComponent) return;
 				
 				AddOwnedComponent(SplineComponent);
 				SplineComponent->SetupAttachment(GetRootComponent());
 				SplineComponent->RegisterComponent();
+			}*/
+			if(!SplineComponent)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 0 ,FColor::Red, TEXT("SplineComponent不存在!"));
+				return;
 			}
 			
 			for(int i = 0; i < OutPoints.Num(); i += 1)
