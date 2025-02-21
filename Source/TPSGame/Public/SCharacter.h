@@ -103,7 +103,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UInventoryComponent* GetInventoryComponent();
 	
-	bool GetIsDied()   const { return bDied; }
+	bool GetIsDied() const { return bDied; }
+	ETeam GetTeam() const { return PlayerTeam; }
 	
 	bool GetIsAiming() const { return bIsAiming; }
 	void SetIsAiming(const bool& IsAiming){ bIsAiming = IsAiming; }
