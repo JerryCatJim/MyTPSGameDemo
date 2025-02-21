@@ -208,6 +208,11 @@ private:
 	void LoopSetBodyColor();
 
 	UFUNCTION()
+	void OnRep_AimOffset_Y(){ if(IsLocallyControlled()) AimOffset_Y = AimOffset_Y_Locally; }
+	UFUNCTION()
+	void OnRep_AimOffset_Z(){ if(IsLocallyControlled()) AimOffset_Z = AimOffset_Z_Locally; }
+	
+	UFUNCTION()
 	void OnRep_PlayerTeam(){ SetBodyColor(PlayerTeam); }
 
 	ASWeapon* SpawnAndAttachWeapon(FWeaponPickUpInfo WeaponToSpawn, bool RefreshWeaponInfo = true);
@@ -334,10 +339,9 @@ protected:
 	bool bDied;
 
 	//瞄准偏移量
-	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
+	UPROPERTY(ReplicatedUsing = OnRep_AimOffset_Y, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Y;
-
-	UPROPERTY(Replicated, BlueprintReadWrite, Category= PlayerStatus)
+	UPROPERTY(ReplicatedUsing = OnRep_AimOffset_Z, BlueprintReadWrite, Category= PlayerStatus)
 	float AimOffset_Z;
 
 	//角色重生倒计时
@@ -407,6 +411,9 @@ private:
 		EWeaponEquipType::MeleeWeapon,
 		EWeaponEquipType::ThrowableWeapon
 	};
+
+	float AimOffset_Y_Locally;
+	float AimOffset_Z_Locally;
 	
 //临时测试接口的区域
 public:

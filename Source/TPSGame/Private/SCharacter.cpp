@@ -404,6 +404,24 @@ void ASCharacter::LookUp(float Value)
 	if( !FMath::IsNearlyEqual(Value, 0) )
 	{
 		SyncAimOffset();
+		//高延迟下本地直接先行修改以保持流畅
+		if(IsLocallyControlled())
+		{
+			FRotator TargetRotator = GetControlRotation()-GetActorRotation();
+			TargetRotator.Normalize();
+	
+			AimOffset_Y = FMath::RInterpTo(
+				FRotator(AimOffset_Y,AimOffset_Z, 0),
+				TargetRotator,
+				GetWorld()->GetDeltaSeconds(),
+				5
+				).Pitch;
+	
+			AimOffset_Y = TargetRotator.Pitch;
+			AimOffset_Z = 0;
+			AimOffset_Y_Locally = AimOffset_Y;
+			AimOffset_Z_Locally = AimOffset_Z;
+		}
 	}
 }
 
