@@ -123,8 +123,8 @@ void AProjectileWeapon::DrawMovementTrajectory()
 		
 		FVector LaunchVelocity(((GetCurrentAimingPoint(!KeepTrajectoryStable) - StartPos).Rotation()+FRotator(UpAngelOffset,0,0)).Vector().GetSafeNormal() * ProjectileInitialSpeed);
 		FVector WeaponSocketVelocity = MuzzleSocket->GetSocketTransform(GetWeaponMeshComp()).GetUnitAxis( EAxis::X ).GetSafeNormal()* ProjectileInitialSpeed;
-		//如果常驻显示轨迹，未瞄准时希望速度方向为枪口方向
-		LaunchVelocity = MyOwner->GetIsAiming() || MyOwner->GetIsFiring() ? LaunchVelocity : WeaponSocketVelocity;
+		//如果常驻显示轨迹，未瞄准或开火,换弹时希望速度方向为枪口方向
+		LaunchVelocity = !(MyOwner->GetIsAiming() || MyOwner->GetIsFiring()) || MyOwner->GetIsReloading() ? WeaponSocketVelocity : LaunchVelocity ;
 		
 		TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 		ObjectTypes.Emplace(ECC_WorldStatic);
