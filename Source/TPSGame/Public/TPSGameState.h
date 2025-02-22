@@ -63,7 +63,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void SortPlayerScoreRank(int PlayerIdToIgnore = -1, bool RemovePlayer = false);
 	
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void Server_AnnounceKill(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_AnnounceKill(ATPSPlayerState* Killer, const FString& Victim, ETeam VictimTeam);
