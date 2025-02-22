@@ -597,8 +597,8 @@ void ASCharacter::PossessedBy(AController* NewController)
 //Character继承于Pawn, Pawn.cpp中 调用GetActorEyesViewPoint 会调用GetPawnViewLocation和GetViewRotation获得值
 FVector ASCharacter::GetPawnViewLocation() const
 {
-	//判断摄像机组件是否为空，然后返回该组件
-	if(CameraComponent)
+	//AIController里的UpdateControlRotation会调用此函数计算Controller的旋转，而且BP_AI继承于SCharacter，所以不希望AI调用
+	if(!bIsAIPlayer && CameraComponent)
 	{
 		return CameraComponent->GetComponentLocation() + CameraComponent->GetForwardVector();
 	}
@@ -1165,6 +1165,8 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ASCharacter, AimOffset_Z);
 	DOREPLIFETIME(ASCharacter, bDisableGamePlayInput);
 	DOREPLIFETIME(ASCharacter, PlayerTeam);
+
+	DOREPLIFETIME(ASCharacter, bIsAIPlayer);
 }
 
 bool ASCharacter::NotEvent_NativeTest_Implementation()

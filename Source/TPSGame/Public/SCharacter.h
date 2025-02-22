@@ -269,6 +269,9 @@ public:
 
 	//防止同时与多个可拾取武器发生重叠时间
 	bool bHasBeenOverlappedWithPickUpWeapon = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
+	bool bIsAIPlayer = false;
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
