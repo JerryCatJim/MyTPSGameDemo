@@ -66,7 +66,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile, meta=(ClampMin = 1.f, ClampMax = 999.f))  //生成抛物线离散点的频率
 	float DrawFrequency = 99.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile, meta=(ClampMin = 0.1f, ClampMax = 5.f))  //总共绘制模拟子弹飞行设定秒数的抛物线
-	float DrawTrajectoryTime = 2.f;
+	float DrawTrajectoryTime = 1.8f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //是否只在本地绘制而不同步到服务器
 	bool DrawTrajectoryLocally = true;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile, meta=(ClampMin = 0))  //绘制抛物线的间隔(隔几段绘制一次)
