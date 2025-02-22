@@ -95,7 +95,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 {
 	if(!CanShowMovementTrajectory || !IsValid(MyOwner) || MyOwner->GetIsDied()) return;
 
-	if(MyOwner->CurrentWeapon != this) return;
+	if(MyOwner->CurrentWeapon != this || MyOwner->GetIsSwappingWeapon() ) return;
 	
 	if(DrawTrajectoryLocally && !MyOwner->IsLocallyControlled()) return;
 	
@@ -114,7 +114,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 	}
 	
 	if((OnlyDrawTrajectoryWhenAiming && MyOwner->GetIsAiming() && !MyOwner->GetIsReloading())
-		|| !OnlyDrawTrajectoryWhenAiming && !MyOwner->GetIsSwappingWeapon() )
+		|| !OnlyDrawTrajectoryWhenAiming )
 	{
 		FHitResult HitResult;
 		TArray<FVector> OutPoints;
