@@ -19,4 +19,7 @@ public:
 
 protected:
 	virtual void DealFire() override;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_WeaponHitTargetBroadcast(bool IsEnemy);
 };

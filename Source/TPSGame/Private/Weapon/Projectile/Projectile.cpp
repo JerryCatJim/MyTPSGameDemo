@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "NiagaraFunctionLibrary.h"
+#include "GameMode/TPSGameMode.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
 
@@ -179,9 +180,44 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 				}
 			}
 		}
+
+		//广播命中事件
+		if(DamagedActor)
+		{
+			bool IsEnemy = true;
+			APawn* HitTarget = Cast<APawn>(DamagedActor);
+			if(HitTarget && OwnerWeapon)
+			{
+				ASCharacter* MyOwner = Cast<ASCharacter>(OwnerWeapon->GetOwner());
+				if(MyOwner)
+				{
+					ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
+					ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
+					if(PS && MyPS)
+					{
+						ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
+						if(GM && GM->GetIsTeamMatchMode())
+						{
+							IsEnemy = MyPS->GetTeam() != PS->GetTeam();
+						}
+					}
+				}
+				//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
+				Multi_WeaponHitTargetBroadcast(IsEnemy);
+			}
+		}
+		
 		ApplyProjectileDamage(DamagedActor, ActualDamage, ShotDirection, NewHit);
 		Multi_PlayImpactEffectsAndSounds(SurfaceType, HitLocation);
 		Multi_PostOnHit();
+	}
+}
+
+void AProjectile::Multi_WeaponHitTargetBroadcast_Implementation(bool IsEnemy)
+{
+	if(OwnerWeapon)
+	{
+		OwnerWeapon->OnWeaponHitTarget.Broadcast(IsEnemy);
 	}
 }
 

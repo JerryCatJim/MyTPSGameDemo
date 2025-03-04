@@ -59,6 +59,7 @@ public:
 //IsEmpty用以区分当次射击是否为空射(可用于播放子弹数为空时的音效等)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCurrentAmmoChangedDelegate, int, CurrentAmmoNum, bool, bPlayEffect);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBackUpAmmoChangedDelegate, int, BackUpAmmoNum, bool, bPlayEffect);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHitTargetDelegate, bool, bIsEnemy);
 
 UCLASS()
 class TPSGAME_API ASWeapon : public AActor
@@ -294,6 +295,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FBackUpAmmoChangedDelegate OnBackUpAmmoChanged;
 
+	UPROPERTY(BlueprintAssignable)
+	FHitTargetDelegate OnWeaponHitTarget;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	bool bIsFullAutomaticWeapon = true;
 
@@ -303,6 +307,9 @@ public:
 	//武器的准星类型
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
 	TSubclassOf<class UTPSCrossHair> CrossHairClass;
+	//武器的命中反馈类型
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
+	TSubclassOf<UUserWidget> HitFeedbackCrossHairClass;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)

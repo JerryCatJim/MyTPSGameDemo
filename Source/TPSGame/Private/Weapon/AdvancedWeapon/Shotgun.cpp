@@ -4,6 +4,7 @@
 #include "Weapon/AdvancedWeapon/Shotgun.h"
 #include "SCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameMode/TPSGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
@@ -55,6 +56,9 @@ void AShotgun::DealFire()
 	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
 	QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
 
+	bool bWeaponHitTarget = false;
+	bool IsEnemy = false;
+	
 	TArray<FVector> TracePointArray;
 	//基本就是把单发射击武器的DealFire逻辑，复制粘贴成次数循环的
 	for(int i=0; i<NumberOfPellets; ++i)
@@ -100,7 +104,27 @@ void AShotgun::DealFire()
 			
 			//应用伤害
 			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, MyOwner->GetInstigatorController(), this, DamageType);
-				
+			//记录命中事件,等待循环结束后广播
+			if(HitActor)
+			{
+				APawn* HitTarget = Cast<APawn>(HitActor);
+				if(HitTarget)
+				{
+					ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
+					ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
+					if(PS && MyPS)
+					{
+						ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
+						if(GM && GM->GetIsTeamMatchMode())
+						{
+							//一次发射多发弹丸,如果同时命中友军和敌军,希望记录为命中敌军
+							IsEnemy = IsEnemy || MyPS->GetTeam() != PS->GetTeam();
+						}
+					}
+					bWeaponHitTarget = true;
+				}
+			}
+			
 			//若击中目标则将轨迹结束点设置为击中点
 			ShotTraceEnd = Hit.ImpactPoint;
 			HitSurfaceType = SurfaceType;
@@ -110,6 +134,13 @@ void AShotgun::DealFire()
 		TracePointArray.Emplace(ShotTraceEnd);
 		//PlayTraceEffect(ShotTraceEnd);  //换个写法，最好别一瞬间执行多次RPC调用，尤其还是Reliable函数
 	}
+
+	if(bWeaponHitTarget)
+	{
+		//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
+		Multi_WeaponHitTargetBroadcast(IsEnemy);
+	}
+	
 	PlayTraceEffectForShotgun(TracePointArray);
 }
 

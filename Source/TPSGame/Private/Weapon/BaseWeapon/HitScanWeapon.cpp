@@ -3,6 +3,7 @@
 
 #include "Weapon/BaseWeapon/HitScanWeapon.h"
 #include "SCharacter.h"
+#include "GameMode/TPSGameMode.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
 #include "Kismet/GameplayStatics.h"
@@ -70,6 +71,27 @@ void AHitScanWeapon::DealFire()
 		
 		//应用伤害
 		UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, MyOwner->GetInstigatorController(), this, DamageType);
+		//广播命中事件
+		if(HitActor)
+		{
+			bool IsEnemy = true;
+			APawn* HitTarget = Cast<APawn>(HitActor);
+			if(HitTarget)
+			{
+				ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
+				ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
+				if(PS && MyPS)
+				{
+					ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
+					if(GM && GM->GetIsTeamMatchMode())
+					{
+						IsEnemy = MyPS->GetTeam() != PS->GetTeam();
+					}
+				}
+			}
+			//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
+			Multi_WeaponHitTargetBroadcast(IsEnemy);
+		}
 			
 		//若击中目标则将轨迹结束点设置为击中点
 		ShotTraceEnd = Hit.ImpactPoint;
@@ -77,4 +99,9 @@ void AHitScanWeapon::DealFire()
 		
 		PlayImpactEffectsAndSounds(HitSurfaceType, ShotTraceEnd);
 	}
+}
+
+void AHitScanWeapon::Multi_WeaponHitTargetBroadcast_Implementation(bool IsEnemy)
+{
+	OnWeaponHitTarget.Broadcast(IsEnemy);
 }

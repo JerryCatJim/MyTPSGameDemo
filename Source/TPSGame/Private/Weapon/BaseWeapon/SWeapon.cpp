@@ -89,6 +89,13 @@ void ASWeapon::BeginPlay()
 		const FString PickUpWeaponClassLoadPath = FString(TEXT("/Game/BP_Weapon/PickUpWeapon/BP_PickUpWeaponBase.BP_PickUpWeaponBase_C"));//蓝图一定要加_C这个后缀名
 		PickUpWeaponClass = LoadClass<APickUpWeapon>(nullptr, *PickUpWeaponClassLoadPath);
 	}
+
+	if(!HitFeedbackCrossHairClass)
+	{
+		//从C++中获取蓝图类
+		const FString HitFeedbackCrossHairClassLoadPath = FString(TEXT("/Game/UI/CrossHair/HitFeedbackCrossHair.HitFeedbackCrossHair_C"));//蓝图一定要加_C这个后缀名
+		HitFeedbackCrossHairClass = LoadClass<UUserWidget>(nullptr, *HitFeedbackCrossHairClassLoadPath);
+	}
 	
 	if(HasAuthority())
 	{

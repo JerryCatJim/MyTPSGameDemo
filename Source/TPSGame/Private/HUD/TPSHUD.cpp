@@ -26,11 +26,21 @@ void ATPSHUD::ResetCrossHairWidget(APlayerController* PlayerController)
 		if(PlayerController->GetPawn())
 		{
 			ASCharacter* PlayerCharacter = Cast<ASCharacter>(PlayerController->GetPawn());
-			if(PlayerCharacter && PlayerCharacter->GetCurrentWeapon() && PlayerCharacter->GetCurrentWeapon()->CrossHairClass)
+			if(PlayerCharacter && PlayerCharacter->GetCurrentWeapon())
 			{
-				CrossHairView = CreateWidget<UTPSCrossHair>(PlayerController, PlayerCharacter->GetCurrentWeapon()->CrossHairClass);
-				CrossHairView->AddToViewport();
-				AddToWidgetList(CrossHairView);
+				if(PlayerCharacter->GetCurrentWeapon()->CrossHairClass)
+				{
+					CrossHairView = CreateWidget<UTPSCrossHair>(PlayerController, PlayerCharacter->GetCurrentWeapon()->CrossHairClass);
+					CrossHairView->AddToViewport();
+					AddToWidgetList(CrossHairView);
+				}
+				if(PlayerCharacter->GetCurrentWeapon()->HitFeedbackCrossHairClass)
+				{
+					HitFeedbackCrossHairView = CreateWidget<UUserWidget>(PlayerController, PlayerCharacter->GetCurrentWeapon()->HitFeedbackCrossHairClass);
+					HitFeedbackCrossHairView->AddToViewport();
+					AddToWidgetList(HitFeedbackCrossHairView);
+					HitFeedbackCrossHairView->SetVisibility(ESlateVisibility::Collapsed);
+				}
 			}
 		}
 	}
