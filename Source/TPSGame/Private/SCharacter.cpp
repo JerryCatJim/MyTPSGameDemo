@@ -148,10 +148,7 @@ void ASCharacter::TryInitBodyColor()
 
 void ASCharacter::LoopSetBodyColor()
 {
-	ATPSPlayerController* MyController = GetController<ATPSPlayerController>();
-	if(!MyController) return;
-	
-	ATPSPlayerState* MyPlayerState = MyController->GetPlayerState<ATPSPlayerState>();
+	ATPSPlayerState* MyPlayerState = GetPlayerState<ATPSPlayerState>();
 	if(MyPlayerState)
 	{
 		SetBodyColor(MyPlayerState->GetTeam());
@@ -515,8 +512,7 @@ void ASCharacter::PlayerLeaveGame_Implementation()
 void ASCharacter::SetBodyColor(ETeam Team)
 {
 	if( GetMesh() == nullptr || (Team == ETeam::ET_NoTeam && OriginalMaterial == nullptr) ) return;
-
-	PlayerTeam = Team;
+	
 	switch(Team)
 	{
 	case ETeam::ET_NoTeam:
@@ -572,7 +568,6 @@ void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ASCharacter, AimOffset_Y);
 	DOREPLIFETIME(ASCharacter, AimOffset_Z);
 	DOREPLIFETIME(ASCharacter, bDisableGamePlayInput);
-	DOREPLIFETIME(ASCharacter, PlayerTeam);
 	DOREPLIFETIME(ASCharacter, bIsAIPlayer);
 }
 

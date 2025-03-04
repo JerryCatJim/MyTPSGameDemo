@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TPSPlayerState.h"
 #include "Weapon/BaseWeapon/SWeapon.h"
 #include "GameFramework/Character.h"
 #include "Interface/MyInterfaceTest.h"
@@ -132,7 +133,26 @@ public:
 	ASWeapon* GetCurrentWeapon(){ return WeaponManagerComponent->CurrentWeapon; }
 	
 	bool GetIsDied() const { return bDied; }
-	ETeam GetTeam() const { return PlayerTeam; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category=PlayerTeam)
+	ETeam GetTeam() const
+	{
+		ATPSPlayerState* PS = Cast<ATPSPlayerState>(GetPlayerState());
+		if(PS)
+		{
+			return PS->GetTeam();
+		}
+		return ETeam::ET_NoTeam;
+	}
+	UFUNCTION(BlueprintCallable, Category=PlayerTeam)
+	void SetTeam(ETeam TeamID)
+	{
+		ATPSPlayerState* PS = Cast<ATPSPlayerState>(GetPlayerState());
+		if(PS)
+		{
+			PS->SetTeam(TeamID);
+		}
+	}
 	
 	float GetAimOffset_Y() const { return AimOffset_Y; }
 	float GetAimOffset_Z() const { return AimOffset_Z; }
@@ -191,9 +211,6 @@ private:
 	UFUNCTION()
 	void OnRep_AimOffset_Z(){ if(IsLocallyControlled()) AimOffset_Z = AimOffset_Z_Locally; }
 	
-	UFUNCTION()
-	void OnRep_PlayerTeam(){ SetBodyColor(PlayerTeam); }
-	
 public:	
 	UPROPERTY(EditAnywhere)
 	float DistanceToHideCharacter = 100;
@@ -249,9 +266,6 @@ protected:
 	//角色重生倒计时
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerTimer)
 	float RespawnCount = 5;
-
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_PlayerTeam, Category=Team)
-	ETeam PlayerTeam = ETeam::ET_NoTeam;
 	
 	UPROPERTY(EditAnywhere, Category=PlayerColor)
 	UMaterialInstance* OriginalMaterial;
