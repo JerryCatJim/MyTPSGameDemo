@@ -5,21 +5,24 @@
 #include "CoreMinimal.h"
 #include "Weapon/BaseWeapon/SWeapon.h"
 #include "GameFramework/Character.h"
-#include "Camera/CameraComponent.h"
-#include "Component/SBuffComponent.h"
-#include "Component/SHealthComponent.h"
-#include "Component/InventoryComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Interface/MyInterfaceTest.h"
 #include "TPSGameType/Team.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
+#include "Component/WeaponManagerComponent.h"
 #include "SCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCurrentWeaponChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyUp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyLongPressed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FPlayerDead, AController*, InstigatedBy, AActor*, DamageCauser,const UDamageType*, DamageType);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnExchangeWeapon, FWeaponPickUpInfo, OldWeaponInfo);
+
+class UInputComponent;
+class UCameraComponent;
+class USpringArmComponent;
+class USHealthComponent;
+class USBuffComponent;
+class UWeaponManagerComponent;
 
 UCLASS()
 class TPSGAME_API ASCharacter : public ACharacter, public IMyInterfaceTest
@@ -37,14 +40,29 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 	//角色被销毁时调用
 	virtual void Destroyed() override;
 
 	//通常只在服务端触发, 刚进游戏时服务端先OnPossess然后BeginPlay，RestartPlayer后服务端先BeginPlay然后OnPossess
 	virtual void PossessedBy(AController* NewController) override;
-	
+
+	//当交互键(E)被按下时
+	UFUNCTION(BlueprintCallable)//, Server, Reliable)
+	void InteractKeyPressed();
+	UFUNCTION(BlueprintCallable)//, Server, Reliable)
+	void InteractKeyReleased();
+	UFUNCTION(BlueprintCallable)//, Server, Reliable)
+	void TryLongPressInteractKey();   //尝试长按交互键
+	void BeginLongPressInteractKey(); //进入长按状态
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OnInteractKeyDown();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OnInteractKeyUp();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_OnInteractKeyLongPressed();
+
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	void PickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 
@@ -77,20 +95,26 @@ public:
 	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
 	void ResetWeaponZoom();
 
-	//当交互键(E)被按下时
-	UFUNCTION(BlueprintCallable)//, Server, Reliable)
-	void InteractKeyPressed();
-	UFUNCTION(BlueprintCallable)//, Server, Reliable)
-	void InteractKeyReleased();
-	UFUNCTION(BlueprintCallable)//, Server, Reliable)
-	void TryLongPressInteractKey();   //尝试长按交互键
-	void BeginLongPressInteractKey(); //进入长按状态
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_OnInteractKeyDown();
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_OnInteractKeyUp();
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_OnInteractKeyLongPressed();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsAiming() const { return WeaponManagerComponent->GetIsAiming(); }
+	UFUNCTION(BlueprintCallable)
+	void SetIsAiming(const bool& IsAiming){ WeaponManagerComponent->SetIsAiming(IsAiming); }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsFiring() const { return WeaponManagerComponent->GetIsFiring(); }
+	UFUNCTION(BlueprintCallable)
+	void SetIsFiring(const bool& IsFiring){ WeaponManagerComponent->SetIsFiring(IsFiring); }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsReloading()  const { return WeaponManagerComponent->GetIsReloading(); }
+	UFUNCTION(BlueprintCallable)
+	void SetIsReloading(const bool& IsReloading){ WeaponManagerComponent->SetIsReloading(IsReloading); }
+	void SetIsReloadingLocally(const bool& IsReloading){ WeaponManagerComponent->SetIsReloadingLocally(IsReloading); }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsSwappingWeapon()  const { return WeaponManagerComponent->GetIsSwappingWeapon(); }
+	UFUNCTION(BlueprintCallable)
+	void SetIsSwappingWeapon(const bool& IsSwappingWeapon){ WeaponManagerComponent->SetIsSwappingWeapon(IsSwappingWeapon); }
 	
 	//重写,获取摄像机组件位置
 	virtual FVector GetPawnViewLocation() const override;
@@ -99,25 +123,16 @@ public:
 	
 	USHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	USBuffComponent* GetBuffComponent()     const { return BuffComponent; }
+	UWeaponManagerComponent* GetWeaponManagerComponent() const { return WeaponManagerComponent; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UInventoryComponent* GetInventoryComponent();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category=CurrentWeapon)
+	ASWeapon* GetCurrentWeapon(){ return WeaponManagerComponent->CurrentWeapon; }
 	
 	bool GetIsDied() const { return bDied; }
 	ETeam GetTeam() const { return PlayerTeam; }
-	
-	bool GetIsAiming() const { return bIsAiming; }
-	void SetIsAiming(const bool& IsAiming){ bIsAiming = IsAiming; }
-
-	bool GetIsFiring() const { return bIsFiring; }
-	void SetIsFiring(const bool& IsFiring){ bIsFiring = IsFiring; }
-	
-	bool GetIsReloading()  const { return bIsReloading; }
-	void SetIsReloading(const bool& IsReloading){ bIsReloading = IsReloading; }
-	void SetIsReloadingLocally(const bool& IsReloading){ bIsReloadingLocally = IsReloading; }
-
-	bool GetIsSwappingWeapon()  const { return bIsSwappingWeapon; }
-	void SetIsSwappingWeapon(const bool& IsSwappingWeapon){ bIsSwappingWeapon = IsSwappingWeapon; }
 	
 	float GetAimOffset_Y() const { return AimOffset_Y; }
 	float GetAimOffset_Z() const { return AimOffset_Z; }
@@ -149,15 +164,6 @@ protected:
 	
 	void BeginCrouch();
 	void EndCrouch();
-
-	void SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
-	void LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
-	void DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ClientSyncPlaySwapWeaponAnim(EWeaponEquipType NewWeaponEquipType, bool Immediately);
-
-	UFUNCTION(Server, Reliable)  //标记Server等RPC方法后不让TEnumAsByte做参数？(TEnumAsByte标记后，将值包装为了一个结构体)
-	void ServerSwapWeapon(EWeaponEquipType NewWeaponEquipType, bool Immediately);
 	
 	//根据是否开镜设置人物的移动类型
 	UFUNCTION(BlueprintNativeEvent)
@@ -168,39 +174,12 @@ protected:
 	
 	//生命值更改函数
 	UFUNCTION()//Server, Reliable)  //必须UFUNCTION才能绑定委托
-	void OnHealthChanged(class USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
-	const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-
-	//武器在服务器生成后复制到客户端有延迟，需要复制完成后再调用委托做一些初始化操作
-	UFUNCTION()
-	void OnRep_CurrentWeapon();
-	/*UFUNCTION()
-	void OnRep_MainWeapon();
-	UFUNCTION()
-	void OnRep_SecondaryWeapon();
-	UFUNCTION()
-	void OnRep_MeleeWeapon();
-	UFUNCTION()
-	void OnRep_ThrowableWeapon();*/
+	void OnHealthChanged(USHealthComponent* OwningHealthComponent, float Health, float HealthDelta, //HealthDelta 生命值改变量,增加或减少
+	const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
 
 	//角色死亡后做的一些操作
 	UFUNCTION()
 	void OnRep_Died();
-
-	UFUNCTION()//延迟较高时快速瞄准又退出时，本地会被服务器覆盖了旧时间的状态，将其改为本地最新状态
-	void OnRep_IsAiming(){ if(IsLocallyControlled()) bIsAiming = bIsAimingLocally; }
-	UFUNCTION()//原理同上
-	void OnRep_IsFiring(){ if(IsLocallyControlled()) bIsFiring = bIsFiringLocally; }
-	UFUNCTION()//原理同上
-	void OnRep_IsReloading(){ if(IsLocallyControlled()) bIsReloading = bIsReloadingLocally; }
-	UFUNCTION()//原理同上
-	void OnRep_IsSwappingWeapon(){ if(IsLocallyControlled()) bIsSwappingWeapon = bIsSwappingWeaponLocally; }
-
-	UFUNCTION(Server, Reliable)
-	void DealDropWeapon(bool ManuallyDiscard);
-	
-	UFUNCTION(Server, Reliable)
-	void DealPickUpWeapon(FWeaponPickUpInfo WeaponInfo);
 	
 private:
 	void HideCharacterIfCameraClose();
@@ -214,36 +193,8 @@ private:
 	
 	UFUNCTION()
 	void OnRep_PlayerTeam(){ SetBodyColor(PlayerTeam); }
-
-	ASWeapon* SpawnAndAttachWeapon(FWeaponPickUpInfo WeaponToSpawn, bool RefreshWeaponInfo = true);
-	TSubclassOf<ASWeapon> GetWeaponSpawnClass(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-	FName GetWeaponSocketName(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-	ASWeapon*& GetWeaponByEquipType(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-	UAnimMontage* GetSwapWeaponAnim(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-	float GetSwapWeaponAnimRate(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-
-	void DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-
-	void SwapToNextAvailableWeapon(TEnumAsByte<EWeaponEquipType> CurrentWeaponEquipType);
 	
 public:	
-	//当前武器
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, ReplicatedUsing = OnRep_CurrentWeapon)  //Replicated : 网络复制
-	class ASWeapon* CurrentWeapon;
-
-	//主武器
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
-	ASWeapon* MainWeapon;
-	//副武器 例如手枪
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
-	ASWeapon* SecondaryWeapon;
-	//近战武器 例如刀
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
-	ASWeapon* MeleeWeapon;
-	//投掷道具，例如手雷，烟雾弹
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon, Replicated)  //Replicated : 网络复制
-	ASWeapon* ThrowableWeapon;
-
 	UPROPERTY(EditAnywhere)
 	float DistanceToHideCharacter = 100;
 
@@ -252,23 +203,14 @@ public:
 	bool bDisableGamePlayInput = false;
 
 	UPROPERTY(BlueprintAssignable)
-	FCurrentWeaponChanged OnCurrentWeaponChanged;
-
-	UPROPERTY(BlueprintAssignable)
 	FPlayerDead OnPlayerDead;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnExchangeWeapon OnExchangeWeapon;
-
+	
 	UPROPERTY(BlueprintAssignable)  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件
 	FOnInteractKeyUp OnInteractKeyDown;
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractKeyUp OnInteractKeyUp;
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractKeyLongPressed OnInteractKeyLongPressed;
-
-	//防止同时与多个可拾取武器发生重叠时间
-	bool bHasBeenOverlappedWithPickUpWeapon = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsAIPlayer = false;
@@ -280,54 +222,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	USpringArmComponent* SpringArmComponent;
 	
-	//是否正在开镜变焦
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsAiming, Category= Weapon)
-	bool bIsAiming;
-	//记录客户端本地的瞄准状态，以修正延迟较高时快速瞄准又退出时被服务器覆盖了旧时间的状态
-	bool bIsAimingLocally;
-
-	//是否正在射击
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsFiring, Category= Weapon)
-	bool bIsFiring;
-	//记录客户端本地的射击状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
-	bool bIsFiringLocally;
-	
-	//当前武器是否正在重新装填子弹
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsReloading, Category= Weapon)
-	bool bIsReloading = false;
-	//记录客户端本地的装弹状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
-	bool bIsReloadingLocally;
-
-	//当前武器是否正在交换武器
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_IsSwappingWeapon, Category= Weapon)
-	bool bIsSwappingWeapon = false;
-	//记录客户端本地的交换武器状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
-	bool bIsSwappingWeaponLocally;
-	
 	//默认视野范围
 	float DefaultFOV;
-
-	//为玩家生成武器
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<ASWeapon> MainWeaponClass;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<ASWeapon> SecondaryWeaponClass;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<ASWeapon> MeleeWeaponClass;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	TSubclassOf<ASWeapon> ThrowableWeaponClass;
-
-	//武器插槽名称
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	FName CurrentWeaponSocketName;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	FName MainWeaponSocketName;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	FName SecondaryWeaponSocketName;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	FName MeleeWeaponSocketName;
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category= Weapon)
-	FName ThrowableWeaponSocketName;
 
 	//生命值组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
@@ -337,6 +233,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	USBuffComponent* BuffComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
+	UWeaponManagerComponent* WeaponManagerComponent;
+	
 	//角色是否死亡
 	UPROPERTY(ReplicatedUsing = OnRep_Died, BlueprintReadOnly, Category= PlayerStatus)
 	bool bDied;
@@ -376,44 +275,12 @@ protected:
 	//按X秒完成长按
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerTimer)
 	float InteractKeyLongPressFinishSecond = 2.f;
-
-	//角色切换武器时的动画
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
-	UAnimMontage* SwapMainWeaponAnim;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
-	UAnimMontage* SwapSecondaryWeaponAnim;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
-	UAnimMontage* SwapMeleeWeaponAnim;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = SwapWeapon)
-	UAnimMontage* SwapThrowableWeaponAnim;
-	UPROPERTY()
-	UAnimMontage* CurrentSwapWeaponAnim; //记录当前正在播放的切换动画，如果切换过程中又想切换回原武器，则反播此动画即可
-	
-	//切换武器动画的播放速率
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
-	float SwapMainWeaponRate = 1.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
-	float SwapSecondaryWeaponRate = 1.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
-	float SwapMeleeWeaponRate = 1.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= SwapWeapon)
-	float SwapThrowableWeaponRate = 1.f;
-	//切换武器动画计时器
-	FTimerHandle SwapWeaponTimer;
 	
 private:
 	bool bPlayerLeftGame = false;
 	
 	FTimerHandle FGetPlayerStateHandle;
 	int TryGetPlayerStateTimes = 0;  //超过5次还没成功就停止计时器
-
-	UPROPERTY()
-	TArray<TEnumAsByte<EWeaponEquipType>> WeaponEquipTypeList = {
-		EWeaponEquipType::MainWeapon,
-		EWeaponEquipType::SecondaryWeapon,
-		EWeaponEquipType::MeleeWeapon,
-		EWeaponEquipType::ThrowableWeapon
-	};
 
 	float AimOffset_Y_Locally;
 	float AimOffset_Z_Locally;

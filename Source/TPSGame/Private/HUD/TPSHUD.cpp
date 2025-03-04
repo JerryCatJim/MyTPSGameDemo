@@ -25,10 +25,10 @@ void ATPSHUD::ResetCrossHairWidget(APlayerController* PlayerController)
 	{
 		if(PlayerController->GetPawn())
 		{
-			const ASCharacter* PlayerCharacter = Cast<ASCharacter>(PlayerController->GetPawn());
-			if(PlayerCharacter && PlayerCharacter->CurrentWeapon && PlayerCharacter->CurrentWeapon->CrossHairClass)
+			ASCharacter* PlayerCharacter = Cast<ASCharacter>(PlayerController->GetPawn());
+			if(PlayerCharacter && PlayerCharacter->GetCurrentWeapon() && PlayerCharacter->GetCurrentWeapon()->CrossHairClass)
 			{
-				CrossHairView = CreateWidget<UTPSCrossHair>(PlayerController, PlayerCharacter->CurrentWeapon->CrossHairClass);
+				CrossHairView = CreateWidget<UTPSCrossHair>(PlayerController, PlayerCharacter->GetCurrentWeapon()->CrossHairClass);
 				CrossHairView->AddToViewport();
 				AddToWidgetList(CrossHairView);
 			}

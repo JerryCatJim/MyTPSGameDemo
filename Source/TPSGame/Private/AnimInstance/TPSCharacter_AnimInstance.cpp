@@ -26,8 +26,8 @@ void UTPSCharacter_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		return;
 	}	
-	bWeaponEquipped = IsValid(PlayerCharacter->CurrentWeapon);
-	EquippedWeapon = bWeaponEquipped ? PlayerCharacter->CurrentWeapon : nullptr;
+	bWeaponEquipped = IsValid(PlayerCharacter->GetCurrentWeapon());
+	EquippedWeapon = bWeaponEquipped ? PlayerCharacter->GetCurrentWeapon() : nullptr;
 	
 	bIsInAir = PlayerCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = PlayerCharacter->GetVelocity().Size() > 0.f;

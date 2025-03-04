@@ -208,9 +208,9 @@ void APickUpWeapon::OnCapsuleComponentBeginOverlap(UPrimitiveComponent* Overlapp
 	if(LastOverlapPlayer)
 	{
 		//防止同时间有多个可拾取武器与人物重叠
-		if(LastOverlapPlayer->bHasBeenOverlappedWithPickUpWeapon == false)
+		if(LastOverlapPlayer->GetWeaponManagerComponent()->bHasBeenOverlappedWithPickUpWeapon == false)
 		{
-			LastOverlapPlayer->bHasBeenOverlappedWithPickUpWeapon = true;
+			LastOverlapPlayer->GetWeaponManagerComponent()->bHasBeenOverlappedWithPickUpWeapon = true;
 			bIsThisTheOverlapOne = true;
 		}
 		else
@@ -230,7 +230,7 @@ void APickUpWeapon::OnCapsuleComponentBeginOverlap(UPrimitiveComponent* Overlapp
 		}
 		
 		//OnPickUpWeapon在SCharacter中仅服务端广播
-		LastOverlapPlayer->OnExchangeWeapon.AddDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
+		LastOverlapPlayer->GetWeaponManagerComponent()->OnExchangeWeapon.AddDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		//角色在拾取范围内死亡时也关闭文字显示
 		LastOverlapPlayer->OnPlayerDead.AddDynamic(this, &APickUpWeapon::OnPlayerDead);
 
@@ -261,10 +261,10 @@ void APickUpWeapon::OnCapsuleComponentEndOverlap(UPrimitiveComponent* Overlapped
 		{
 			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
-		LastOverlapPlayer->OnExchangeWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
+		LastOverlapPlayer->GetWeaponManagerComponent()->OnExchangeWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
 		ShowTipWidget(false);
-		LastOverlapPlayer->bHasBeenOverlappedWithPickUpWeapon = false;
+		LastOverlapPlayer->GetWeaponManagerComponent()->bHasBeenOverlappedWithPickUpWeapon = false;
 		
 		//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("离开了 %d"), HasAuthority()));
 	}
@@ -320,7 +320,7 @@ void APickUpWeapon::OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser
 		{
 			LastOverlapPlayer->OnInteractKeyDown.RemoveDynamic(this, &APickUpWeapon::OnInteractKeyDown);
 		}
-		LastOverlapPlayer->OnExchangeWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
+		LastOverlapPlayer->GetWeaponManagerComponent()->OnExchangeWeapon.RemoveDynamic(this, &APickUpWeapon::Server_ResetPickUpWeaponInfo);
 		LastOverlapPlayer->OnPlayerDead.RemoveDynamic(this, &APickUpWeapon::OnPlayerDead);
 		
 		LastOverlapPlayer = nullptr;
