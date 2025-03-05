@@ -90,7 +90,7 @@ void AHitScanWeapon::DealFire()
 				}
 			}
 			//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
-			Multi_WeaponHitTargetBroadcast(IsEnemy);
+			Multi_WeaponHitTargetBroadcast(IsEnemy,SurfaceType == Surface_FleshVulnerable);
 		}
 			
 		//若击中目标则将轨迹结束点设置为击中点
@@ -101,7 +101,7 @@ void AHitScanWeapon::DealFire()
 	}
 }
 
-void AHitScanWeapon::Multi_WeaponHitTargetBroadcast_Implementation(bool IsEnemy)
+void AHitScanWeapon::Multi_WeaponHitTargetBroadcast_Implementation(bool IsEnemy, bool IsHeadshot)
 {
-	OnWeaponHitTarget.Broadcast(IsEnemy);
+	OnWeaponHitTarget.Broadcast(IsEnemy, IsHeadshot);
 }

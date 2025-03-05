@@ -59,7 +59,7 @@ public:
 //IsEmpty用以区分当次射击是否为空射(可用于播放子弹数为空时的音效等)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCurrentAmmoChangedDelegate, int, CurrentAmmoNum, bool, bPlayEffect);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBackUpAmmoChangedDelegate, int, BackUpAmmoNum, bool, bPlayEffect);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHitTargetDelegate, bool, bIsEnemy);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHitTargetDelegate, bool, bIsEnemy, bool, bIsHeadshot);
 
 UCLASS()
 class TPSGAME_API ASWeapon : public AActor

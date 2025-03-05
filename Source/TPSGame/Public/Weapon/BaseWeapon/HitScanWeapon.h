@@ -21,5 +21,5 @@ protected:
 	virtual void DealFire() override;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_WeaponHitTargetBroadcast(bool IsEnemy);
+	void Multi_WeaponHitTargetBroadcast(bool IsEnemy, bool IsHeadshot);
 };

@@ -58,6 +58,7 @@ void AShotgun::DealFire()
 
 	bool bWeaponHitTarget = false;
 	bool IsEnemy = false;
+	bool IsHeadshot = false;
 	
 	TArray<FVector> TracePointArray;
 	//基本就是把单发射击武器的DealFire逻辑，复制粘贴成次数循环的
@@ -100,6 +101,7 @@ void AShotgun::DealFire()
 			if(SurfaceType == Surface_FleshVulnerable)
 			{
 				ActualDamage *= HeadShotBonus;
+				IsHeadshot = true;
 			}
 			
 			//应用伤害
@@ -138,7 +140,7 @@ void AShotgun::DealFire()
 	if(bWeaponHitTarget)
 	{
 		//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
-		Multi_WeaponHitTargetBroadcast(IsEnemy);
+		Multi_WeaponHitTargetBroadcast(IsEnemy, IsHeadshot);
 	}
 	
 	PlayTraceEffectForShotgun(TracePointArray);

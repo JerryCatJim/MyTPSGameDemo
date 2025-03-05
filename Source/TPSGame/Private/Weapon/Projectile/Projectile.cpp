@@ -142,6 +142,8 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		FVector ShotDirection = FVector();
 		FHitResult NewHit;
 
+		bool IsHeadshot = false;
+		
 		if(OwnerWeapon)
 		{
 			FVector EyeLocation;
@@ -177,6 +179,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 				if(SurfaceType == Surface_FleshVulnerable)
 				{
 					ActualDamage *= HeadShotBonusRate;
+					IsHeadshot = true;
 				}
 			}
 		}
@@ -203,7 +206,7 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 					}
 				}
 				//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
-				Multi_WeaponHitTargetBroadcast(IsEnemy);
+				Multi_WeaponHitTargetBroadcast(IsEnemy, IsHeadshot && !bIsAoeDamage);
 			}
 		}
 		
@@ -213,11 +216,11 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 	}
 }
 
-void AProjectile::Multi_WeaponHitTargetBroadcast_Implementation(bool IsEnemy)
+void AProjectile::Multi_WeaponHitTargetBroadcast_Implementation(bool IsEnemy, bool IsHeadshot)
 {
 	if(OwnerWeapon)
 	{
-		OwnerWeapon->OnWeaponHitTarget.Broadcast(IsEnemy);
+		OwnerWeapon->OnWeaponHitTarget.Broadcast(IsEnemy, IsHeadshot);
 	}
 }
 
