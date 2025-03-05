@@ -53,6 +53,11 @@ void ATPSHUD::RemoveCrossHairWidget()
 		CrossHairView->RemoveFromParent();
 		WidgetsList.Remove(CrossHairView);
 	}
+	if(HitFeedbackCrossHairView)
+	{
+		HitFeedbackCrossHairView->RemoveFromParent();
+		WidgetsList.Remove(HitFeedbackCrossHairView);
+	}
 }
 
 void ATPSHUD::SetCrossHairVisibility(bool IsVisible)
