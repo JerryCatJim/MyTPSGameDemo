@@ -60,8 +60,9 @@ void AShotgun::DealFire()
 	//基本就是把单发射击武器的DealFire逻辑，复制粘贴成次数循环的
 	for(int i=0; i<NumberOfPellets; ++i)
 	{
+		FVector StartPoint = GetWeaponShootStartPoint();
 		//伤害效果射击方位
-		FVector ShotDirection = EyeRotation.Vector();
+		FVector ShotDirection = (GetCurrentAimingPoint()-StartPoint).GetSafeNormal();
 		//Radian 弧度
 		//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
 		float HalfRadian = FMath::DegreesToRadians(GetDynamicBulletSpread());
@@ -77,7 +78,6 @@ void AShotgun::DealFire()
 		FHitResult Hit;
 		//射线检测
 		bool bIsTraceHit;  //是否射线检测命中
-		FVector StartPoint = GetWeaponShootStartPoint();
 		bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
 		if(bIsTraceHit)
 		{
