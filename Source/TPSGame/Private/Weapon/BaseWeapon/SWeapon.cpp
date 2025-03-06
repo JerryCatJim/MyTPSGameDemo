@@ -1011,7 +1011,7 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 	TArray<AActor*> UniqueHitActors;
 	for(auto& HitResult : HitResults)
 	{
-		if(HitResult.GetActor() && IsInScreenViewport(HitResult.GetActor()->GetActorLocation()))
+		if(HitResult.GetActor())// && IsInScreenViewport(HitResult.GetActor()->GetActorLocation()))
 		{
 			UniqueHitActors.AddUnique(HitResult.GetActor());
 		}
@@ -1093,7 +1093,7 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 				//角度越小Cos越大
 				const float CosAngel = FVector::DotProduct(StartForward,StartToEnemy);  //两个都为单位向量，除以的模长为1
 			
-				if(CosAngel > MaxCos)
+				if(CosAngel > MaxCos && CosAngel > 0.7) //服务端无法正确判断IsInScreenViewport，会导致双端不同步，所以只好用角度限制一下了
 				{
 					//NearestEnemyToCrossHair = HitActor;
 					NearestLocationToCrossHair = HitActor->GetActorLocation() + AutoLockTipOffset; //稍微抬高一下
