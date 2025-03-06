@@ -248,7 +248,14 @@ protected:
 	void Multi_ClientSyncFireAnimAndEffectsAndSounds();
 
 	//获取开枪起始位置
-	FVector GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRotation);
+	FVector GetWeaponShootStartPoint();
+
+private:
+	UFUNCTION(BlueprintCallable)
+	FVector GetEnemyPositionNearestToCrossHair();
+	
+	UFUNCTION(BlueprintCallable)
+	bool IsInScreenViewport(const FVector& WorldPosition);
 	
 public:
 	//当前子弹数
@@ -276,6 +283,16 @@ public:
 	//是否无限备用子弹
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
 	bool bIsBackUpAmmoInfinity = false;
+
+	//是否自动瞄准锁定离准星最近敌人
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")//, ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
+	bool bIsAutoLockEnemy = false;
+	//自动索敌时的最远距离
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")//, ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
+	float AutoLockEnemyDistanceMax = 3000;
+	//自动索敌时的最高高度
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")//, ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
+	float AutoLockEnemyHeightMax = 500;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", Replicated)
 	FName WeaponName;

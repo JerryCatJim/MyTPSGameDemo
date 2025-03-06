@@ -16,6 +16,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameMode/TPSGameMode.h"
 #include "Weapon/PickUpWeapon.h"
 #include "Net/UnrealNetwork.h"
 
@@ -179,11 +180,11 @@ bool ASWeapon::CheckIsFullAmmo()
 		|| (CurrentAmmoNum >= OnePackageAmmoNum+1 && CanOverloadAmmo);
 }
 
-FVector ASWeapon::GetWeaponShootStartPoint(FVector EyeLocation, FRotator EyeRotation)
+FVector ASWeapon::GetWeaponShootStartPoint()
 {
 	//将开枪的射线检测起始点从摄像机前移，防止敌人在自己后面但在摄像机前面时也被射中
 	float DistanceFromCamera = IsValid(MyOwner) ? MyOwner->GetSpringArmLength() + MyOwner->GetCapsuleComponent()->GetScaledCapsuleRadius() : 0 ;
-	return EyeLocation + FTransform(FQuat(EyeRotation),EyeLocation).GetUnitAxis(EAxis::X) * DistanceFromCamera;
+	return EyeLocation_Rep + (EyeRotation_Rep.Vector() * DistanceFromCamera);
 }
 
 FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
@@ -203,8 +204,9 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	//轴线就是传入的ShotDirection向量
 	FVector NewShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
 	
+	FVector StartPoint = GetWeaponShootStartPoint();
 	//射线检测的最远位置
-	const FVector EndPoint = EyeLocation_Rep + (NewShotDirection * WeaponTraceRange);
+	const FVector EndPoint = StartPoint + (NewShotDirection * WeaponTraceRange);
 	//碰撞查询
 	FCollisionQueryParams QueryParams;
 	//忽略武器自身和持有者的碰撞
@@ -216,12 +218,17 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	FHitResult Hit;
 	//射线检测
 	bool bIsTraceHit;  //是否射线检测命中
-	FVector StartPoint = GetWeaponShootStartPoint(EyeLocation_Rep, EyeRotation_Rep);
 	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
-	
-	if(bIsTraceHit)
+
+	ASCharacter* TraceHitCharacter = Cast<ASCharacter>(Hit.GetActor());
+	if(bIsTraceHit && TraceHitCharacter)
 	{
 		return Hit.ImpactPoint;
+	}
+	else if(bIsAutoLockEnemy)  //获取一定范围内离准星角度最小的敌人位置
+	{
+		FVector EnemyLocation = GetEnemyPositionNearestToCrossHair();
+		return EnemyLocation != FVector::ZeroVector ? EnemyLocation + FVector(0, 0, 20) : EndPoint; //稍微抬高一下
 	}
 	return EndPoint;
 }
@@ -966,6 +973,124 @@ USkeletalMeshComponent* ASWeapon::GetWeaponMeshComp() const
 {
 	return MeshComponent;
 }
+
+FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
+{
+	TArray<AActor*> ActorsToIgnore;
+	//最好不要现开数组，此函数因为在GetCurrentAimingPoint中被调用，所以基本每帧调用，会浪费很多开辟数组的内存，懒得改了
+	ActorsToIgnore.Emplace(MyOwner);
+	ActorsToIgnore.Emplace(this);
+
+	FVector ShootStartPoint = GetWeaponShootStartPoint();
+	TArray<FHitResult> HitResults;
+	UKismetSystemLibrary::CapsuleTraceMulti(
+		this,
+		ShootStartPoint,
+		ShootStartPoint,
+		AutoLockEnemyDistanceMax,
+		AutoLockEnemyHeightMax,
+		UEngineTypes::ConvertToTraceType(Collision_Weapon),
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::None,
+		HitResults,
+		true
+		);
+	
+	//ASCharacter* NearestEnemyToCrossHair = nullptr;  //离准星角度最小的敌人
+	FVector NearestLocationToCrossHair = FVector::ZeroVector;
+	float MaxCos = -1;
+
+	TArray<AActor*> UniqueHitActors;
+	for(auto& HitResult : HitResults)
+	{
+		if(HitResult.GetActor() && IsInScreenViewport(HitResult.GetActor()->GetActorLocation()))
+		{
+			FHitResult TempHit;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(MyOwner);
+			QueryParams.AddIgnoredActor(this);
+			QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
+			/*FCollisionObjectQueryParams ObjectQueryParams;
+			ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+			ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);*/
+			
+			bool bTraceHit = GetWorld()->LineTraceSingleByChannel(//ObjectType(
+				TempHit,
+				ShootStartPoint,
+				HitResult.GetActor()->GetActorLocation(),
+				ECollisionChannel::ECC_Visibility,//ObjectQueryParams,
+				QueryParams
+				);
+			if(!bTraceHit) //排除掉被物体遮挡的敌人
+			{
+				UniqueHitActors.AddUnique(HitResult.GetActor());
+			}
+		}
+	}
+
+	for(auto& HitActor : UniqueHitActors)
+	{
+		bool IsEnemy = true;
+		ASCharacter* HitTarget = Cast<ASCharacter>(HitActor);
+		if(HitTarget && !HitTarget->GetIsDied())
+		{
+			ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
+			ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
+			if(PS && MyPS)
+			{
+				ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
+				if(GM && GM->GetIsTeamMatchMode())
+				{
+					IsEnemy = MyPS->GetTeam() != PS->GetTeam();
+				}
+			}
+		}
+		if(IsEnemy && HitTarget)
+		{
+			FVector StartForward = EyeRotation_Rep.Vector();
+			FVector StartToEnemy = (HitActor->GetActorLocation() - ShootStartPoint).GetSafeNormal();
+			//点乘公式：|a|x|b| x CosA = 向量a和b的对应坐标相乘之和(点乘)
+			//角度越小Cos越大
+			const float CosAngel = FVector::DotProduct(StartForward,StartToEnemy);  //两个都为单位向量，除以的模长为1
+			
+			if(CosAngel > MaxCos)
+			{
+				//NearestEnemyToCrossHair = HitActor;
+				NearestLocationToCrossHair = HitActor->GetActorLocation();
+				MaxCos = CosAngel;
+			}
+		}
+	}
+	UniqueHitActors.Empty();
+	
+	//return NearestEnemyToCrossHair ? NearestEnemyToCrossHair->GetActorLocation() : FVector::ZeroVector;
+	return NearestLocationToCrossHair;
+}
+
+bool ASWeapon::IsInScreenViewport(const FVector& WorldPosition)
+{
+	APlayerController *Player = UGameplayStatics::GetPlayerController(this, 0);
+	ULocalPlayer* const LP = Player ? Player->GetLocalPlayer() : nullptr;
+	if (LP && LP->ViewportClient)
+	{
+		// get the projection data
+		FSceneViewProjectionData ProjectionData;
+		if (LP->GetProjectionData(LP->ViewportClient->Viewport, eSSP_FULL, /*out*/ ProjectionData))
+		{
+			FMatrix const ViewProjectionMatrix = ProjectionData.ComputeViewProjectionMatrix();
+			FVector2D ScreenPosition;
+			bool bResult = FSceneView::ProjectWorldToScreen(WorldPosition, ProjectionData.GetConstrainedViewRect(), ViewProjectionMatrix, ScreenPosition);
+			if (bResult && ScreenPosition.X > ProjectionData.GetViewRect().Min.X && ScreenPosition.X < ProjectionData.GetViewRect().Max.X
+				&& ScreenPosition.Y > ProjectionData.GetViewRect().Min.Y && ScreenPosition.Y < ProjectionData.GetViewRect().Max.Y)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 
 //一个模板
 void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

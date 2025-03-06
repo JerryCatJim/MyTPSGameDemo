@@ -81,7 +81,7 @@ void AShotgun::DealFire()
 		FHitResult Hit;
 		//射线检测
 		bool bIsTraceHit;  //是否射线检测命中
-		FVector StartPoint = GetWeaponShootStartPoint(EyeLocation, EyeRotation);
+		FVector StartPoint = GetWeaponShootStartPoint();
 		bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
 		if(bIsTraceHit)
 		{
