@@ -70,7 +70,7 @@ public:
 	// Sets default values for this actor's properties
 	ASWeapon();
 	// Called every frame
-	//virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 
 	virtual void Destroyed() override;
 	
@@ -416,10 +416,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon)
 	float WeaponTraceRange = 10000;
 
-	UPROPERTY(BlueprintReadWrite, Category= Weapon, Replicated)
-	FVector EyeLocation_Rep;
-	UPROPERTY(BlueprintReadWrite, Category= Weapon, Replicated)
-	FRotator EyeRotation_Rep;
+	UPROPERTY(BlueprintReadWrite, Category= Weapon)
+	FVector EyeLocation;
+	UPROPERTY(BlueprintReadWrite, Category= Weapon)
+	FRotator EyeRotation;
 	
 	//射击命中的位置
 	FVector ShotTraceEnd;

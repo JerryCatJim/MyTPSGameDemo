@@ -3,7 +3,7 @@
 
 #include "Weapon/BaseWeapon/HitScanWeapon.h"
 #include "SCharacter.h"
-#include "GameMode/TPSGameMode.h"
+#include "TPSGameState.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
 #include "Kismet/GameplayStatics.h"
@@ -65,8 +65,8 @@ void AHitScanWeapon::DealFire()
 				ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
 				if(PS && MyPS)
 				{
-					ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
-					if(GM && GM->GetIsTeamMatchMode())
+					ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(this));
+					if(GS && GS->GetIsTeamMatchMode())
 					{
 						IsEnemy = MyPS->GetTeam() != PS->GetTeam();
 					}

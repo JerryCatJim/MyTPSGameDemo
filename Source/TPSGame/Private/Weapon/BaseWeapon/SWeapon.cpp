@@ -16,7 +16,7 @@
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameMode/TPSGameMode.h"
+#include "TPSGameState.h"
 #include "Weapon/PickUpWeapon.h"
 #include "Net/UnrealNetwork.h"
 
@@ -104,11 +104,17 @@ void ASWeapon::BeginPlay()
 	}
 }
 
-/*// Called every frame
+// Called every frame
 void ASWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-}*/
+	
+	if(MyOwner)
+	{
+		//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
+		MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
+	}
+}
 
 bool ASWeapon::CheckOwnerValidAndAlive()
 {
@@ -184,20 +190,13 @@ FVector ASWeapon::GetWeaponShootStartPoint()
 {
 	//将开枪的射线检测起始点从摄像机前移，防止敌人在自己后面但在摄像机前面时也被射中
 	float DistanceFromCamera = IsValid(MyOwner) ? MyOwner->GetSpringArmLength() + MyOwner->GetCapsuleComponent()->GetScaledCapsuleRadius() : 0 ;
-	return EyeLocation_Rep + (EyeRotation_Rep.Vector() * DistanceFromCamera);
+	return EyeLocation + (EyeRotation.Vector() * DistanceFromCamera);
 }
 
 FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 {
-	//客户端主控取不到其他玩家的EyeLocation和EyeRotation，只能获得GetActorLocation和GetActorRotation，所以把其他玩家的值从服务器同步到客户端
-	if(HasAuthority() || (!HasAuthority() && MyOwner->IsLocallyControlled()))
-	{
-		//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
-		MyOwner->GetActorEyesViewPoint(EyeLocation_Rep,EyeRotation_Rep);
-	}
-	
 	//伤害效果射击方位
-	FVector ShotDirection = EyeRotation_Rep.Vector();
+	FVector ShotDirection = EyeRotation.Vector();
 	//Radian 弧度
 	//矫正武器枪口指向位置时不想应用散布导致偏移
 	float HalfRadian = bUseSpread ? FMath::DegreesToRadians(GetDynamicBulletSpread()) : 0;
@@ -335,7 +334,7 @@ void ASWeapon::Fire()
 		LastFireTime = GetWorld()->TimeSeconds;
 		
 		//控制台控制是否显示
-		if(DebugWeaponDrawing > 0)
+		/*if(DebugWeaponDrawing > 0)
 		{
 			//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
 			FVector EyeLocation;
@@ -343,7 +342,7 @@ void ASWeapon::Fire()
 			MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
 			//绘制射线
 			DrawDebugLine(GetWorld(), EyeLocation, ShotTraceEnd, FColor::Red, false, 1.0f, 0,1.0f);
-		}
+		}*/
 		
 		//客户端射击时也会立刻播放动画和特效，所以不用Multi
 		PlayFireAnim();
@@ -985,11 +984,11 @@ USkeletalMeshComponent* ASWeapon::GetWeaponMeshComp() const
 FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 {
 	TArray<AActor*> ActorsToIgnore;
-	//最好不要现开数组，此函数因为在GetCurrentAimingPoint中被调用，所以基本每帧调用，会浪费很多开辟数组的内存，懒得改了
+	//最好不要现开数组，此函数因为在GetCurrentAimingPoint中被调用，会被频繁调用，会浪费很多开辟数组的内存，懒得改了
 	ActorsToIgnore.Emplace(MyOwner);
 	ActorsToIgnore.Emplace(this);
 
-	FVector ShootStartPoint = EyeLocation_Rep;//GetWeaponShootStartPoint();
+	FVector ShootStartPoint = EyeLocation;//GetWeaponShootStartPoint();
 	TArray<FHitResult> HitResults;
 	UKismetSystemLibrary::CapsuleTraceMulti(
 		this,
@@ -1079,8 +1078,8 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 				ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
 				if(PS && MyPS)
 				{
-					ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
-					if(GM && GM->GetIsTeamMatchMode())
+					ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(this));
+					if(GS && GS->GetIsTeamMatchMode())
 					{
 						IsEnemy = MyPS->GetTeam() != PS->GetTeam();
 					}
@@ -1088,7 +1087,7 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 			}
 			if(IsEnemy && HitTarget)
 			{
-				FVector StartForward = EyeRotation_Rep.Vector();
+				FVector StartForward = EyeRotation.Vector();
 				FVector StartToEnemy = (HitActor->GetActorLocation() - ShootStartPoint).GetSafeNormal();
 				//点乘公式：|a|x|b| x CosA = 向量a和b的对应坐标相乘之和(点乘)
 				//角度越小Cos越大
@@ -1159,8 +1158,6 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, WeaponName);
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
-	DOREPLIFETIME(ASWeapon, EyeLocation_Rep);
-	DOREPLIFETIME(ASWeapon, EyeRotation_Rep);
 	DOREPLIFETIME(ASWeapon, bIsAutoLockEnemy);
 }
 

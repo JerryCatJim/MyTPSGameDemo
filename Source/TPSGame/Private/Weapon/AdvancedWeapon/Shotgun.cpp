@@ -4,7 +4,7 @@
 #include "Weapon/AdvancedWeapon/Shotgun.h"
 #include "SCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameMode/TPSGameMode.h"
+#include "TPSGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
@@ -43,11 +43,6 @@ float AShotgun::GetDynamicBulletSpread()
 
 void AShotgun::DealFire()
 {
-	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
-	FVector EyeLocation;
-	FRotator EyeRotation;
-	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
-	
 	//碰撞查询
 	FCollisionQueryParams QueryParams;
 	//忽略武器自身和持有者的碰撞
@@ -56,9 +51,10 @@ void AShotgun::DealFire()
 	QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
 	QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
 
-	bool bWeaponHitTarget = false;
-	bool IsEnemy = false;
+	bool IsEnemy = true;
 	bool IsHeadshot = false;
+	float HitTargetTimes = 0;
+	float HitFriendTimes = 0;
 	
 	TArray<FVector> TracePointArray;
 	//基本就是把单发射击武器的DealFire逻辑，复制粘贴成次数循环的
@@ -116,14 +112,17 @@ void AShotgun::DealFire()
 					ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
 					if(PS && MyPS)
 					{
-						ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
-						if(GM && GM->GetIsTeamMatchMode())
+						ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(this));
+						if(GS && GS->GetIsTeamMatchMode())
 						{
-							//一次发射多发弹丸,如果同时命中友军和敌军,希望记录为命中敌军
-							IsEnemy = IsEnemy || MyPS->GetTeam() != PS->GetTeam();
+							//一次发射多发弹丸,如果至少击中一次敌军,则记录为命中敌军
+							if(MyPS->GetTeam() == PS->GetTeam())
+							{
+								HitFriendTimes ++ ;
+							}
 						}
 					}
-					bWeaponHitTarget = true;
+					HitTargetTimes ++ ;
 				}
 			}
 			
@@ -137,7 +136,9 @@ void AShotgun::DealFire()
 		//PlayTraceEffect(ShotTraceEnd);  //换个写法，最好别一瞬间执行多次RPC调用，尤其还是Reliable函数
 	}
 
-	if(bWeaponHitTarget)
+	//一次发射多发弹丸,如果至少击中一次敌军,则记录为命中敌军
+	IsEnemy = HitFriendTimes < HitTargetTimes ;
+	if(HitTargetTimes > 0)
 	{
 		//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
 		Multi_WeaponHitTargetBroadcast(IsEnemy, IsHeadshot);
