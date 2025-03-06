@@ -19,6 +19,8 @@ public:
 	// Sets default values for this component's properties
 	UWeaponManagerComponent();
 
+	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
+	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
@@ -89,6 +91,9 @@ public:
 
 	bool GetIsSwappingWeapon()  const { return bIsSwappingWeapon; }
 	void SetIsSwappingWeapon(const bool& IsSwappingWeapon){ bIsSwappingWeapon = IsSwappingWeapon; }
+
+	UFUNCTION(BlueprintCallable)
+	void ShowAutoLockEnemyTipView();
 	
 protected:
 	// Called when the game starts
@@ -254,4 +259,6 @@ private:
 		EWeaponEquipType::ThrowableWeapon
 	};
 	
+	UPROPERTY()
+	class UUserWidget* AutoLockEnemyTipView;
 };

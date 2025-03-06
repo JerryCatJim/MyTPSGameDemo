@@ -5,6 +5,7 @@
 #include "Weapon/PickUpWeapon.h"
 #include "TPSPlayerController.h"
 #include "SCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
@@ -663,16 +664,69 @@ void UWeaponManagerComponent::OnRep_CurrentWeapon()
 	{
 		MyController->ResetCrossHair();
 	}
-
+	ShowAutoLockEnemyTipView();
+	
 	//服务器调用OnRep时会立刻将bIsSwappingWeapon赋值为false，客户端需等待OnRep完成复制时才改为false以保持同步
 	StopSwapWeapon(false);
 	
 	OnCurrentWeaponChanged.Broadcast();
 }
 
+void UWeaponManagerComponent::ShowAutoLockEnemyTipView()
+{
+	if(!CurrentWeapon || !IsLocallyControlled()) return;
+	
+	bool IsAutoLock = CurrentWeapon->GetIsAutoLockEnemy();
+	if(IsAutoLock)
+	{
+		if(AutoLockEnemyTipView)
+		{
+			AutoLockEnemyTipView->RemoveFromParent();
+			AutoLockEnemyTipView = nullptr;
+		}
+		if(!CurrentWeapon->AutoLockEnemyTipClass)
+		{
+			//从C++中获取蓝图类
+			const FString AutoLockEnemyTipClassLoadPath = FString(TEXT("/Game/UI/WBP_AutoLockTip.WBP_AutoLockTip_C"));//蓝图一定要加_C这个后缀名
+			CurrentWeapon->AutoLockEnemyTipClass = LoadClass<UUserWidget>(nullptr, *AutoLockEnemyTipClassLoadPath);
+		}
+		if(CurrentWeapon->AutoLockEnemyTipClass && CurrentWeapon->GetOwner())
+		{
+			APawn* TempOwner = Cast<APawn>(CurrentWeapon->GetOwner());
+			if(TempOwner)
+			{
+				APlayerController* PC = Cast<APlayerController>(TempOwner->GetController());
+				//APlayerController* PC = UGameplayStatics::GetPlayerController(this,0);
+				AutoLockEnemyTipView = CreateWidget<UUserWidget>(PC, CurrentWeapon->AutoLockEnemyTipClass);
+				if(AutoLockEnemyTipView)
+				{
+					AutoLockEnemyTipView->AddToViewport();
+				}
+			}
+		}
+	}
+	else
+	{
+		if(AutoLockEnemyTipView)
+		{
+			AutoLockEnemyTipView->RemoveFromParent();
+			AutoLockEnemyTipView = nullptr;
+		}
+	}
+}
+
 bool UWeaponManagerComponent::IsLocallyControlled()
 {
 	return MyOwnerPlayer && MyOwnerPlayer->IsLocallyControlled();
+}
+
+void UWeaponManagerComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+	if(AutoLockEnemyTipView)
+	{
+		AutoLockEnemyTipView->RemoveFromParent();
+		AutoLockEnemyTipView = nullptr;
+	}
 }
 
 void UWeaponManagerComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

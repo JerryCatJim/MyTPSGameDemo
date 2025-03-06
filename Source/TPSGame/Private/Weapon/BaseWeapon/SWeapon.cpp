@@ -228,7 +228,7 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	else if(bIsAutoLockEnemy)  //获取一定范围内离准星角度最小的敌人位置
 	{
 		FVector EnemyLocation = GetEnemyPositionNearestToCrossHair();
-		return EnemyLocation != FVector::ZeroVector ? EnemyLocation + FVector(0, 0, 20) : EndPoint; //稍微抬高一下
+		return EnemyLocation != FVector::ZeroVector ? EnemyLocation : EndPoint;
 	}
 	return EndPoint;
 }
@@ -349,8 +349,8 @@ void ASWeapon::Fire()
 		PlayFireAnim();
 		PlayFireEffectsAndSounds();
 		
-		//因为双端分别执行Fire没用Multi，所以如果是服务器主控玩家，则需要同步播放开火特效等表现到客户端
-		if(HasAuthority() && MyOwner->IsLocallyControlled())
+		//客户端提前进行了行为预测，需要在服务端同步播放开火特效等表现到客户端
+		if(HasAuthority())// && MyOwner->IsLocallyControlled())
 		{
 			Multi_ClientSyncFireAnimAndEffectsAndSounds();
 		}
@@ -480,8 +480,8 @@ void ASWeapon::Reload(bool IsAutoReload)
 	
 	//客户端换弹时也会立刻播放动画，所以不用Multi
 	PlayReloadAnimAndSound();
-	//因为双端分别执行Reload没用Multi，所以如果是服务器主控玩家，则需要同步播放换弹动画等表现到客户端
-	if(HasAuthority() && MyOwner->IsLocallyControlled())
+	//客户端提前进行了行为预测，需要在服务端同步播放换弹动画等表现到客户端
+	if(HasAuthority())// && MyOwner->IsLocallyControlled())
 	{
 		Multi_ClientSyncPlayReloadAnimAndSound();
 	}
@@ -831,7 +831,7 @@ void ASWeapon::PlayFireAnim()//_Implementation()
 
 void ASWeapon::Multi_ClientSyncFireAnimAndEffectsAndSounds_Implementation()
 {
-	if(HasAuthority() && MyOwner->IsLocallyControlled())
+	if(MyOwner->IsLocallyControlled())  //仅用作将表现同步给其他客户端，不要自己再执行一次
 	{
 		return;
 	}
@@ -870,7 +870,7 @@ void ASWeapon::PlayReloadAnimAndSound()//_Implementation()
 
 void ASWeapon::Multi_ClientSyncPlayReloadAnimAndSound_Implementation()
 {
-	if(HasAuthority() && MyOwner->IsLocallyControlled())
+	if(MyOwner->IsLocallyControlled())  //仅用作将表现同步给其他客户端，不要自己再执行一次
 	{
 		return;
 	}
@@ -920,6 +920,14 @@ void ASWeapon::OnRep_WeaponPickUpInfo()
 	if(WeaponPickUpInfo.IsWeaponValid)
 	{
 		GetWeaponMeshComp()->SetSkeletalMesh(WeaponPickUpInfo.WeaponMesh);
+	}
+}
+
+void ASWeapon::OnRep_IsAutoLockEnemy()
+{
+	if(MyOwner)
+	{
+		MyOwner->GetWeaponManagerComponent()->ShowAutoLockEnemyTipView();
 	}
 }
 
@@ -981,7 +989,7 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 	ActorsToIgnore.Emplace(MyOwner);
 	ActorsToIgnore.Emplace(this);
 
-	FVector ShootStartPoint = GetWeaponShootStartPoint();
+	FVector ShootStartPoint = EyeLocation_Rep;//GetWeaponShootStartPoint();
 	TArray<FHitResult> HitResults;
 	UKismetSystemLibrary::CapsuleTraceMulti(
 		this,
@@ -1006,62 +1014,103 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 	{
 		if(HitResult.GetActor() && IsInScreenViewport(HitResult.GetActor()->GetActorLocation()))
 		{
-			FHitResult TempHit;
-			FCollisionQueryParams QueryParams;
-			QueryParams.AddIgnoredActor(MyOwner);
-			QueryParams.AddIgnoredActor(this);
-			QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
-			/*FCollisionObjectQueryParams ObjectQueryParams;
-			ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-			ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);*/
-			
-			bool bTraceHit = GetWorld()->LineTraceSingleByChannel(//ObjectType(
-				TempHit,
-				ShootStartPoint,
-				HitResult.GetActor()->GetActorLocation(),
-				ECollisionChannel::ECC_Visibility,//ObjectQueryParams,
-				QueryParams
-				);
-			if(!bTraceHit) //排除掉被物体遮挡的敌人
-			{
-				UniqueHitActors.AddUnique(HitResult.GetActor());
-			}
+			UniqueHitActors.AddUnique(HitResult.GetActor());
 		}
 	}
 
 	for(auto& HitActor : UniqueHitActors)
 	{
-		bool IsEnemy = true;
-		ASCharacter* HitTarget = Cast<ASCharacter>(HitActor);
-		if(HitTarget && !HitTarget->GetIsDied())
+		FHitResult LineHit;
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(MyOwner);
+		QueryParams.AddIgnoredActor(this);
+		QueryParams.bTraceComplex = true;  //启用复杂碰撞检测，更精确
+		QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
+		/*FCollisionObjectQueryParams ObjectQueryParams;
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);*/
+		bool bLineTraceHit = GetWorld()->LineTraceSingleByChannel(
+			LineHit,
+			ShootStartPoint,
+			HitActor->GetActorLocation(),
+			Collision_Weapon,
+			QueryParams
+			);
+
+		bool bSphereTraceHit = false;
+		FHitResult SphereHit;
+		if(!bLineTraceHit)
 		{
-			ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
-			ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
-			if(PS && MyPS)
+			//一开火或者瞄准时就会丢失射线检测目标，后来发现是因为动画会导致Mesh往后缩，错过了射线检测，所以改为球形检测
+			bSphereTraceHit = UKismetSystemLibrary::SphereTraceSingle(//ObjectType(
+				this,
+				ShootStartPoint,
+				HitActor->GetActorLocation(),
+				10,
+				UEngineTypes::ConvertToTraceType(Collision_Weapon),//ObjectQueryParams,
+				true,
+				ActorsToIgnore,
+				EDrawDebugTrace::None,
+				SphereHit,
+				true
+				);
+		}
+
+		bool bTraceActorSuccessful = false;
+		if(bLineTraceHit || (!bLineTraceHit && bSphereTraceHit))
+		{
+			//排除掉因为球形检测穿墙的问题
+			if(bLineTraceHit && LineHit.GetActor() == HitActor)  //可能是对着后面的角色射线检测，射中了前面的人，这种情况要排除
 			{
-				ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
-				if(GM && GM->GetIsTeamMatchMode())
+				bTraceActorSuccessful = true;
+			}
+			else if(!bLineTraceHit && bSphereTraceHit && SphereHit.GetActor() == HitActor)
+			{
+				bTraceActorSuccessful = true;
+			}
+		}
+		if(bTraceActorSuccessful) //排除掉被物体遮挡的敌人
+		{
+			bool IsEnemy = true;
+			ASCharacter* HitTarget = Cast<ASCharacter>(HitActor);
+			if(HitTarget && !HitTarget->GetIsDied())
+			{
+				ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
+				ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
+				if(PS && MyPS)
 				{
-					IsEnemy = MyPS->GetTeam() != PS->GetTeam();
+					ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
+					if(GM && GM->GetIsTeamMatchMode())
+					{
+						IsEnemy = MyPS->GetTeam() != PS->GetTeam();
+					}
 				}
 			}
-		}
-		if(IsEnemy && HitTarget)
-		{
-			FVector StartForward = EyeRotation_Rep.Vector();
-			FVector StartToEnemy = (HitActor->GetActorLocation() - ShootStartPoint).GetSafeNormal();
-			//点乘公式：|a|x|b| x CosA = 向量a和b的对应坐标相乘之和(点乘)
-			//角度越小Cos越大
-			const float CosAngel = FVector::DotProduct(StartForward,StartToEnemy);  //两个都为单位向量，除以的模长为1
-			
-			if(CosAngel > MaxCos)
+			if(IsEnemy && HitTarget)
 			{
-				//NearestEnemyToCrossHair = HitActor;
-				NearestLocationToCrossHair = HitActor->GetActorLocation();
-				MaxCos = CosAngel;
+				FVector StartForward = EyeRotation_Rep.Vector();
+				FVector StartToEnemy = (HitActor->GetActorLocation() - ShootStartPoint).GetSafeNormal();
+				//点乘公式：|a|x|b| x CosA = 向量a和b的对应坐标相乘之和(点乘)
+				//角度越小Cos越大
+				const float CosAngel = FVector::DotProduct(StartForward,StartToEnemy);  //两个都为单位向量，除以的模长为1
+			
+				if(CosAngel > MaxCos)
+				{
+					//NearestEnemyToCrossHair = HitActor;
+					NearestLocationToCrossHair = HitActor->GetActorLocation() + AutoLockTipOffset; //稍微抬高一下
+					MaxCos = CosAngel;
+				}
 			}
+			/*DrawDebugLine(
+				GetWorld(),
+				ShootStartPoint,
+				HitActor->GetActorLocation(),
+				FColor::Red
+				);*/
 		}
 	}
+	ActorsToIgnore.Empty();
+	HitResults.Empty();
 	UniqueHitActors.Empty();
 	
 	//return NearestEnemyToCrossHair ? NearestEnemyToCrossHair->GetActorLocation() : FVector::ZeroVector;
@@ -1091,6 +1140,11 @@ bool ASWeapon::IsInScreenViewport(const FVector& WorldPosition)
 	return false;
 }
 
+void ASWeapon::Destroyed()
+{
+	
+}
+
 
 //一个模板
 void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1107,6 +1161,7 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
 	DOREPLIFETIME(ASWeapon, EyeLocation_Rep);
 	DOREPLIFETIME(ASWeapon, EyeRotation_Rep);
+	DOREPLIFETIME(ASWeapon, bIsAutoLockEnemy);
 }
 
 

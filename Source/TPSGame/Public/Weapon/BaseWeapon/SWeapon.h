@@ -72,6 +72,8 @@ public:
 	// Called every frame
 	//virtual void Tick(float DeltaTime) override;
 
+	virtual void Destroyed() override;
+	
 	//重写父类函数,在生命周期中进行网络复制
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -136,6 +138,18 @@ public:
 	bool GetWeaponCanManuallyDiscard() const { return bCanManuallyDiscard; }
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponCanManuallyDiscard(bool NewCanManuallyDiscard) { bCanManuallyDiscard = NewCanManuallyDiscard; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsAutoLockEnemy() { return bIsAutoLockEnemy; }
+	UFUNCTION(BlueprintCallable)
+	void SetIsAutoLockEnemy(bool IsAutoLockEnemy)
+	{
+		bIsAutoLockEnemy = IsAutoLockEnemy;
+		if(HasAuthority())
+		{
+			OnRep_IsAutoLockEnemy();
+		}
+	}
 	
 protected:
 	// Called when the game starts or when spawned
@@ -224,6 +238,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnRep_WeaponPickUpInfo();
 
+	UFUNCTION()
+	void OnRep_IsAutoLockEnemy();
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
 	UFUNCTION(NetMulticast, Reliable)
@@ -249,9 +266,9 @@ protected:
 
 	//获取开枪起始位置
 	FVector GetWeaponShootStartPoint();
-
+	
 private:
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetEnemyPositionNearestToCrossHair();
 	
 	UFUNCTION(BlueprintCallable)
@@ -283,16 +300,6 @@ public:
 	//是否无限备用子弹
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
 	bool bIsBackUpAmmoInfinity = false;
-
-	//是否自动瞄准锁定离准星最近敌人
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")//, ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
-	bool bIsAutoLockEnemy = false;
-	//自动索敌时的最远距离
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")//, ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
-	float AutoLockEnemyDistanceMax = 3000;
-	//自动索敌时的最高高度
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Weapon")//, ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
-	float AutoLockEnemyHeightMax = 500;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", Replicated)
 	FName WeaponName;
@@ -327,6 +334,9 @@ public:
 	//武器的命中反馈类型
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
 	TSubclassOf<UUserWidget> HitFeedbackCrossHairClass;
+	//自动索敌时显示的UI
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
+	TSubclassOf<UUserWidget> AutoLockEnemyTipClass;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
@@ -473,6 +483,18 @@ protected:
 	//不填则在C++文件的BeginPlay中默认选择BP_PickUpWeaponBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<APickUpWeapon> PickUpWeaponClass;
+
+	//是否自动瞄准锁定离准星最近敌人
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock", ReplicatedUsing = OnRep_IsAutoLockEnemy)
+	bool bIsAutoLockEnemy = false;
+	//自动索敌时的最远距离
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
+	float AutoLockEnemyDistanceMax = 3000;
+	//自动索敌时的最高高度
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
+	float AutoLockEnemyHeightMax = 500;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
+	FVector AutoLockTipOffset = FVector(0,0,40);
 	
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponPickUpInfo)
