@@ -15,24 +15,8 @@ AHitScanWeapon::AHitScanWeapon()
 
 void AHitScanWeapon::DealFire()
 {
-	//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
-	FVector EyeLocation;
-	FRotator EyeRotation;
-	MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
-	
-	//伤害效果射击方位
-	FVector ShotDirection = EyeRotation.Vector();
-		
-	//Radian 弧度
-	//连续射击同一点位(不扩散时),服务器会省略一部分通信复制内容,因此让子弹扩散,保持射击轨迹同步复制
-	float HalfRadian = FMath::DegreesToRadians(GetDynamicBulletSpread());
-	//轴线就是传入的ShotDirection向量
-	FVector NewShotDirection = FMath::VRandCone(ShotDirection, HalfRadian, HalfRadian);
-		
-	//射程终止点
-	FVector EndPoint = EyeLocation + (NewShotDirection*WeaponTraceRange);
-	//FVector TraceEnd = EyeLocation + MyOwner->GetActorForwardVector() * WeaponTraceRange
-	
+	FVector StartPoint = GetWeaponShootStartPoint();
+	FVector EndPoint = GetCurrentAimingPoint();//EyeLocation + (NewShotDirection*WeaponTraceRange);
 	ShotTraceEnd = EndPoint;
 	
 	//碰撞查询
@@ -47,7 +31,6 @@ void AHitScanWeapon::DealFire()
 	FHitResult Hit;
 	//射线检测
 	bool bIsTraceHit;  //是否射线检测命中
-	FVector StartPoint = GetWeaponShootStartPoint();
 	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
 	if(bIsTraceHit)
 	{
@@ -70,7 +53,7 @@ void AHitScanWeapon::DealFire()
 		}
 		
 		//应用伤害
-		UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, MyOwner->GetInstigatorController(), this, DamageType);
+		UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, EndPoint-StartPoint, Hit, MyOwner->GetInstigatorController(), this, DamageType);
 		//广播命中事件
 		if(HitActor)
 		{
