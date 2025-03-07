@@ -5,6 +5,7 @@
 
 #include "SCharacter.h"
 #include "SPowerUpActor.h"
+#include "Component/SBuffComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/DecalComponent.h"
 #include "TPSGameType/CustomCollisionType.h"
@@ -65,7 +66,7 @@ void ASPowerUpCreator::NotifyActorBeginOverlap(AActor* OtherActor)
 	{
 		//将道具效果加入BuffComponent管理
 		ASCharacter* CurrentPlayer = Cast<ASCharacter>(OtherActor);
-		if(!CurrentPlayer)  //转化失败则无事发生
+		if(!CurrentPlayer || (CurrentPlayer && CurrentPlayer->bIsAIPlayer)) //AI玩家不要拾取道具
 		{
 			return;
 		}
