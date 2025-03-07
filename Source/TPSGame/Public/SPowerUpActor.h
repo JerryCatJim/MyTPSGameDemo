@@ -54,33 +54,33 @@ protected:
 public:
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category= PowerUps)
-	float PowerUpInterval;  //道具效果的持续时间
+	UPROPERTY(EditDefaultsOnly, Category= PowerUps)  //道具效果的持续时间
+	float PowerUpInterval;
 
-	UPROPERTY(EditDefaultsOnly, Category= PowerUps)
-	int MaxOverlyingNum;  //道具Buff最大可叠加层数
+	UPROPERTY(EditDefaultsOnly, Category= PowerUps)  //道具Buff最大可叠加层数
+	int MaxOverlyingNum;
 	
-	UPROPERTY(EditDefaultsOnly, Category= PowerUps)
-	int SingleOverlyingNum;  //道具单次叠加层数
+	UPROPERTY(EditDefaultsOnly, Category= PowerUps)  //道具单次叠加层数
+	int SingleOverlyingNum;
 
-	UPROPERTY(EditDefaultsOnly, Category= PowerUps)
-	bool bCanDecay;  //true为层层衰减，否则一次性掉光; 例如吃血药一次上4次回血Buff，掉一层回一次血
+	UPROPERTY(EditDefaultsOnly, Category= PowerUps)  //true为层层衰减，否则一次性掉光; 例如吃血药一次上4次回血Buff，掉一层回一次血
+	bool bCanDecay;
 
-	UPROPERTY(EditDefaultsOnly, Category= PowerUps)
-	bool bRefreshImmediately;  //获取道具效果后是否立刻刷新计时器进度条
+	UPROPERTY(EditDefaultsOnly, Category= PowerUps)  //获取道具效果后是否立刻刷新计时器进度条
+	bool bRefreshImmediately;
 
-	UPROPERTY(BlueprintReadOnly, Category= PowerUps)
-	int CurrentOverlyingNum; //道具已叠加层数
+	UPROPERTY(BlueprintReadOnly, Category= PowerUps) //道具已叠加层数
+	int CurrentOverlyingNum;
 	
 	//计时器句柄
 	FTimerHandle TimerHandle_PowerUpTick;
 
-	UPROPERTY(EditAnywhere, Category= PowerUps)
-	int PowerUpID;  //道具唯一ID
+	UPROPERTY(EditAnywhere, Category= PowerUps)  //道具唯一ID
+	int PowerUpID;
 
-	UPROPERTY(ReplicatedUsing= OnRep_PowerUpActive, BlueprintReadOnly, Category= PowerUps)
-	bool bIsActive;  //道具是否处于激活状态
+	UPROPERTY(ReplicatedUsing= OnRep_PowerUpActive, BlueprintReadOnly, Category= PowerUps)  //道具是否处于激活状态
+	bool bIsActive;
 
-	UPROPERTY(BlueprintReadOnly, Category= PowerUps)
-	AActor* CurrentOverlapActor;    //用于记录拾取了该道具的Actor(Character)
+	UPROPERTY(BlueprintReadOnly, Category= PowerUps)    //用于记录拾取了该道具的Actor(Character)
+	AActor* CurrentOverlapActor;
 };
