@@ -94,7 +94,18 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ShowAutoLockEnemyTipView();
-	
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsAutoLockEnemy() { return bIsAutoLockEnemy; }
+	UFUNCTION(BlueprintCallable)
+	void SetIsAutoLockEnemy(bool IsAutoLockEnemy)
+	{
+		bIsAutoLockEnemy = IsAutoLockEnemy;
+		if(HasAuthority())
+		{
+			OnRep_IsAutoLockEnemy();
+		}
+	}
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -129,6 +140,9 @@ protected:
 	UFUNCTION()//原理同上
 	void OnRep_IsSwappingWeapon(){ if(IsLocallyControlled()) bIsSwappingWeapon = bIsSwappingWeaponLocally; }
 
+	UFUNCTION()
+	void OnRep_IsAutoLockEnemy();
+	
 	UFUNCTION(Server, Reliable)
 	void DealDropWeapon(bool ManuallyDiscard);
 	
@@ -147,6 +161,7 @@ private:
 
 	void SwapToNextAvailableWeapon(TEnumAsByte<EWeaponEquipType> CurrentWeaponEquipType);
 
+	bool HasAuthority();
 	bool IsLocallyControlled();
 	
 public:
@@ -175,6 +190,15 @@ public:
 
 	//防止同时与多个可拾取武器发生重叠时间
 	bool bHasBeenOverlappedWithPickUpWeapon = false;
+	
+	//自动索敌时的最远距离
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
+	float AutoLockEnemyDistanceMax = 3000;
+	//自动索敌时的最高高度
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
+	float AutoLockEnemyHeightMax = 500;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
+	FVector AutoLockTipOffset = FVector(0,0,40);
 	
 protected:
 	UPROPERTY()
@@ -249,7 +273,11 @@ protected:
 	float SwapThrowableWeaponRate = 1.f;
 	//切换武器动画计时器
 	FTimerHandle SwapWeaponTimer;
-
+	
+	//是否自动瞄准锁定离准星最近敌人
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock", ReplicatedUsing = OnRep_IsAutoLockEnemy)
+	bool bIsAutoLockEnemy = false;
+	
 private:
 	UPROPERTY()
 	TArray<TEnumAsByte<EWeaponEquipType>> WeaponEquipTypeList = {

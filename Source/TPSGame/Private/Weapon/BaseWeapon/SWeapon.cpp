@@ -224,7 +224,7 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	{
 		return Hit.ImpactPoint;
 	}
-	else if(bIsAutoLockEnemy)  //获取一定范围内离准星角度最小的敌人位置
+	else if(MyOwner && MyOwner->GetWeaponManagerComponent()->GetIsAutoLockEnemy())  //获取一定范围内离准星角度最小的敌人位置
 	{
 		FVector EnemyLocation = GetEnemyPositionNearestToCrossHair();
 		return EnemyLocation != FVector::ZeroVector ? EnemyLocation : EndPoint;
@@ -922,14 +922,6 @@ void ASWeapon::OnRep_WeaponPickUpInfo()
 	}
 }
 
-void ASWeapon::OnRep_IsAutoLockEnemy()
-{
-	if(MyOwner)
-	{
-		MyOwner->GetWeaponManagerComponent()->ShowAutoLockEnemyTipView();
-	}
-}
-
 //服务器开火函数(客户端发送开火请求，服务器调用真正的开火逻辑)
 void ASWeapon::ServerFire_Implementation()
 {
@@ -983,6 +975,8 @@ USkeletalMeshComponent* ASWeapon::GetWeaponMeshComp() const
 
 FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 {
+	if(!MyOwner) return FVector::ZeroVector;
+	
 	TArray<AActor*> ActorsToIgnore;
 	//最好不要现开数组，此函数因为在GetCurrentAimingPoint中被调用，会被频繁调用，会浪费很多开辟数组的内存，懒得改了
 	ActorsToIgnore.Emplace(MyOwner);
@@ -994,8 +988,8 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 		this,
 		ShootStartPoint,
 		ShootStartPoint,
-		AutoLockEnemyDistanceMax,
-		AutoLockEnemyHeightMax,
+		MyOwner->GetWeaponManagerComponent()->AutoLockEnemyDistanceMax,
+		MyOwner->GetWeaponManagerComponent()->AutoLockEnemyHeightMax,
 		UEngineTypes::ConvertToTraceType(Collision_Weapon),
 		false,
 		ActorsToIgnore,
@@ -1096,7 +1090,7 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 				if(CosAngel > MaxCos && CosAngel > 0.7) //服务端无法正确判断IsInScreenViewport，会导致双端不同步，所以只好用角度限制一下了
 				{
 					//NearestEnemyToCrossHair = HitActor;
-					NearestLocationToCrossHair = HitActor->GetActorLocation() + AutoLockTipOffset; //稍微抬高一下
+					NearestLocationToCrossHair = HitActor->GetActorLocation() + MyOwner->GetWeaponManagerComponent()->AutoLockTipOffset; //稍微抬高一下
 					MaxCos = CosAngel;
 				}
 			}
@@ -1158,7 +1152,6 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, WeaponName);
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
-	DOREPLIFETIME(ASWeapon, bIsAutoLockEnemy);
 }
 
 

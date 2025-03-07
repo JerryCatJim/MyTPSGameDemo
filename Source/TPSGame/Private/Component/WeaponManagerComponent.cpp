@@ -35,7 +35,7 @@ void UWeaponManagerComponent::BeginPlay()
 	MyOwnerPlayer = Cast<ASCharacter>(GetOwner());
 	
 	//如果控制权在服务器Server(相对Client)则执行下列代码
-	if(MyOwnerPlayer && MyOwnerPlayer->HasAuthority())
+	if(HasAuthority())
 	{
 		//生成默认武器并吸附到角色部位
 		for(int i = 0; i < WeaponEquipTypeList.Num(); ++i)
@@ -237,14 +237,14 @@ void UWeaponManagerComponent::DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipT
 	//可以先将武器交换吸附这种纯表现的逻辑在双端都进行，但是实际更改CurrentWeapon赋值的行为只在服务器进行
 	GetWeaponByEquipType(WeaponEquipType)->AttachToComponent(MyOwnerPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
 	
-	if(!MyOwnerPlayer->HasAuthority())
+	if(!HasAuthority())
 	{
 		//客户端需等待服务器完成判断，在此之前本地虽结束了动画播放和计时器，但bIsSwapping状态应该仍为true，以禁止当前武器开火
 		StopSwapWeapon(true);
 		return;
 	}
 
-	if(MyOwnerPlayer->HasAuthority())
+	if(HasAuthority())
 	{
 		CurrentWeapon = GetWeaponByEquipType(WeaponEquipType);
 		//OnRep中会调用StopSwapWeapon(false)将bIsSwappingWeapon变为false
@@ -338,7 +338,7 @@ void UWeaponManagerComponent::StartDropWeapon(bool ManuallyDiscard)
 {
 	if(!MyOwnerPlayer) return;
 	
-	if(!MyOwnerPlayer->HasAuthority())
+	if(HasAuthority())
 	{
 		//客户端提前预测，以停止当前行动等待服务器同步，提升客户端在高延迟下的观感，不保持也不影响最终的数据同步
 		if(!IsValid(CurrentWeapon) || (!ManuallyDiscard && !CurrentWeapon->GetWeaponCanDropDown())
@@ -513,7 +513,7 @@ void UWeaponManagerComponent::StopSwapWeapon(bool bWaitCurrentWeaponReplicated)
 	MyOwnerPlayer->StopAnimMontage(CurrentSwapWeaponAnim);
 	CurrentSwapWeaponAnim = nullptr;
 
-	if(MyOwnerPlayer->HasAuthority())
+	if(HasAuthority())
 	{
 		bIsSwappingWeapon = false;
 		bIsSwappingWeaponLocally = false;
@@ -542,7 +542,7 @@ void UWeaponManagerComponent::SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeapon
 	StopFire();
 	StopReload();
 	
-	if(!MyOwnerPlayer->HasAuthority())  //本地只处理一些表现效果，权威端在服务器
+	if(!HasAuthority())  //本地只处理一些表现效果，权威端在服务器
 	{
 		//分开处理是为了高延迟下客户端也能立刻响应一些表现
 		ServerSwapWeapon(NewWeaponEquipType, Immediately);
@@ -553,7 +553,7 @@ void UWeaponManagerComponent::SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeapon
 	bIsSwappingWeapon = true;
 	DealPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
 	//因为双端分别执行Swap没用Multi，所以如果是服务器主控玩家，则需要同步播放Swap动画等表现到客户端
-	if(MyOwnerPlayer->HasAuthority() && IsLocallyControlled())
+	if(HasAuthority() && IsLocallyControlled())
 	{
 		Multi_ClientSyncPlaySwapWeaponAnim(NewWeaponEquipType, Immediately);
 	}
@@ -574,7 +574,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 {
 	if(Immediately)
 	{
-		if(MyOwnerPlayer->HasAuthority())  //客户端只播放动画
+		if(HasAuthority())  //客户端只播放动画
 		{
 			DealSwapWeaponAttachment(NewWeaponEquipType);
 		}
@@ -626,7 +626,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 				GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
 					FString::Printf(TEXT("%s的 SwapAnimPlayRate < 0 ！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
 			
-				if(MyOwnerPlayer->HasAuthority())  //客户端只播放动画
+				if(HasAuthority())  //客户端只播放动画
 				{
 					DealSwapWeaponAttachment(NewWeaponEquipType);
 				}
@@ -638,7 +638,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red,
 				FString::Printf(TEXT("Swap%sAnim蒙太奇不存在！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
 				
-			if(MyOwnerPlayer->HasAuthority())  //客户端只播放动画
+			if(HasAuthority())  //客户端只播放动画
 			{
 				DealSwapWeaponAttachment(NewWeaponEquipType);
 			}
@@ -648,7 +648,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 
 void UWeaponManagerComponent::Multi_ClientSyncPlaySwapWeaponAnim_Implementation(EWeaponEquipType NewWeaponEquipType, bool Immediately)
 {
-	if(!MyOwnerPlayer || MyOwnerPlayer->HasAuthority() && IsLocallyControlled())
+	if(!MyOwnerPlayer || HasAuthority() && IsLocallyControlled())
 	{
 		return;
 	}
@@ -672,11 +672,16 @@ void UWeaponManagerComponent::OnRep_CurrentWeapon()
 	OnCurrentWeaponChanged.Broadcast();
 }
 
+void UWeaponManagerComponent::OnRep_IsAutoLockEnemy()
+{
+	ShowAutoLockEnemyTipView();
+}
+
 void UWeaponManagerComponent::ShowAutoLockEnemyTipView()
 {
 	if(!CurrentWeapon || !IsLocallyControlled()) return;
 	
-	bool IsAutoLock = CurrentWeapon->GetIsAutoLockEnemy();
+	bool IsAutoLock = GetIsAutoLockEnemy();
 	if(IsAutoLock)
 	{
 		if(AutoLockEnemyTipView)
@@ -715,10 +720,16 @@ void UWeaponManagerComponent::ShowAutoLockEnemyTipView()
 	}
 }
 
+bool UWeaponManagerComponent::HasAuthority()
+{
+	return MyOwnerPlayer && MyOwnerPlayer->HasAuthority();
+}
+
 bool UWeaponManagerComponent::IsLocallyControlled()
 {
 	return MyOwnerPlayer && MyOwnerPlayer->IsLocallyControlled();
 }
+
 
 void UWeaponManagerComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
@@ -743,4 +754,6 @@ void UWeaponManagerComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(UWeaponManagerComponent, bIsFiring);
 	DOREPLIFETIME(UWeaponManagerComponent, bIsReloading);
 	DOREPLIFETIME(UWeaponManagerComponent, bIsSwappingWeapon);
+	
+	DOREPLIFETIME(UWeaponManagerComponent, bIsAutoLockEnemy);
 }

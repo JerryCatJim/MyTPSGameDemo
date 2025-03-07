@@ -139,15 +139,27 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponCanManuallyDiscard(bool NewCanManuallyDiscard) { bCanManuallyDiscard = NewCanManuallyDiscard; }
 
+	//当前子弹无限和后备子弹无限的Getter和Setter
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool GetIsAutoLockEnemy() { return bIsAutoLockEnemy; }
+	bool GetIsCurrentAmmoInfinity() { return bIsCurrentAmmoInfinity; }
 	UFUNCTION(BlueprintCallable)
-	void SetIsAutoLockEnemy(bool IsAutoLockEnemy)
+	void SetIsCurrentAmmoInfinity(bool IsCurrentAmmoInfinity)
 	{
-		bIsAutoLockEnemy = IsAutoLockEnemy;
+		bIsCurrentAmmoInfinity = IsCurrentAmmoInfinity;
 		if(HasAuthority())
 		{
-			OnRep_IsAutoLockEnemy();
+			OnRep_IsCurrentAmmoInfinity();
+		}
+	}
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetIsBackUpAmmoInfinity() { return bIsBackUpAmmoInfinity; }
+	UFUNCTION(BlueprintCallable)
+	void SetIsBackUpAmmoInfinity(bool IsBackUpAmmoInfinity)
+	{
+		bIsBackUpAmmoInfinity = IsBackUpAmmoInfinity;
+		if(HasAuthority())
+		{
+			OnRep_IsBackUpAmmoInfinity();
 		}
 	}
 	
@@ -237,9 +249,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void OnRep_WeaponPickUpInfo();
-
-	UFUNCTION()
-	void OnRep_IsAutoLockEnemy();
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayTraceEffect(FVector TraceEnd);  //子弹轨迹特效
@@ -293,13 +302,6 @@ public:
 	//是否满装弹后可以再装填一发
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	bool CanOverloadAmmo = true;
-	
-	//是否无限当前子弹
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
-	bool bIsCurrentAmmoInfinity = false;
-	//是否无限备用子弹
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
-	bool bIsBackUpAmmoInfinity = false;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", Replicated)
 	FName WeaponName;
@@ -473,7 +475,14 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponBulletType> WeaponBulletType;
-
+	
+	//是否无限当前子弹
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsCurrentAmmoInfinity)
+	bool bIsCurrentAmmoInfinity = false;
+	//是否无限备用子弹
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_IsBackUpAmmoInfinity)
+	bool bIsBackUpAmmoInfinity = false;
+	
 	//武器是否可以死后掉落
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon, Replicated)
 	bool bCanDropDown = true;
@@ -483,18 +492,6 @@ protected:
 	//不填则在C++文件的BeginPlay中默认选择BP_PickUpWeaponBase
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<APickUpWeapon> PickUpWeaponClass;
-
-	//是否自动瞄准锁定离准星最近敌人
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock", ReplicatedUsing = OnRep_IsAutoLockEnemy)
-	bool bIsAutoLockEnemy = false;
-	//自动索敌时的最远距离
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
-	float AutoLockEnemyDistanceMax = 3000;
-	//自动索敌时的最高高度
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
-	float AutoLockEnemyHeightMax = 500;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "WeaponAutoLock")
-	FVector AutoLockTipOffset = FVector(0,0,40);
 	
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponPickUpInfo)
