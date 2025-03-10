@@ -110,7 +110,7 @@ void ASWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	
-	if(MyOwner)
+	if(MyOwner && (HasAuthority() || IsLocallyControlled()))  //本地由于延迟要进行本地预测，服务器也要同步
 	{
 		//SCharacter.cpp中重写了Pawn.cpp的GetPawnViewLocation().以获取CameraComponent的位置而不是人物Pawn的位置
 		MyOwner->GetActorEyesViewPoint(EyeLocation,EyeRotation);
@@ -1111,6 +1111,11 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 	return NearestLocationToCrossHair;
 }
 
+bool ASWeapon::IsLocallyControlled()
+{
+	return MyOwner && MyOwner->IsLocallyControlled();
+}
+
 void ASWeapon::Destroyed()
 {
 	
@@ -1131,6 +1136,8 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
 	DOREPLIFETIME(ASWeapon, WeaponEquipType);
+	DOREPLIFETIME(ASWeapon, EyeLocation);
+	DOREPLIFETIME(ASWeapon, EyeRotation);
 }
 
 

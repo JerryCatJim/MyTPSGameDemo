@@ -279,9 +279,12 @@ protected:
 	void Multi_ClientSyncFireAnimAndEffectsAndSounds();
 
 	//获取开枪起始位置
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetWeaponShootStartPoint();
 	
 private:
+	bool IsLocallyControlled();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetEnemyPositionNearestToCrossHair();
 	
@@ -420,9 +423,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon)
 	float WeaponTraceRange = 10000;
 
-	UPROPERTY(BlueprintReadWrite, Category= Weapon)
+	UPROPERTY(BlueprintReadWrite, Category= Weapon, Replicated)
 	FVector EyeLocation;
-	UPROPERTY(BlueprintReadWrite, Category= Weapon)
+	UPROPERTY(BlueprintReadWrite, Category= Weapon, Replicated)
 	FRotator EyeRotation;
 	
 	//射击命中的位置
