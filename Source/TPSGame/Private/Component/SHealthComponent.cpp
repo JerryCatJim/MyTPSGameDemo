@@ -81,12 +81,18 @@ void USHealthComponent::Multi_OnHealthChangedBoardCast_Implementation(float CurH
 	OnHealthChanged.Broadcast(this, CurHealth, HealthDelta, DamageType, InstigatedBy, DamageCauser);
 }
 
-void USHealthComponent::OnRep_Health(float OldHealth)  //服务器通知其他客户端Client同步更新（这是客户端调用的函数）
+void USHealthComponent::OnRep_Health(float OldHealth)
 {
 	//float Damage = Health - OldHealth;
 
 	//OnHealthChanged.Broadcast(this, Health, Damage, nullptr, nullptr, nullptr);
 }
+
+void USHealthComponent::OnRep_MaxHealth(float OldMaxHealth)
+{
+	OnMaxHealthChanged.Broadcast(MaxHealth);
+}
+
 
 //恢复生命值
 void USHealthComponent::Heal_Implementation(float HealAmount, AController* InstigatedBy, AActor* Healer)
@@ -111,4 +117,5 @@ void USHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 
 	//指定网络复制哪一部分（一个变量）
 	DOREPLIFETIME(USHealthComponent, Health);
+	DOREPLIFETIME(USHealthComponent, MaxHealth);
 }

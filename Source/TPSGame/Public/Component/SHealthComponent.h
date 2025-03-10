@@ -6,11 +6,11 @@
 #include "Components/ActorComponent.h"
 #include "SHealthComponent.generated.h"
 
+DECLARE_DELEGATE(FTestDelegate)
 //自定义委托
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, class USHealthComponent*, OwningHealthComponent, float, Health, float, HealthDelta, //HealthDelta 生命值改变量,增加或减少
 	const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
-
-DECLARE_DELEGATE(FTestDelegate)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMaxHealthChangedSignature, float, NewMaxHealth);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TPSGAME_API USHealthComponent : public UActorComponent
@@ -33,6 +33,36 @@ public:
 	//伤害处理函数
 	UFUNCTION(BlueprintCallable, Server, Reliable, Category= TakeDamage)
 	void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetCurrentHealth(){ return Health; }
+	UFUNCTION(BlueprintCallable)
+	float SetCurrentHealth(float NewHealth)
+	{
+		if(GetOwnerRole() == ROLE_Authority)
+		{
+			OnRep_Health(Health);
+		}
+		Health = NewHealth;
+		return Health;
+	}
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetMaxHealth(){ return MaxHealth; }
+	UFUNCTION(BlueprintCallable)
+	float SetMaxHealth(float NewMaxHealth)
+	{
+		if(GetOwnerRole() == ROLE_Authority)
+		{
+			OnRep_MaxHealth(MaxHealth);
+		}
+		MaxHealth = NewMaxHealth;
+		if(Health > MaxHealth)
+		{
+			Health = MaxHealth;
+		}
+		return MaxHealth;
+	}
 	
 protected:
 	// Called when the game starts
@@ -46,18 +76,25 @@ protected:
 	UFUNCTION()  //必须用UFUNCTION标记
 	void OnRep_Health(float OldHealth);
 
-public:
-	//生命值变更时触发事件广播
-	UPROPERTY(BlueprintAssignable, Category= Events)
-	FOnHealthChangedSignature OnHealthChanged;
+	UFUNCTION()
+	void OnRep_MaxHealth(float OldMaxHealth);
 
-	FTestDelegate TestDelegate;
+public:
+	//FTestDelegate TestDelegate;
+	
+	//生命值变更时触发事件广播
+	UPROPERTY(BlueprintAssignable, Category= HealthEvents)
+	FOnHealthChangedSignature OnHealthChanged;
+	
+	UPROPERTY(BlueprintAssignable, Category= HealthEvents)
+	FOnMaxHealthChangedSignature OnMaxHealthChanged;
+	
 protected:
 	//生命值
 	UPROPERTY(ReplicatedUsing= OnRep_Health, EditAnywhere, BlueprintReadOnly, Category= HealthComponent)
 	float Health;
 	//默认生命值
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= HealthComponent)
+	UPROPERTY(ReplicatedUsing= OnRep_MaxHealth,EditDefaultsOnly, BlueprintReadWrite, Category= HealthComponent)
 	float MaxHealth;
 	//无限生命
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= HealthComponent)
