@@ -97,6 +97,9 @@ public:
 	void ResetWeaponZoom();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FName GetCharacterName();
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetIsAiming() const { return WeaponManagerComponent->GetIsAiming(); }
 	UFUNCTION(BlueprintCallable)
 	void SetIsAiming(const bool& IsAiming){ WeaponManagerComponent->SetIsAiming(IsAiming); }
@@ -233,6 +236,9 @@ public:
 	bool bIsAIPlayer = false;
 	
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= CharacterName)
+	FName CharacterName =TEXT("默认名字");
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	UCameraComponent* CameraComponent;
 

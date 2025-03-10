@@ -356,6 +356,11 @@ void ASCharacter::ResetWeaponZoom()
 	WeaponManagerComponent->ResetWeaponZoom();
 }
 
+FName ASCharacter::GetCharacterName()
+{
+	return CharacterName;
+}
+
 //由于被交互的物体可能为ROLE_SimulatedProxy,从客户端发送的Server版RPC调用会被丢弃，Multicast也仅会本地调用，
 //所以有时需从那边手动触发SCharacter的Server版事件广播以完成 被交互物体 的Server端逻辑响应
 void ASCharacter::Server_OnInteractKeyDown_Implementation()
