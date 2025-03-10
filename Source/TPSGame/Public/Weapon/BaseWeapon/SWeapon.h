@@ -280,9 +280,6 @@ private:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetEnemyPositionNearestToCrossHair();
 	
-	UFUNCTION(BlueprintCallable)
-	bool IsInScreenViewport(const FVector& WorldPosition);
-	
 public:
 	//当前子弹数
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")

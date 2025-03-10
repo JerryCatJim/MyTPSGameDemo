@@ -17,6 +17,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TPSGameState.h"
+#include "FunctionLibrary/TPSGameBPFLibrary.h"
 #include "Weapon/PickUpWeapon.h"
 #include "Net/UnrealNetwork.h"
 
@@ -1005,7 +1006,7 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 	TArray<AActor*> UniqueHitActors;
 	for(auto& HitResult : HitResults)
 	{
-		if(HitResult.GetActor())// && IsInScreenViewport(HitResult.GetActor()->GetActorLocation()))
+		if(HitResult.GetActor())// && UTPSGameBPFLibrary::IsInScreenViewport(this,HitResult.GetActor()->GetActorLocation()))
 		{
 			UniqueHitActors.AddUnique(HitResult.GetActor());
 		}
@@ -1108,29 +1109,6 @@ FVector ASWeapon::GetEnemyPositionNearestToCrossHair()
 	
 	//return NearestEnemyToCrossHair ? NearestEnemyToCrossHair->GetActorLocation() : FVector::ZeroVector;
 	return NearestLocationToCrossHair;
-}
-
-bool ASWeapon::IsInScreenViewport(const FVector& WorldPosition)
-{
-	APlayerController *Player = UGameplayStatics::GetPlayerController(this, 0);
-	ULocalPlayer* const LP = Player ? Player->GetLocalPlayer() : nullptr;
-	if (LP && LP->ViewportClient)
-	{
-		// get the projection data
-		FSceneViewProjectionData ProjectionData;
-		if (LP->GetProjectionData(LP->ViewportClient->Viewport, eSSP_FULL, /*out*/ ProjectionData))
-		{
-			FMatrix const ViewProjectionMatrix = ProjectionData.ComputeViewProjectionMatrix();
-			FVector2D ScreenPosition;
-			bool bResult = FSceneView::ProjectWorldToScreen(WorldPosition, ProjectionData.GetConstrainedViewRect(), ViewProjectionMatrix, ScreenPosition);
-			if (bResult && ScreenPosition.X > ProjectionData.GetViewRect().Min.X && ScreenPosition.X < ProjectionData.GetViewRect().Max.X
-				&& ScreenPosition.Y > ProjectionData.GetViewRect().Min.Y && ScreenPosition.Y < ProjectionData.GetViewRect().Max.Y)
-			{
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 void ASWeapon::Destroyed()
