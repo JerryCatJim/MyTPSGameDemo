@@ -350,7 +350,7 @@ void ASWeapon::Fire()
 		PlayFireEffectsAndSounds();
 		
 		//客户端提前进行了行为预测，需要在服务端同步播放开火特效等表现到客户端
-		if(HasAuthority())// && MyOwner->IsLocallyControlled())
+		if(HasAuthority())// && IsLocallyControlled())
 		{
 			Multi_ClientSyncFireAnimAndEffectsAndSounds();
 		}
@@ -481,7 +481,7 @@ void ASWeapon::Reload(bool IsAutoReload)
 	//客户端换弹时也会立刻播放动画，所以不用Multi
 	PlayReloadAnimAndSound();
 	//客户端提前进行了行为预测，需要在服务端同步播放换弹动画等表现到客户端
-	if(HasAuthority())// && MyOwner->IsLocallyControlled())
+	if(HasAuthority())// IsLocallyControlled())
 	{
 		Multi_ClientSyncPlayReloadAnimAndSound();
 	}
@@ -796,7 +796,7 @@ void ASWeapon::PlayFireEffectsAndSounds()//_Implementation()
 
 	//获得武器持有者owner
 	//APawn* MyOwner = Cast<APawn>(GetOwner());
-	if(MyOwner && MyOwner->IsLocallyControlled())
+	if(IsLocallyControlled())
 	{
 		//获得玩家控制器
 		APlayerController* PC = Cast<APlayerController>(MyOwner->GetController());
@@ -831,7 +831,7 @@ void ASWeapon::PlayFireAnim()//_Implementation()
 
 void ASWeapon::Multi_ClientSyncFireAnimAndEffectsAndSounds_Implementation()
 {
-	if(MyOwner->IsLocallyControlled())  //仅用作将表现同步给其他客户端，不要自己再执行一次
+	if(IsLocallyControlled())  //仅用作将表现同步给其他客户端，不要自己再执行一次
 	{
 		return;
 	}
@@ -870,7 +870,7 @@ void ASWeapon::PlayReloadAnimAndSound()//_Implementation()
 
 void ASWeapon::Multi_ClientSyncPlayReloadAnimAndSound_Implementation()
 {
-	if(MyOwner->IsLocallyControlled())  //仅用作将表现同步给其他客户端，不要自己再执行一次
+	if(IsLocallyControlled())  //仅用作将表现同步给其他客户端，不要自己再执行一次
 	{
 		return;
 	}
