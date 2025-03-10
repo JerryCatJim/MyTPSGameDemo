@@ -73,23 +73,12 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 
 	APawn* OldPawn = PlayerController->GetPawn();
 	
-	if(PlayerController->GetPawn())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
-					FString::Printf(TEXT("当前Pawn : %s"), *(PlayerController->GetPawn()->GetName())));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
-					FString::Printf(TEXT("当前Pawn : CNM")));
-	}
-	
 	//如果死亡时切换角色，希望复活后再变为新角色
 	ATPSPlayerController* TPC = Cast<ATPSPlayerController>(PlayerController);
 	if(TPC)
 	{
-		AActor* StartSpot = StartSpot = TPC->StartSpot.Get();
-		/*AActor* StartSpot = FindPlayerStart(TPC);
+		//AActor* StartSpot = StartSpot = TPC->StartSpot.Get();
+		AActor* StartSpot = FindPlayerStart(TPC);
 		// If a start spot wasn't found,
 		if (StartSpot == nullptr)
 		{
@@ -99,7 +88,7 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 				StartSpot = TPC->StartSpot.Get();
 				UE_LOG(LogGameMode, Warning, TEXT("RestartPlayer: Player start not found, using last start spot"));
 			}	
-		}*/
+		}
 		const FTransform NewPawnPos = StartSpot ? FTransform(StartSpot->GetActorLocation()) : FTransform();
 	
 		FActorSpawnParameters SpawnParams;
