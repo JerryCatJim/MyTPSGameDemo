@@ -107,6 +107,11 @@ public:
 	
 	EWeaponType GetWeaponType() const { return WeaponType; }
 	EWeaponEquipType GetWeaponEquipType() const { return WeaponEquipType; }
+	void SetWeaponEquipType(EWeaponEquipType NewType)
+	{
+		WeaponEquipType = NewType;
+		WeaponPickUpInfo.WeaponEquipType = NewType;
+	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetCurrentAimingPoint(bool bUseSpread = true);
@@ -340,7 +345,7 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Rifle;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon, Replicated)
 	TEnumAsByte<EWeaponEquipType> WeaponEquipType;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "Component")

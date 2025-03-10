@@ -1130,6 +1130,7 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, WeaponName);
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
+	DOREPLIFETIME(ASWeapon, WeaponEquipType);
 }
 
 

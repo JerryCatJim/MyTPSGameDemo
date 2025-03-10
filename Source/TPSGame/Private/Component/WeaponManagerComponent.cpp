@@ -42,16 +42,19 @@ void UWeaponManagerComponent::BeginPlay()
 		{
 			FWeaponPickUpInfo TempInfo = FWeaponPickUpInfo();
 			TempInfo.WeaponClass = GetWeaponSpawnClass(WeaponEquipTypeList[i]);
-			
-			//武器当前还为空值，取不到自身PickUpWeaponInfo，所以手动造一个，并且不刷新信息(这样造出来的武器的WeaponPickUpInfo的是默认值)
-			ASWeapon*& CurWeapon = GetWeaponByEquipType(WeaponEquipTypeList[i]) = SpawnAndAttachWeapon(TempInfo, false);
-			
-			if(!CurrentWeapon && CurWeapon)  //把有效的第一把武器设置为当前默认武器
+			TempInfo.WeaponEquipType = WeaponEquipTypeList[i];
+
+			if(TempInfo.WeaponClass)  //注意是否为空指针
 			{
-				CurrentWeapon = CurWeapon;
-				CurrentWeapon->AttachToComponent(MyOwnerPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
-				//C++中的服务器不会自动调用OnRep函数，需要手动调用
-				OnRep_CurrentWeapon();
+				//武器当前还为空值，取不到自身PickUpWeaponInfo，所以手动造一个，并且不刷新信息(这样造出来的武器的WeaponPickUpInfo的是默认值)
+				ASWeapon*& CurWeapon = GetWeaponByEquipType(WeaponEquipTypeList[i]) = SpawnAndAttachWeapon(TempInfo, false);
+				if(CurWeapon && !CurrentWeapon)  //把有效的第一把武器设置为当前默认武器
+				{
+					CurrentWeapon = CurWeapon;
+					CurrentWeapon->AttachToComponent(MyOwnerPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
+					//C++中的服务器不会自动调用OnRep函数，需要手动调用
+					OnRep_CurrentWeapon();
+				}
 			}
 		}
 	}
@@ -77,6 +80,8 @@ ASWeapon* UWeaponManagerComponent::SpawnAndAttachWeapon(FWeaponPickUpInfo Weapon
 	//NewWeapon->SetOwner(this);
 	if(NewWeapon && MyOwnerPlayer)
 	{
+		//将对应槽位武器的类型改为对应类型，例如配置时把小手枪设为了主武器，但是其默认类型为副武器，也将其改为主武器以和槽位保持一致
+		NewWeapon->SetWeaponEquipType(WeaponInfo.WeaponEquipType);
 		//如果角色身上有对应插槽则吸附，否则说明忘了配置了或者写错名字了，武器就掉到地上
 		if(MyOwnerPlayer->GetMesh()->GetSocketByName(GetWeaponSocketName(NewWeapon->GetWeaponEquipType())))
 		{

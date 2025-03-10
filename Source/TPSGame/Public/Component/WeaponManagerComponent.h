@@ -96,6 +96,9 @@ public:
 	void ShowAutoLockEnemyTipView();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	ASWeapon*& GetWeaponByEquipType(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetIsAutoLockEnemy() { return bIsAutoLockEnemy; }
 	UFUNCTION(BlueprintCallable)
 	void SetIsAutoLockEnemy(bool IsAutoLockEnemy)
@@ -153,7 +156,6 @@ private:
 	ASWeapon* SpawnAndAttachWeapon(FWeaponPickUpInfo WeaponToSpawn, bool RefreshWeaponInfo = true);
 	TSubclassOf<ASWeapon> GetWeaponSpawnClass(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
 	FName GetWeaponSocketName(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
-	ASWeapon*& GetWeaponByEquipType(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
 	UAnimMontage* GetSwapWeaponAnim(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
 	float GetSwapWeaponAnimRate(TEnumAsByte<EWeaponEquipType> WeaponEquipType);
 
