@@ -58,6 +58,13 @@ void ATPSPlayerController::BeginPlay()
 	
 }
 
+void ATPSPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	NewPawnClassToPossess = GetPawn()->GetClass();
+}
+
 void ATPSPlayerController::RefreshScoreBoardUI_Implementation()
 {
 	ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(GetWorld()));
@@ -71,6 +78,42 @@ float ATPSPlayerController::GetRespawnCount()
 {
 	ATPSGameState* GS = Cast<ATPSGameState>(UGameplayStatics::GetGameState(GetWorld()));
 	return GS ? GS->GetRespawnCount() : -1 ;
+}
+
+void ATPSPlayerController::SetNewPawn_Implementation(TSubclassOf<ASCharacter> NewPawnClass)
+{
+	if(!NewPawnClass || NewPawnClass == GetPawn()->GetClass())
+	{
+		NewPawnClassToPossess = GetPawn()->GetClass();
+		return;
+	}
+	
+	ASCharacter* OldCharacter = Cast<ASCharacter>(GetPawn());
+	ASCharacter* NewCharacter = nullptr;
+	
+	if(OldCharacter && !OldCharacter->GetIsDied())
+	{
+		FTransform OldPawnPos = OldCharacter && !OldCharacter->GetIsDied() ?
+				OldCharacter->GetActorTransform()
+				: FTransform(FRotator(), FVector(-10000,-10000,-10000));
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Owner = this;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
+		NewCharacter =  GetWorld()->SpawnActor<ASCharacter>(
+			NewPawnClass,
+			OldPawnPos,
+			SpawnParams
+		);
+
+		if(NewCharacter)
+		{
+			Possess(NewCharacter);
+			OldCharacter->Destroy(true);
+		}
+	}
+	
+	NewPawnClassToPossess = NewPawnClass;
 }
 
 void ATPSPlayerController::ShowReturnToMainMenu()

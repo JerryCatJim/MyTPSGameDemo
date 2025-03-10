@@ -9,6 +9,7 @@
 
 #include "TPSPlayerController.generated.h"
 
+class ASCharacter;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagDetected);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagEnded);
 
@@ -52,11 +53,18 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	float GetRespawnCount();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SetNewPawn(TSubclassOf<ASCharacter> NewPawnClass);
+
+	TSubclassOf<APawn> GetNewPawnClassToPossess() const { return NewPawnClassToPossess; }
 	
 protected:
 	virtual void SetupInputComponent() override;
 
 	virtual void BeginPlay() override;
+
+	virtual void OnPossess(APawn* InPawn) override;
 	
 	void ShowReturnToMainMenu();
 	
@@ -114,4 +122,7 @@ private:
 
 	UPROPERTY()
 	class UReturnToMainMenu* ReturnToMainMenu;
+
+	UPROPERTY()
+	TSubclassOf<APawn> NewPawnClassToPossess;
 };

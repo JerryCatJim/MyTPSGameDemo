@@ -4,6 +4,7 @@
 #include "GameMode/TPSGameMode.h"
 #include "SCharacter.h"
 #include "TPSGameState.h"
+#include "TPSPlayerController.h"
 
 ATPSGameMode::ATPSGameMode()
 {
@@ -70,16 +71,55 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 		return;
 	}
 
-	ASCharacter* PlayerPawn = Cast<ASCharacter>(PlayerController->GetPawn());
-	if(PlayerPawn)
+	APawn* OldPawn = PlayerController->GetPawn();
+	
+	if(PlayerController->GetPawn())
 	{
-		PlayerPawn->Destroy();
-		/*if(PlayerPawn->CurrentWeapon)  //SCharacter中的Destroyed()调用了销毁武器
-		{
-			PlayerPawn->CurrentWeapon->Destroy();
-		}*/
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+					FString::Printf(TEXT("当前Pawn : %s"), *(PlayerController->GetPawn()->GetName())));
 	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Red,
+					FString::Printf(TEXT("当前Pawn : CNM")));
+	}
+	
+	//如果死亡时切换角色，希望复活后再变为新角色
+	ATPSPlayerController* TPC = Cast<ATPSPlayerController>(PlayerController);
+	if(TPC)
+	{
+		AActor* StartSpot = StartSpot = TPC->StartSpot.Get();
+		/*AActor* StartSpot = FindPlayerStart(TPC);
+		// If a start spot wasn't found,
+		if (StartSpot == nullptr)
+		{
+			// Check for a previously assigned spot
+			if (TPC->StartSpot != nullptr)
+			{
+				StartSpot = TPC->StartSpot.Get();
+				UE_LOG(LogGameMode, Warning, TEXT("RestartPlayer: Player start not found, using last start spot"));
+			}	
+		}*/
+		const FTransform NewPawnPos = StartSpot ? FTransform(StartSpot->GetActorLocation()) : FTransform();
+	
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Owner = PlayerController;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
+		SpawnParams.Instigator = GetInstigator();
+		ASCharacter* NewCharacter =  GetWorld()->SpawnActor<ASCharacter>(
+			TPC->GetNewPawnClassToPossess(),
+			NewPawnPos,
+			SpawnParams
+		);
+		TPC->Possess(NewCharacter);
+	}
+	
 	RestartPlayer(PlayerController);
+	
+	if(OldPawn)
+	{
+		OldPawn->Destroy();
+	}
 }
 
 float ATPSGameMode::CalculateDamage(AController* Attacker, AController* Victim, float BaseDamage)
