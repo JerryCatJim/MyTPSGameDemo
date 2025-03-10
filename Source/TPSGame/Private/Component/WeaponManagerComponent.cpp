@@ -738,6 +738,21 @@ void UWeaponManagerComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 		AutoLockEnemyTipView->RemoveFromParent();
 		AutoLockEnemyTipView = nullptr;
 	}
+	if(MainWeapon)
+	{
+		MainWeapon->Destroy();
+	}
+	if(SecondaryWeapon)
+	{
+		SecondaryWeapon->Destroy();
+	}if(MeleeWeapon)
+	{
+		MeleeWeapon->Destroy();
+	}
+	if(ThrowableWeapon)
+	{
+		ThrowableWeapon->Destroy();
+	}
 }
 
 void UWeaponManagerComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

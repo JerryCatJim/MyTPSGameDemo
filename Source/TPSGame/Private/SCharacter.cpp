@@ -408,11 +408,6 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 void ASCharacter::Destroyed()
 {
 	Super::Destroyed();
-
-	if(WeaponManagerComponent && WeaponManagerComponent->CurrentWeapon)
-	{
-		WeaponManagerComponent->CurrentWeapon->Destroy();
-	}
 }
 
 void ASCharacter::PossessedBy(AController* NewController)
