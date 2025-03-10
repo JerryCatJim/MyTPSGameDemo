@@ -97,9 +97,12 @@ void ATPSPlayerController::RequestRespawn_Implementation()
 		{
 			//尝试复活
 			GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
-			[this, GM]()->void
+			[this, WeakGM = TWeakObjectPtr<ATPSGameMode>(GM)]()->void
 			{
-				GM->RespawnPlayer(this);
+				if(WeakGM.IsValid())
+				{
+					WeakGM->RespawnPlayer(this);
+				}
 			},
 			RespawnCount,
 			false);
