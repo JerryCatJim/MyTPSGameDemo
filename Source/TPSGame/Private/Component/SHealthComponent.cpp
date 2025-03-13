@@ -21,7 +21,6 @@ USHealthComponent::USHealthComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-
 // Called when the game starts
 void USHealthComponent::BeginPlay()
 {
@@ -38,7 +37,6 @@ void USHealthComponent::BeginPlay()
 	}
 	
 }
-
 
 // Called every frame
 /*void USHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -79,6 +77,15 @@ void USHealthComponent::Multi_OnHealthChangedBoardCast_Implementation(float CurH
 	const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	OnHealthChanged.Broadcast(this, CurHealth, HealthDelta, DamageType, InstigatedBy, DamageCauser);
+}
+
+void USHealthComponent::SetCurrentHealth_Implementation(float NewHealth)
+{
+	Health = NewHealth;
+	if(GetOwnerRole() == ROLE_Authority)
+	{
+		OnRep_Health(Health);
+	}
 }
 
 void USHealthComponent::OnRep_Health(float OldHealth)

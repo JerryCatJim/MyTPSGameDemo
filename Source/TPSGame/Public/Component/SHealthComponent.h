@@ -36,16 +36,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetCurrentHealth(){ return Health; }
-	UFUNCTION(BlueprintCallable)
-	float SetCurrentHealth(float NewHealth)
-	{
-		if(GetOwnerRole() == ROLE_Authority)
-		{
-			OnRep_Health(Health);
-		}
-		Health = NewHealth;
-		return Health;
-	}
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SetCurrentHealth(float NewHealth);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMaxHealth(){ return MaxHealth; }
