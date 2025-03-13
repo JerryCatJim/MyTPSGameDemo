@@ -63,6 +63,10 @@ void ATPSPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	NewPawnClassToPossess = GetPawn()->GetClass();
+	
+	//PlayerController.cpp的OnPossess函数中先触发Pawn的PossessedBy再触发SetPawn()，所以走到这里时，controller还没有新的Pawn，
+	//HUD里判断GetPawn()就会失败，所以要把逻辑移到Controller的OnPossess中实现
+	ResetHUDWidgets(EHUDViewType::AllViews);
 }
 
 void ATPSPlayerController::RefreshScoreBoardUI_Implementation()

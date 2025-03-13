@@ -96,7 +96,9 @@ void ASCharacter::BeginPlay()
 void ASCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
+	
+	/*//PlayerController.cpp的OnPossess函数中先触发Pawn的PossessedBy再触发SetPawn()，所以走到这里时，controller还没有新的Pawn，
+	//HUD里判断GetPawn()就会失败，所以这段代码也就没用了。把逻辑移到Controller的OnPossess中实现
 	if(IsLocallyControlled())
 	{
 		ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
@@ -104,7 +106,7 @@ void ASCharacter::PossessedBy(AController* NewController)
 		{
 			MyController->ResetHUDWidgets(EHUDViewType::AllViews);
 		}
-	}
+	}*/
 }
 
 // Called every frame
