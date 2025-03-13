@@ -3,6 +3,7 @@
 
 #include "SCharacter.h"
 
+#include "AbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -12,6 +13,7 @@
 #include "Component/SBuffComponent.h"
 #include "Component/SHealthComponent.h"
 #include "Component/InventoryComponent.h"
+#include "Component/SkillComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/PickUpWeapon.h"
@@ -56,11 +58,11 @@ ASCharacter::ASCharacter()
 	
 	//生命值组件初始化
 	HealthComponent = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComponent"));
-	
 	//Buff组件初始化
 	BuffComponent = CreateDefaultSubobject<USBuffComponent>(TEXT("BuffComponent"));
-
 	WeaponManagerComponent = CreateDefaultSubobject<UWeaponManagerComponent>(TEXT("WeaponManagerComponent"));
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	SkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	
 	bDied = false;
 	AimOffset_Y = 0;
@@ -89,6 +91,20 @@ void ASCharacter::BeginPlay()
 	
 	//测试UEC++函数 可以返回多个值
 	//testtest();
+}
+
+void ASCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if(IsLocallyControlled())
+	{
+		ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
+		if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置UI
+		{
+			MyController->ResetHUDWidgets(EHUDViewType::AllViews);
+		}
+	}
 }
 
 // Called every frame
@@ -408,20 +424,6 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 void ASCharacter::Destroyed()
 {
 	Super::Destroyed();
-}
-
-void ASCharacter::PossessedBy(AController* NewController)
-{
-	Super::PossessedBy(NewController);
-
-	if(IsLocallyControlled())
-	{
-		ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
-		if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置准星
-		{
-			MyController->ResetCrossHair();
-		}
-	}
 }
 
 //SWeapon.cpp中 Fire函数会让Owner(即该文件)调用GetActorEyesViewPoint,下面函数重写了方法，使眼部位置变为摄像机位置

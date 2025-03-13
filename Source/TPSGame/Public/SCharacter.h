@@ -13,6 +13,7 @@
 #include "Component/WeaponManagerComponent.h"
 #include "SCharacter.generated.h"
 
+class USkillComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyDown);  //对于不需要长按的互动对象则只绑定KeyDown事件，否则只绑定KeyUp和LongPress事件，用以区分
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyUp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractKeyLongPressed);
@@ -24,6 +25,7 @@ class USpringArmComponent;
 class USHealthComponent;
 class USBuffComponent;
 class UWeaponManagerComponent;
+class UAbilitySystemComponent;
 
 UCLASS()
 class TPSGAME_API ASCharacter : public ACharacter, public IMyInterfaceTest
@@ -128,6 +130,8 @@ public:
 	USHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	USBuffComponent* GetBuffComponent()     const { return BuffComponent; }
 	UWeaponManagerComponent* GetWeaponManagerComponent() const { return WeaponManagerComponent; }
+	UAbilitySystemComponent* GetAbilitySystemComponent() const { return AbilitySystemComponent; }
+	USkillComponent* GetSkillComponent() const { return SkillComponent; }
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	UInventoryComponent* GetInventoryComponent();
@@ -258,6 +262,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
 	UWeaponManagerComponent* WeaponManagerComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
+	UAbilitySystemComponent* AbilitySystemComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
+	USkillComponent* SkillComponent;
 	
 	//角色是否死亡
 	UPROPERTY(ReplicatedUsing = OnRep_Died, BlueprintReadOnly, Category= PlayerStatus)

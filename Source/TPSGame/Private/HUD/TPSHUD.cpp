@@ -4,6 +4,9 @@
 #include "HUD/TPSHUD.h"
 
 #include "SCharacter.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Component/SkillComponent.h"
+#include "Components/CanvasPanelSlot.h"
 #include "UserWidget/TPSCrossHair.h"
 
 ATPSHUD::ATPSHUD()
@@ -31,15 +34,21 @@ void ATPSHUD::ResetCrossHairWidget(APlayerController* PlayerController)
 				if(PlayerCharacter->GetCurrentWeapon()->CrossHairClass)
 				{
 					CrossHairView = CreateWidget<UTPSCrossHair>(PlayerController, PlayerCharacter->GetCurrentWeapon()->CrossHairClass);
-					CrossHairView->AddToViewport();
-					AddToWidgetList(CrossHairView);
+					if(CrossHairView)
+					{
+						CrossHairView->AddToViewport();
+						AddToWidgetList(CrossHairView);
+					}
 				}
 				if(PlayerCharacter->GetCurrentWeapon()->HitFeedbackCrossHairClass)
 				{
 					HitFeedbackCrossHairView = CreateWidget<UUserWidget>(PlayerController, PlayerCharacter->GetCurrentWeapon()->HitFeedbackCrossHairClass);
-					HitFeedbackCrossHairView->AddToViewport();
-					AddToWidgetList(HitFeedbackCrossHairView);
-					HitFeedbackCrossHairView->SetVisibility(ESlateVisibility::Collapsed);
+					if(HitFeedbackCrossHairView)
+					{
+						HitFeedbackCrossHairView->AddToViewport();
+						AddToWidgetList(HitFeedbackCrossHairView);
+						HitFeedbackCrossHairView->SetVisibility(ESlateVisibility::Collapsed);
+					}
 				}
 			}
 		}
@@ -57,6 +66,36 @@ void ATPSHUD::RemoveCrossHairWidget()
 	{
 		HitFeedbackCrossHairView->RemoveFromParent();
 		WidgetsList.Remove(HitFeedbackCrossHairView);
+	}
+}
+
+void ATPSHUD::ResetSkillPercentWidget(APlayerController* PlayerController)
+{
+	RemoveSkillPercentWidget();
+	if(PlayerController)
+	{
+		if(PlayerController->GetPawn())
+		{
+			ASCharacter* PlayerCharacter = Cast<ASCharacter>(PlayerController->GetPawn());
+			if(PlayerCharacter && PlayerCharacter->GetSkillComponent() && PlayerCharacter->GetSkillComponent()->SkillPercentWidgetClass)
+			{
+				SkillPercentView = CreateWidget<UUserWidget>(PlayerController, PlayerCharacter->GetSkillComponent()->SkillPercentWidgetClass);
+				if(SkillPercentView)
+				{
+					SkillPercentView->AddToViewport();
+					AddToWidgetList(SkillPercentView);
+				}
+			}
+		}
+	}
+}
+
+void ATPSHUD::RemoveSkillPercentWidget()
+{
+	if(SkillPercentView)
+	{
+		SkillPercentView->RemoveFromParent();
+		WidgetsList.Remove(SkillPercentView);
 	}
 }
 

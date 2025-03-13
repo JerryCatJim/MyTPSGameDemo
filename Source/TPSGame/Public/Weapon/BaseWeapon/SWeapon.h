@@ -128,6 +128,8 @@ public:
 	void RefreshWeaponInfo(FWeaponPickUpInfo WeaponInfo);
 
 	float GetHeadShotBonus() const { return HeadShotBonus; }
+	float GetHitChargePercent() const { return HitChargePercent; }
+	float GetHitChargeHeadshotBonus() const { return HitChargeHeadshotBonus; }
 
 	UFUNCTION(BlueprintCallable, Client, Reliable)  //直接改变子弹数，不修正AmmoSequence
 	void ClientChangeCurrentAmmo(int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
@@ -414,10 +416,16 @@ protected:
 	//射击基础伤害
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	float BaseDamage;
-
 	//爆头伤害倍率
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	float HeadShotBonus;
+
+	//命中时给大招增加的充能
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
+	float HitChargePercent = 1.f;
+	//爆头时增加的充能倍率
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Weapon")
+	float HitChargeHeadshotBonus = 5.f;
 
 	//武器最远射程
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= Weapon)

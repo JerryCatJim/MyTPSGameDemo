@@ -667,7 +667,7 @@ void UWeaponManagerComponent::OnRep_CurrentWeapon()
 	ATPSPlayerController* MyController = Cast<ATPSPlayerController>(MyOwnerPlayer->GetController());
 	if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置准星
 	{
-		MyController->ResetCrossHair();
+		MyController->ResetHUDWidgets(EHUDViewType::CrossHairView);
 	}
 	ShowAutoLockEnemyTipView();
 	

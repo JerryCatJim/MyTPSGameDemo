@@ -4,6 +4,7 @@
 #include "Weapon/BaseWeapon/HitScanWeapon.h"
 #include "SCharacter.h"
 #include "TPSGameState.h"
+#include "Component/SkillComponent.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
 #include "Kismet/GameplayStatics.h"
@@ -17,6 +18,7 @@ void AHitScanWeapon::DealFire()
 {
 	FVector StartPoint = GetWeaponShootStartPoint();
 	FVector EndPoint = GetCurrentAimingPoint();//EyeLocation + (NewShotDirection*WeaponTraceRange);
+	EndPoint = EndPoint + (EndPoint - StartPoint).GetSafeNormal() * 10;  //稍微延长一下，否则很容易因为位置正好而丢失射线检测
 	ShotTraceEnd = EndPoint;
 	
 	//碰撞查询
@@ -46,8 +48,9 @@ void AHitScanWeapon::DealFire()
 		//EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());  //弱引用
 		EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 		
+		bool IsHeadshot = SurfaceType == Surface_FleshVulnerable;
 		//爆头伤害加成
-		if(SurfaceType == Surface_FleshVulnerable)
+		if(IsHeadshot)
 		{
 			ActualDamage *= HeadShotBonus;
 		}
@@ -71,9 +74,14 @@ void AHitScanWeapon::DealFire()
 						IsEnemy = MyPS->GetTeam() != PS->GetTeam();
 					}
 				}
+				//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
+				Multi_WeaponHitTargetBroadcast(IsEnemy,IsHeadshot);
+				if(MyOwner->GetSkillComponent())
+				{
+					float AddPercent = IsHeadshot ? GetHitChargePercent() * GetHitChargeHeadshotBonus() : GetHitChargePercent();
+					MyOwner->GetSkillComponent()->AddSkillChargePercent(AddPercent);
+				}
 			}
-			//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
-			Multi_WeaponHitTargetBroadcast(IsEnemy,SurfaceType == Surface_FleshVulnerable);
 		}
 			
 		//若击中目标则将轨迹结束点设置为击中点

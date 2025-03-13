@@ -19,6 +19,8 @@ void ATPSGameMode::BeginPlay()
 	{
 		MyGameState = GetGameState<ATPSGameState>();
 	}
+	
+	SetHasGameBegun(true); //后续可以做个倒计时后开始游戏，将此处移到那里
 }
 
 void ATPSGameMode::SwapPlayerControllers(APlayerController* OldPC, APlayerController* NewPC)

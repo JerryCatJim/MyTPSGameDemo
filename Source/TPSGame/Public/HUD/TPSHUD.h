@@ -19,10 +19,14 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void ResetCrossHairWidget(APlayerController* PlayerController);
-
 	UFUNCTION(BlueprintCallable)
 	void RemoveCrossHairWidget();
 
+	UFUNCTION(BlueprintCallable)
+	void ResetSkillPercentWidget(APlayerController* PlayerController);
+	UFUNCTION(BlueprintCallable)
+	void RemoveSkillPercentWidget();
+	
 	UFUNCTION(BlueprintCallable)
 	void SetCrossHairVisibility(bool IsVisible);
 	
@@ -46,9 +50,16 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UUserWidget* HitFeedbackCrossHairView;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	class UUserWidget* SkillPercentView;
 	
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<class UUserWidget> EndGameScreenClass;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	class UUserWidget* EndGameView;*/
+	
+private:
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* BackgroundCanvasPanel;
 };

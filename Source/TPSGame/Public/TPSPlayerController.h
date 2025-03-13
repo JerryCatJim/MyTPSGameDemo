@@ -4,10 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-
 #include "Component/InventoryComponent.h"
-
 #include "TPSPlayerController.generated.h"
+
+UENUM(BlueprintType)
+enum class EHUDViewType : uint8
+{
+	AllViews,
+	CrossHairView,
+	SkillPercentView,
+};
 
 class ASCharacter;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLagDetected);
@@ -37,14 +43,18 @@ public:
 	void RequestRespawn();
 
 	UFUNCTION(BlueprintCallable)
-	void ResetCrossHair();
+	void ResetHUDWidgets(EHUDViewType HUDViewType);
 	
 	UFUNCTION(BlueprintCallable)
+	void ResetCrossHair();
+	UFUNCTION(BlueprintCallable)
 	void RemoveCrossHair();
-
 	UFUNCTION(BlueprintCallable)
 	void SetCrossHairVisibility(bool IsVisible);
 
+	UFUNCTION(BlueprintCallable)
+	void ResetSkillPercentWidget();
+	
 	//UFUNCTION(Server, Reliable)
 	void PlayerLeaveGame();
 

@@ -7,6 +7,7 @@
 #include "TPSGameType/Team.h"
 #include "TPSGameMode.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameBegin, bool, HasGameBegun);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnMatchEnd, int, WinnerID, ETeam, WinningTeam);
 /**
  * 
@@ -35,6 +36,18 @@ public:
 	bool GetIsTeamMatchMode() const { return bIsTeamMatchMode; }
 	UFUNCTION(BlueprintCallable)
 	float GetRespawnCount() const { return RespawnCount; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category=Game)
+	bool GetHasGameBegun() const { return HasGameBegun; }
+	UFUNCTION(BlueprintCallable, Category=Game)
+	void SetHasGameBegun(bool NewHasGameBegun)
+	{
+		if(!HasGameBegun && NewHasGameBegun == true)
+		{
+			OnGameBegin.Broadcast(HasGameBegun);
+		}
+		HasGameBegun = NewHasGameBegun;
+	}
 #pragma endregion GetterAndSetter
 	
 protected:
@@ -46,6 +59,9 @@ protected:
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnMatchEnd OnMatchEnd;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGameBegin OnGameBegin;
 	
 	//这里的有些变量设置到protected里用Getter和Setter可能更好，暂时先不改了
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=TeammateDamage)
@@ -69,6 +85,11 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	class ATPSGameState* MyGameState;
 	
+	//若设定数值为小于0则意思为禁止复活
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float RespawnCount = 5.f;  //若设定数值为小于0则意思为禁止复活
+	float RespawnCount = 5.f;
+	
+	//游戏是否已经开始
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool HasGameBegun = false;
 };

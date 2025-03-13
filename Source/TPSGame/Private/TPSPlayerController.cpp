@@ -157,6 +157,25 @@ void ATPSPlayerController::RequestRespawn_Implementation()
 	}
 }
 
+void ATPSPlayerController::ResetHUDWidgets(EHUDViewType HUDViewType)
+{
+	switch(HUDViewType)
+	{
+	case EHUDViewType::CrossHairView:
+		ResetCrossHair();
+		break;
+	case EHUDViewType::SkillPercentView:
+		ResetSkillPercentWidget();
+		break;
+	case EHUDViewType::AllViews:
+		ResetCrossHair();
+		ResetSkillPercentWidget();
+		break;
+	default:
+		break;
+	}
+}
+
 void ATPSPlayerController::ResetCrossHair()
 {
 	ATPSHUD* CurHUD = Cast<ATPSHUD>(GetHUD());
@@ -181,6 +200,15 @@ void ATPSPlayerController::SetCrossHairVisibility(bool IsVisible)
 	if(CurHUD)
 	{
 		CurHUD->SetCrossHairVisibility(IsVisible);
+	}
+}
+
+void ATPSPlayerController::ResetSkillPercentWidget()
+{
+	ATPSHUD* CurHUD = Cast<ATPSHUD>(GetHUD());
+	if(CurHUD)
+	{
+		CurHUD->ResetSkillPercentWidget(this);
 	}
 }
 

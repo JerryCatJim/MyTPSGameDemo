@@ -9,6 +9,7 @@
 #include "Sound/SoundCue.h"
 #include "NiagaraFunctionLibrary.h"
 #include "TPSGameState.h"
+#include "Component/SkillComponent.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
 
@@ -207,6 +208,11 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 				}
 				//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
 				Multi_WeaponHitTargetBroadcast(IsEnemy, IsHeadshot && !bIsAoeDamage);
+				if(MyOwner->GetSkillComponent() && OwnerWeapon)
+				{
+					float AddPercent = IsHeadshot ? OwnerWeapon->GetHitChargePercent() * OwnerWeapon->GetHitChargeHeadshotBonus() : OwnerWeapon->GetHitChargePercent();
+					MyOwner->GetSkillComponent()->AddSkillChargePercent(AddPercent);
+				}
 			}
 		}
 		
