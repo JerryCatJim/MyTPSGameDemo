@@ -221,11 +221,12 @@ FVector ASWeapon::GetCurrentAimingPoint(bool bUseSpread)
 	bIsTraceHit = GetWorld()->LineTraceSingleByChannel(Hit, StartPoint, EndPoint, Collision_Weapon, QueryParams);
 
 	ASCharacter* TraceHitCharacter = Cast<ASCharacter>(Hit.GetActor());
-	if(bIsTraceHit && TraceHitCharacter)
+	bool IsAutoLocking = MyOwner && MyOwner->GetWeaponManagerComponent()->GetIsAutoLockEnemy();
+	if(bIsTraceHit && (TraceHitCharacter || (!TraceHitCharacter && !IsAutoLocking)))
 	{
 		return Hit.ImpactPoint;
 	}
-	else if(MyOwner && MyOwner->GetWeaponManagerComponent()->GetIsAutoLockEnemy())  //获取一定范围内离准星角度最小的敌人位置
+	else if(IsAutoLocking)  //获取一定范围内离准星角度最小的敌人位置
 	{
 		FVector EnemyLocation = GetEnemyPositionNearestToCrossHair();
 		return EnemyLocation != FVector::ZeroVector ? EnemyLocation : EndPoint;
