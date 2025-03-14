@@ -52,10 +52,15 @@ void USkillComponent::BeginPlay()
 		if(MyOwnerPlayer && GM)
 		{
 			GM->OnGameBegin.AddDynamic(this, &USkillComponent::LearnAllSkills);
+			GM->OnGameBegin.AddDynamic(this, &USkillComponent::SetAutoSkillChargeTimer);
 			LearnAllSkills(GM->GetHasGameBegun());
+			SetAutoSkillChargeTimer(GM->GetHasGameBegun());
+		}
+		else if(!GM)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, TEXT("SkillComponent中获取GameMode失败!"));
 		}
 	}
-
 	SetSkillChargePercent(0);
 }
 
@@ -81,35 +86,89 @@ void USkillComponent::SetSkillChargePercent_Implementation(float NewSkillChargeP
 	OnSkillPercentChanged.Broadcast(SkillChargePercent);
 }
 
+void USkillComponent::SetIsUsingUltimateSkill_Implementation(bool NewIsUsingUltimateSkill)
+{
+	bIsUsingUltimateSkill = NewIsUsingUltimateSkill;
+}
+
 void USkillComponent::AddSkillChargePercent_Implementation(float AddPercent)
 {
+	if(GetIsUsingUltimateSkill())
+	{
+		return;
+	}
+	
 	SetSkillChargePercent(GetSkillChargePercent() + AddPercent);
 }
 
-bool USkillComponent::ActivateAbility(float AbilityIndex)
+void USkillComponent::ActivateAbility_Implementation(int AbilityIndex)
 {
 	if(MyOwnerPlayer && MyOwnerPlayer->GetAbilitySystemComponent() && GameplayTagContainer.IsValidIndex(AbilityIndex))
 	{
-		return MyOwnerPlayer->GetAbilitySystemComponent()->TryActivateAbilitiesByTag(GameplayTagContainer[AbilityIndex]);
+		MyOwnerPlayer->GetAbilitySystemComponent()->TryActivateAbilitiesByTag(GameplayTagContainer[AbilityIndex]);
 	}
-	return false;
+}
+
+void USkillComponent::ActivateUltimateSkill_Implementation()
+{
+	if(SkillChargePercent < 100) return;
+	if(MyOwnerPlayer && MyOwnerPlayer->GetAbilitySystemComponent() && UltimateSkillTag.IsValid())
+	{
+		const bool Res = MyOwnerPlayer->GetAbilitySystemComponent()->TryActivateAbilitiesByTag(UltimateSkillTag);
+		if(Res)
+		{
+			SetSkillChargePercent(0);
+		}
+	}
 }
 
 void USkillComponent::LearnAllSkills(bool HasGameBegun)
 {
 	if(HasGameBegun && MyOwnerPlayer && MyOwnerPlayer->GetAbilitySystemComponent())
 	{
-		if(UltimateSkillClass)
+		for(auto AbilityClass : SkillsAbilityClass)
 		{
-			MyOwnerPlayer->GetAbilitySystemComponent()->GiveAbility(UltimateSkillClass);
+			if(AbilityClass)
+			{
+				MyOwnerPlayer->GetAbilitySystemComponent()->GiveAbility(AbilityClass);
+			}
 		}
 	}
 }
 
+void USkillComponent::SetAutoSkillChargeTimer(bool HasGameBegun)
+{
+	if(!HasGameBegun) return;
+	
+	if(GetWorld())
+	{
+		if(GetWorld()->GetTimerManager().IsTimerActive(AutoSkillChargeTimer)) return;
+		
+		GetWorld()->GetTimerManager().SetTimer(
+			AutoSkillChargeTimer,
+			[this]()->void
+			{
+				AddSkillChargePercent(AutoSkillChargePercent);
+			},
+			AutoSkillChargeTime,
+			true
+			);
+	}
+}
+
+void USkillComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
+{
+	Super::OnComponentDestroyed(bDestroyingHierarchy);
+	if(GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(AutoSkillChargeTimer);
+	}
+}
 void USkillComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(USkillComponent, SkillChargePercent);
+	DOREPLIFETIME(USkillComponent, bIsUsingUltimateSkill);
 }
 
