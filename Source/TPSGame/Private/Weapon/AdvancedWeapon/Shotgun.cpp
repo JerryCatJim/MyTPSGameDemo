@@ -5,6 +5,7 @@
 #include "SCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TPSGameState.h"
+#include "Component/SkillComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "TPSGameType/CustomCollisionType.h"
 #include "TPSGameType/CustomSurfaceType.h"
@@ -52,9 +53,12 @@ void AShotgun::DealFire()
 	QueryParams.bReturnPhysicalMaterial = true;  //物理查询为真，否则不会返回自定义材质
 
 	bool IsEnemy = true;
-	bool IsHeadshot = false;
-	float HitTargetTimes = 0;
+	int EnemyHeadshotTimes = 0;
+	int FriendHeadshotTimes = 0;
+	float HitEnemyTimes = 0;
 	float HitFriendTimes = 0;
+	TArray<AActor*> UniqueHitActors;
+	TArray<AActor*> UniqueHeadshotActors;
 	
 	TArray<FVector> TracePointArray;
 	//基本就是把单发射击武器的DealFire逻辑，复制粘贴成次数循环的
@@ -85,7 +89,7 @@ void AShotgun::DealFire()
 
 			//击中物体
 			AActor* HitActor = Hit.GetActor();
-
+			
 			//实际伤害
 			float ActualDamage = BaseDamage;
 				
@@ -97,17 +101,17 @@ void AShotgun::DealFire()
 			if(SurfaceType == Surface_FleshVulnerable)
 			{
 				ActualDamage *= HeadShotBonus;
-				IsHeadshot = true;
 			}
-			
 			//应用伤害
 			UGameplayStatics::ApplyPointDamage(HitActor, ActualDamage, ShotDirection, Hit, MyOwner->GetInstigatorController(), this, DamageType);
+			
 			//记录命中事件,等待循环结束后广播
 			if(HitActor)
 			{
 				APawn* HitTarget = Cast<APawn>(HitActor);
 				if(HitTarget)
 				{
+					bool TempIsEnemy = true;
 					ATPSPlayerState* PS = HitTarget->GetPlayerState<ATPSPlayerState>();
 					ATPSPlayerState* MyPS = MyOwner->GetPlayerState<ATPSPlayerState>();
 					if(PS && MyPS)
@@ -118,14 +122,21 @@ void AShotgun::DealFire()
 							//一次发射多发弹丸,如果至少击中一次敌军,则记录为命中敌军
 							if(MyPS->GetTeam() == PS->GetTeam())
 							{
-								HitFriendTimes ++ ;
+								TempIsEnemy = false;
 							}
 						}
 					}
-					HitTargetTimes ++ ;
+					HitEnemyTimes += TempIsEnemy ? 1 : 0;
+					HitFriendTimes += !TempIsEnemy ? 1 : 0;
+					if(SurfaceType == Surface_FleshVulnerable && !UniqueHeadshotActors.Contains(HitActor))
+					{
+						EnemyHeadshotTimes += TempIsEnemy ? 1 : 0;
+						FriendHeadshotTimes += !TempIsEnemy ? 1 : 0;
+						UniqueHeadshotActors.AddUnique(HitActor);
+					}
+					UniqueHitActors.AddUnique(HitActor);
 				}
 			}
-			
 			//若击中目标则将轨迹结束点设置为击中点
 			ShotTraceEnd = Hit.ImpactPoint;
 			HitSurfaceType = SurfaceType;
@@ -137,14 +148,24 @@ void AShotgun::DealFire()
 	}
 
 	//一次发射多发弹丸,如果至少击中一次敌军,则记录为命中敌军
-	IsEnemy = HitFriendTimes < HitTargetTimes ;
-	if(HitTargetTimes > 0)
+	IsEnemy = HitEnemyTimes > 0;
+	if(HitFriendTimes + HitEnemyTimes > 0)
 	{
 		//将击中事件广播出去，可用于HitFeedBackCrossHair这个UserWidget播放击中特效等功能
-		Multi_WeaponHitTargetBroadcast(IsEnemy, IsHeadshot);
+		Multi_WeaponHitTargetBroadcast(IsEnemy, EnemyHeadshotTimes + FriendHeadshotTimes > 0);
+		if(MyOwner->GetSkillComponent())
+		{
+			float AddPercent = EnemyHeadshotTimes * GetHitChargePercent() * GetHitChargeHeadshotBonus()
+						     + (UniqueHitActors.Num()-EnemyHeadshotTimes) * GetHitChargePercent();
+			MyOwner->GetSkillComponent()->AddSkillChargePercent(AddPercent);
+		}
 	}
 	
 	PlayTraceEffectForShotgun(TracePointArray);
+	
+	UniqueHitActors.Empty();
+	UniqueHeadshotActors.Empty();
+	TracePointArray.Empty();
 }
 
 void AShotgun::PlayTraceEffectForShotgun_Implementation(const TArray<FVector>& TracePointArray)
