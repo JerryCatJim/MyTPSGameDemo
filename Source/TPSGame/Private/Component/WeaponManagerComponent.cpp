@@ -399,8 +399,8 @@ void UWeaponManagerComponent::DealDropWeapon_Implementation(bool ManuallyDiscard
 				MyOwnerPlayer,
 				CurrentWeapon->GetWeaponMeshComp()->SkeletalMesh,
 				CurrentWeapon->GetClass(),
-				CurrentWeapon->CurrentAmmoNum,
-				CurrentWeapon->BackUpAmmoNum,
+				CurrentWeapon->GetCurrentAmmoNum(),
+				CurrentWeapon->GetBackUpAmmoNum(),
 				CurrentWeapon->WeaponName,
 				CurrentWeapon->GetWeaponEquipType(),
 				true

@@ -97,8 +97,15 @@ public:
 	bool SetWeaponZoom();
 	UFUNCTION(BlueprintCallable)  //将开镜行为发送到服务器然后同步
 	bool ResetWeaponZoom();
-	
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetCurrentAmmoNum() const { return CurrentAmmoNum; }
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect = true);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetBackUpAmmoNum() const { return BackUpAmmoNum; }
+	UFUNCTION(BlueprintCallable)
+	void SetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect = true);
 
 	TSubclassOf<UDamageType> GetWeaponDamageType() const { return DamageType; }
 
@@ -130,9 +137,6 @@ public:
 	float GetHeadShotBonus() const { return HeadShotBonus; }
 	float GetHitChargePercent() const { return HitChargePercent; }
 	float GetHitChargeHeadshotBonus() const { return HitChargeHeadshotBonus; }
-
-	UFUNCTION(BlueprintCallable, Client, Reliable)  //直接改变子弹数，不修正AmmoSequence
-	void ClientChangeCurrentAmmo(int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
 
 	UFUNCTION(BlueprintCallable)
 	bool CheckIsMeleeWeapon() const { return GetWeaponType() == EWeaponType::Knife || GetWeaponType() == EWeaponType::Fist; }
@@ -239,15 +243,6 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ClientSyncPlayReloadAnimAndSound();
 	
-	UFUNCTION(Client, Reliable)  //只作为验证函数，若想直接改变数值则调用ClientChangeCurrentAmmo()
-	void ClientSyncCurrentAmmo(int ServerAmmo, int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
-	
-	UFUNCTION(BlueprintCallable)
-	void UpdateCurrentAmmoChange(bool PlayEffect){ OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum, PlayEffect); }
-	
-	UFUNCTION(BlueprintCallable)
-	void OnRep_BackUpAmmoNum();
-	
 	UFUNCTION(BlueprintCallable)
 	void OnRep_IsCurrentAmmoInfinity();
 	
@@ -290,16 +285,19 @@ private:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetEnemyPositionNearestToCrossHair();
 	
-public:
-	//当前子弹数
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
-	int CurrentAmmoNum;
-	//本地相较于服务器未经同步验证的子弹数差值(负数为本地比服务器少的值，正数为本地比服务器多的值)
-	int AmmoSequence = 0;  //射击次数权威仍在服务端，但是本地端预测了开火特效和枪声，延迟过大时可能出现开枪声音次数大于实际次数的问题，用此变量来记录因延迟未被同步的子弹数差值
+	void LocalSetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect = true);
+	UFUNCTION(Server, Reliable)
+	void ServerSetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect = true);
+	UFUNCTION(Client, Reliable)  //只作为验证函数
+	void ClientSyncCurrentAmmo(int ServerAmmo, int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
 	
-	//备用子弹数(不包括当前子弹数)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon", ReplicatedUsing = OnRep_BackUpAmmoNum)
-	int BackUpAmmoNum;
+	void LocalSetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect = true);
+	UFUNCTION(Server, Reliable)
+	void ServerSetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect = true);
+	UFUNCTION(Client, Reliable)  //只作为验证函数
+	void ClientSyncBackUpAmmo(int ServerAmmo, int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
+	
+public:
 	//一个弹匣的装弹量
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
 	int OnePackageAmmoNum;
@@ -348,6 +346,18 @@ public:
 	TSubclassOf<UUserWidget> AutoLockEnemyTipClass;
 	
 protected:
+	//当前子弹数
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
+	int CurrentAmmoNum;
+	//本地相较于服务器未经同步验证的子弹数差值(负数为本地比服务器少的值，正数为本地比服务器多的值)
+	int CurrentAmmoSequence = 0;  //射击次数权威仍在服务端，但是本地端预测了开火特效和枪声，延迟过大时可能出现开枪声音次数大于实际次数的问题，用此变量来记录因延迟未被同步的子弹数差值
+	
+	//备用子弹数(不包括当前子弹数)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category= "Weapon")
+	int BackUpAmmoNum;
+	//本地相较于服务器未经同步验证的子弹数差值(负数为本地比服务器少的值，正数为本地比服务器多的值)
+	int BackUpAmmoSequence = 0;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Weapon)
 	TEnumAsByte<EWeaponType> WeaponType = EWeaponType::Rifle;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon, Replicated)
