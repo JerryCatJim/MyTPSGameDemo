@@ -96,8 +96,11 @@ void ASPowerUpCreator::Respawn()
 	
 	FActorSpawnParameters SpawnParameters;
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	
-	PowerUpInstance = GetWorld()->SpawnActor<ASPowerUpActor>(PowerUpClass, GetTransform(), SpawnParameters);
+
+	if(GetWorld())
+	{
+		PowerUpInstance = GetWorld()->SpawnActor<ASPowerUpActor>(PowerUpClass, GetTransform(), SpawnParameters);
+	}
 
 	if(PowerUpInstance->GetPowerUpID() <= 0)  //如果道具ID不合法
 	{
