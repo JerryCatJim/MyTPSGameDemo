@@ -504,7 +504,7 @@ void ASWeapon::Reload(bool IsAutoReload)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
 		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
-		GetWorldTimerManager().SetTimer(ReloadTimer, [this](){ReloadFinished();}, MontagePlayTime, false);
+		GetWorldTimerManager().SetTimer(ReloadTimer, this, &ASWeapon::ReloadFinished, MontagePlayTime, false);
 	}
 
 	//要处理啥，留个接口出来
@@ -532,7 +532,7 @@ void ASWeapon::LocalReload(bool IsAutoReload)
 	if(GetWorld())
 	{
 		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
-		GetWorldTimerManager().SetTimer(ReloadTimer, [this](){LocalReloadFinished();}, MontagePlayTime, false);
+		GetWorldTimerManager().SetTimer(ReloadTimer, this, &ASWeapon::LocalReloadFinished, MontagePlayTime, false);
 	}
 
 	//要处理啥，留个接口出来
@@ -928,11 +928,11 @@ void ASWeapon::Multi_ClientSyncPlayReloadAnimAndSound_Implementation()
 		
 		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
 		GetWorldTimerManager().SetTimer(ReloadSoundTimer,
-		[this]()->void
+		[this, SWP = TWeakObjectPtr<USoundCue>(ReloadSound)]()->void
 		{
-			if(ReloadSound)
+			if(SWP.IsValid())
 			{
-				WeaponSoundAudio->SetSound(ReloadSound);
+				WeaponSoundAudio->SetSound(SWP.Get());
 				WeaponSoundAudio->Play();
 			}
 		},
