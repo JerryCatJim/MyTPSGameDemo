@@ -516,7 +516,7 @@ void UWeaponManagerComponent::StopSwapWeapon(bool bWaitCurrentWeaponReplicated)
 
 	if(GetWorld())
 	{
-		MyOwnerPlayer->GetWorldTimerManager().ClearTimer(SwapWeaponTimer);
+		GetWorld()->GetTimerManager().ClearTimer(SwapWeaponTimer);
 	}
 	MyOwnerPlayer->StopAnimMontage(CurrentSwapWeaponAnim);
 	CurrentSwapWeaponAnim = nullptr;
@@ -623,8 +623,8 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 				float TimerRate = SwapAnimPlayRate > 0 ? 0.8 : 0.7;//反播动画时候稍微快点结束
 				if(GetWorld())
 				{
-					//GetWorldTimerManager().ClearTimer(SwapWeaponTimer);  //Set已存在的Timer会自动先Clear
-					MyOwnerPlayer->GetWorldTimerManager().SetTimer(
+					//GetWorld()->GetTimerManager().ClearTimer(SwapWeaponTimer);  //Set已存在的Timer会自动先Clear
+					GetWorld()->GetTimerManager().SetTimer(
 						SwapWeaponTimer,
 						STD,
 						MontagePlayTime* TimerRate,
