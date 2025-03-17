@@ -19,8 +19,12 @@ AProjectileWeapon::AProjectileWeapon()
 	}
 	if(SplineComponent)
 	{
-		SplineComponent->SetupAttachment(GetRootComponent());
 		SplineComponent->ClearSplinePoints();
+	}
+	if(GetRootComponent() && Cast<USkeletalMeshComponent>(GetRootComponent()))
+	{
+		//别在子类直接Attach到Root，有可能自己变成Root然后导致命名冲突而直接崩溃
+		SplineComponent->SetupAttachment(GetRootComponent());
 	}
 }
 
