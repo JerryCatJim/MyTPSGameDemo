@@ -66,13 +66,13 @@ void AProjectileWeapon::DealFire()
 		if(World)
 		{
 			FTransform SpawnTransform = FTransform(TargetRotation,SocketTransform.GetLocation());
-			AProjectile* SpawnProjectile = World->SpawnActorDeferred<AProjectile>(
+			TWeakObjectPtr<AProjectile> SpawnProjectile = World->SpawnActorDeferred<AProjectile>(
 				ProjectileClass,
 				SpawnTransform,
 				this,
 				InstigatorPawn
 			);
-			if(SpawnProjectile)
+			if(SpawnProjectile.IsValid())
 			{
 				if(OverrideProjectileDefaultData)
 				{
@@ -158,7 +158,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 
 		if(TrajectoryTargetPointClass)
 		{
-			if(!TrajectoryTargetPointActor)
+			if(!TrajectoryTargetPointActor && GetWorld())
 			{
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

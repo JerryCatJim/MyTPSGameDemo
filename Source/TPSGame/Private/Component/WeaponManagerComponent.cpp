@@ -47,10 +47,12 @@ void UWeaponManagerComponent::BeginPlay()
 			if(TempInfo.WeaponClass)  //注意是否为空指针
 			{
 				//武器当前还为空值，取不到自身PickUpWeaponInfo，所以手动造一个，并且不刷新信息(这样造出来的武器的WeaponPickUpInfo的是默认值)
-				ASWeapon*& CurWeapon = GetWeaponByEquipType(WeaponEquipTypeList[i]) = SpawnAndAttachWeapon(TempInfo, false);
-				if(CurWeapon && !CurrentWeapon)  //把有效的第一把武器设置为当前默认武器
+				GetWeaponByEquipType(WeaponEquipTypeList[i]) = SpawnAndAttachWeapon(TempInfo, false);
+				//ASWeapon*& CurWeapon
+				TWeakObjectPtr<ASWeapon> CurWeapon = GetWeaponByEquipType(WeaponEquipTypeList[i]);
+				if(CurWeapon.IsValid() && !CurrentWeapon)  //把有效的第一把武器设置为当前默认武器
 				{
-					CurrentWeapon = CurWeapon;
+					CurrentWeapon = CurWeapon.Get();
 					CurrentWeapon->AttachToComponent(MyOwnerPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, CurrentWeaponSocketName);
 					//C++中的服务器不会自动调用OnRep函数，需要手动调用
 					OnRep_CurrentWeapon();
@@ -76,9 +78,9 @@ ASWeapon* UWeaponManagerComponent::SpawnAndAttachWeapon(FWeaponPickUpInfo Weapon
 	SpawnParams.Owner = MyOwnerPlayer;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
 
 	//如果Spawn的Class不存在则不会生成
-	ASWeapon* NewWeapon = GetWorld()->SpawnActor<ASWeapon>(WeaponInfo.WeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
+	TWeakObjectPtr<ASWeapon> NewWeapon = GetWorld()->SpawnActor<ASWeapon>(WeaponInfo.WeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
 	//NewWeapon->SetOwner(this);
-	if(NewWeapon && MyOwnerPlayer)
+	if(NewWeapon.IsValid() && MyOwnerPlayer)
 	{
 		//将对应槽位武器的类型改为对应类型，例如配置时把小手枪设为了主武器，但是其默认类型为副武器，也将其改为主武器以和槽位保持一致
 		NewWeapon->SetWeaponEquipType(WeaponInfo.WeaponEquipType);
@@ -97,7 +99,7 @@ ASWeapon* UWeaponManagerComponent::SpawnAndAttachWeapon(FWeaponPickUpInfo Weapon
 			NewWeapon->RefreshWeaponInfo(WeaponInfo);
 		}
 	}
-	return NewWeapon;
+	return NewWeapon.Get();
 }
 
 TSubclassOf<ASWeapon> UWeaponManagerComponent::GetWeaponSpawnClass(TEnumAsByte<EWeaponEquipType> WeaponEquipType)
@@ -385,11 +387,11 @@ void UWeaponManagerComponent::DealDropWeapon_Implementation(bool ManuallyDiscard
 		//PickUpWeaponClass如果没有指定默认的SkeletalMesh(即默认为空指针)时,
 		//会导致其实例在BeginPlay中设置完Mesh后立刻SetSimulatePhysics(true)时触发断言而游戏崩溃,
 		//因为复制时Mesh还不存在而触发断言checkSlow(RootComponent->IsSimulatingPhysics())为false.
-		APickUpWeapon* PickUpWeapon = World->SpawnActorDeferred<APickUpWeapon>(
+		TWeakObjectPtr<APickUpWeapon> PickUpWeapon = World->SpawnActorDeferred<APickUpWeapon>(
 			PickUpWeaponClass,
 			FTransform(MyOwnerPlayer->GetActorLocation() + MyOwnerPlayer->GetActorForwardVector() *50 )
 			);
-		if(PickUpWeapon)
+		if(PickUpWeapon.IsValid())
 		{
 			PickUpWeapon->SetOwner(MyOwnerPlayer);
 			PickUpWeapon->DefaultEditWeaponClass = nullptr;

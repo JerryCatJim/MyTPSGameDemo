@@ -97,12 +97,12 @@ void ATPSGameMode::RespawnPlayer(APlayerController* PlayerController)
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnParams.Owner = PlayerController;  //要在Spawn时就指定Owner，否则没法生成物体后直接在其BeginPlay中拿到Owner，会为空
 		SpawnParams.Instigator = GetInstigator();
-		ASCharacter* NewCharacter =  GetWorld()->SpawnActor<ASCharacter>(
+		TWeakObjectPtr<ASCharacter> NewCharacter =  GetWorld()->SpawnActor<ASCharacter>(
 			TPC->GetNewPawnClassToPossess(),
 			NewPawnPos,
 			SpawnParams
 		);
-		TPC->Possess(NewCharacter);
+		TPC->Possess(NewCharacter.Get());
 	}
 	
 	RestartPlayer(PlayerController);

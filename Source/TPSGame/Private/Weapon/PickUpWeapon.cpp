@@ -63,7 +63,7 @@ void APickUpWeapon::BeginPlay()
 
 	if(DefaultEditWeaponClass != nullptr )
 	{
-		ASWeapon* CurWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultEditWeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
+		TWeakObjectPtr<ASWeapon> CurWeapon = GetWorld()->SpawnActor<ASWeapon>(DefaultEditWeaponClass, FVector().ZeroVector, FRotator().ZeroRotator, SpawnParams);
 		WeaponPickUpInfo = CurWeapon->GetWeaponPickUpInfo();
 		CurWeapon->Destroy();
 	}

@@ -93,7 +93,7 @@ void ATPSPlayerController::SetNewPawn_Implementation(TSubclassOf<ASCharacter> Ne
 	}
 	
 	ASCharacter* OldCharacter = Cast<ASCharacter>(GetPawn());
-	ASCharacter* NewCharacter = nullptr;
+	TWeakObjectPtr<ASCharacter> NewCharacter = nullptr;
 	
 	if(OldCharacter && !OldCharacter->GetIsDied())
 	{
@@ -110,9 +110,9 @@ void ATPSPlayerController::SetNewPawn_Implementation(TSubclassOf<ASCharacter> Ne
 			SpawnParams
 		);
 
-		if(NewCharacter)
+		if(NewCharacter.IsValid())
 		{
-			Possess(NewCharacter);
+			Possess(NewCharacter.Get());
 			OldCharacter->Destroy(true);
 		}
 	}
