@@ -33,7 +33,7 @@ ASWeapon::ASWeapon()
 
 	WeaponBulletType = EWeaponBulletType::HitScan;
 	
-	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
+	MeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMeshComponent"));
 	SetRootComponent(MeshComponent);
 	WeaponSoundAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("WeaponSoundAudio"));
 	WeaponSoundAudio->SetupAttachment(RootComponent);
