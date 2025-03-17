@@ -48,9 +48,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
 	float ProjectileGravityZScale = 1.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
-	float ProjectileInitialSpeed = 50.f;
+	float ProjectileInitialSpeed = 1500.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)
-	float ProjectileMaxSpeed = 50.f;
+	float ProjectileMaxSpeed = 1500.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //是否使用武器设置的数值覆盖其发射的子弹类的ProjectileMovementComponent的默认数值
 	bool OverrideProjectileDefaultData = false;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=WeaponProjectile)  //如果子弹是AOE伤害，需传入内圈和外圈范围，从内圈范围向外会衰减伤害直到外圈范围

@@ -7,6 +7,7 @@ AThrowGrenade::AThrowGrenade()
 {
 	WeaponType = EWeaponType::ThrowGrenade;
 	WeaponBulletType = EWeaponBulletType::Projectile;
+	WeaponEquipType = EWeaponEquipType::ThrowableWeapon;
 	ZoomedFOV = 90.f;
 	RateOfShoot = 60.f;
 	BulletSpread = 0.f;  //指哪扔哪，不会抖动
