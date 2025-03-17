@@ -198,7 +198,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 			
 			for(int i = 0; i < OutPoints.Num()-1 ; i += DrawTrajectoryJumpNum <= 0 ? 1 : DrawTrajectoryJumpNum)
 			{
-				USplineMeshComponent* Spl = NewObject<USplineMeshComponent>(this, TEXT("SplineMesh" + i));
+				TWeakObjectPtr<USplineMeshComponent> Spl = NewObject<USplineMeshComponent>(this, TEXT("SplineMesh" + i));
 				Spl->RegisterComponent();
 				//默认生成的是Static
 				Spl->SetMobility(EComponentMobility::Movable);
@@ -212,7 +212,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 				Spl->SetStartScale(FVector2D(TrajectoryLineScale,TrajectoryLineScale));
 				Spl->SetEndScale(FVector2D(TrajectoryLineScale,TrajectoryLineScale));
 				
-				TrajectoryLineArray.Emplace(Spl);
+				TrajectoryLineArray.Emplace(Spl.Get());
 			}
 		}
 	}
