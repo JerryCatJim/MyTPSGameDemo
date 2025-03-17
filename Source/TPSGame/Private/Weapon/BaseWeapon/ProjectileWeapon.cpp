@@ -243,4 +243,9 @@ void AProjectileWeapon::ClearMovementTrajectory()
 void AProjectileWeapon::Destroyed()
 {
 	ClearMovementTrajectory();
+	if(SplineComponent)
+	{
+		SplineComponent->ClearSplinePoints();
+		SplineComponent->DestroyComponent();
+	}
 }
