@@ -154,8 +154,7 @@ void USkillComponent::SetAutoSkillChargeTimer(bool HasGameBegun)
 	
 	if(GetWorld())
 	{
-		//用IsTimerActive 在StandAlone模式下客户端加入游戏会直接崩溃？？？
-		//if(GetWorld()->GetTimerManager().IsTimerActive(AutoSkillChargeTimer)) return;
+		if(GetWorld()->GetTimerManager().IsTimerActive(AutoSkillChargeTimer)) return;
 		
 		GetWorld()->GetTimerManager().SetTimer(
 			AutoSkillChargeTimer,

@@ -86,9 +86,12 @@ void ASPowerUpActor::RefreshBuffState()
 	{
 		return;
 	}
-	
-	GetWorldTimerManager().ClearTimer(TimerHandle_PowerUpTick);
-	GetWorldTimerManager().SetTimer(TimerHandle_PowerUpTick, this, &ASPowerUpActor::OnPowerUpTicked, PowerUpInterval, true, -1);
+
+	if(GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_PowerUpTick);
+		GetWorldTimerManager().SetTimer(TimerHandle_PowerUpTick, this, &ASPowerUpActor::OnPowerUpTicked, PowerUpInterval, true, -1);
+	}
 	OnActivated(CurrentOverlyingNum);
 }
 

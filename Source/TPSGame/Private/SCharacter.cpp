@@ -288,28 +288,34 @@ void ASCharacter::TryLongPressInteractKey()//_Implementation()
 {
 	if(bDisableGamePlayInput || bDied) return;
 
-	//进入长按状态
-	GetWorldTimerManager().SetTimer(
-	FInteractKeyLongPressBeginHandle,
-	this,
-	&ASCharacter::BeginLongPressInteractKey,
-	InteractKeyLongPressBeginSecond,
-	false);
+	if(GetWorld())
+	{
+		//进入长按状态
+		GetWorldTimerManager().SetTimer(
+		FInteractKeyLongPressBeginHandle,
+		this,
+		&ASCharacter::BeginLongPressInteractKey,
+		InteractKeyLongPressBeginSecond,
+		false);
+	}
 }
 
 void ASCharacter::BeginLongPressInteractKey()
 {
-	bIsLongPressing = true;
-	//例如 长按0.5秒后进入长安状态后，在 2 - 0.5 秒后执行长按完成的广播
-	GetWorldTimerManager().SetTimer(
-	FInteractKeyLongPressFinishHandle,
-	[this]()->void
+	if(GetWorld())
 	{
-		//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
-		OnInteractKeyLongPressed.Broadcast();
-	},
-	InteractKeyLongPressFinishSecond - InteractKeyLongPressBeginSecond,
-	false);
+		bIsLongPressing = true;
+		//例如 长按0.5秒后进入长安状态后，在 2 - 0.5 秒后执行长按完成的广播
+		GetWorldTimerManager().SetTimer(
+		FInteractKeyLongPressFinishHandle,
+		[this]()->void
+		{
+			//由于交互按钮会对不同物体产生不同反馈，应将这一行为广播出去，由要产生互动的一端绑定委托，然后收到广播后自行编写响应行为
+			OnInteractKeyLongPressed.Broadcast();
+		},
+		InteractKeyLongPressFinishSecond - InteractKeyLongPressBeginSecond,
+		false);
+	}
 }
 
 void ASCharacter::PickUpWeapon(FWeaponPickUpInfo WeaponInfo)
@@ -476,10 +482,9 @@ void ASCharacter::OnRep_Died()
 
 	if(HasAuthority())
 	{
-		StartDropWeapon(false);  //死亡后掉落武器,然后隐藏手中武器
-
 		if(!bPlayerLeftGame)
 		{
+			StartDropWeapon(false);  //死亡后掉落武器,然后隐藏手中武器
 			//尝试复活
 			ATPSPlayerController* MyController = Cast<ATPSPlayerController>(GetController());
 			if(MyController)

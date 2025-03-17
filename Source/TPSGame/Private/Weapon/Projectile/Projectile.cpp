@@ -66,8 +66,11 @@ void AProjectile::BeginPlay()
 
 void AProjectile::StartDestroyTimer()
 {
-	//子弹被生成时开启X秒后主动销毁子弹的计时器
-	GetWorldTimerManager().SetTimer(StartDestroyTimerHandle, this, &AProjectile::StartDestroyTimerFinished, StartDestroyTime, false);
+	if(GetWorld())
+	{
+		//子弹被生成时开启X秒后主动销毁子弹的计时器
+		GetWorldTimerManager().SetTimer(StartDestroyTimerHandle, this, &AProjectile::StartDestroyTimerFinished, StartDestroyTime, false);
+	}
 }
 
 void AProjectile::SpawnTracerAndTrailSystem()
@@ -243,7 +246,7 @@ void AProjectile::PostOnHit()
 		//Timer的 InRate <=0 时会清除Timer而不是触发
 		OnHitDestroyTimerFinished();
 	}
-	else
+	else if(GetWorld())
 	{
 		GetWorldTimerManager().SetTimer(OnHitDestroyTimerHandle, this, &AProjectile::OnHitDestroyTimerFinished, OnHitDestroyTime, false);
 	}

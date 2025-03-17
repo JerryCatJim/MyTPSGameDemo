@@ -261,12 +261,15 @@ void ASWeapon::StopReloadAnimAndTimer()
 
 void ASWeapon::StartFire()
 {
-	//第一次延迟时间
-	float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
-	FirstDelay = FMath::Clamp(FirstDelay, 0.f, FirstDelay);
-	//FirstDelay = FMath::Max(FirstDelay, 0.f);
+	if(GetWorld())
+	{
+		//第一次延迟时间
+		float FirstDelay = LastFireTime + TimeBetweenShots - GetWorld()->TimeSeconds;
+		FirstDelay = FMath::Clamp(FirstDelay, 0.f, FirstDelay);
+		//FirstDelay = FMath::Max(FirstDelay, 0.f);
 
-	GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
+		GetWorldTimerManager().SetTimer(TimerHandle_TimerBetweenShot, this, &ASWeapon::Fire, TimeBetweenShots, bIsFullAutomaticWeapon, FirstDelay);
+	}
 }
 
 void ASWeapon::DealFire()
@@ -484,10 +487,13 @@ void ASWeapon::Reload(bool IsAutoReload)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("Reload蒙太奇不存在！")));
 	}
-	
-	//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
-	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
-	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){ReloadFinished();}, MontagePlayTime, false);
+
+	if(GetWorld())
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 10, FColor::Red, FString::Printf(TEXT("蒙太奇长度: %f"),MontagePlayTime));
+		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
+		GetWorldTimerManager().SetTimer(ReloadTimer, [this](){ReloadFinished();}, MontagePlayTime, false);
+	}
 
 	//要处理啥，留个接口出来
 	PostReload();
@@ -511,8 +517,11 @@ void ASWeapon::LocalReload(bool IsAutoReload)
 	//客户端换弹时也会立刻播放动画，所以不用Multi
 	PlayReloadAnimAndSound();
 
-	const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
-	GetWorldTimerManager().SetTimer(ReloadTimer, [this](){LocalReloadFinished();}, MontagePlayTime, false);
+	if(GetWorld())
+	{
+		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
+		GetWorldTimerManager().SetTimer(ReloadTimer, [this](){LocalReloadFinished();}, MontagePlayTime, false);
+	}
 
 	//要处理啥，留个接口出来
 	PostReload();
@@ -866,7 +875,7 @@ void ASWeapon::PlayReloadAnimAndSound()//_Implementation()
 	
 	MyOwner->SetIsReloading(true);
 	
-	if(ReloadMontage)
+	if(ReloadMontage && GetWorld())
 	{
 		MyOwner->PlayAnimMontage(ReloadMontage, ReloadPlayRate);
 		
@@ -901,7 +910,7 @@ void ASWeapon::Multi_ClientSyncPlayReloadAnimAndSound_Implementation()
 	
 	//MyOwner->SetIsReloading(true);
 	
-	if(ReloadMontage)
+	if(ReloadMontage && GetWorld())
 	{
 		MyOwner->PlayAnimMontage(ReloadMontage, ReloadPlayRate);
 		

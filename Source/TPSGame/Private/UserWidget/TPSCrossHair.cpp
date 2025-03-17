@@ -88,7 +88,7 @@ void UTPSCrossHair::DrawCrossHairSpread()
 	}
 
 	//每帧都检测是否需要重画准星，因为准星扩散或缩小需要时间，所以设置计时器每帧循环更新准星位置
-	if(LastSpreadValue != GetDynamicSpreadValue())
+	if(LastSpreadValue != GetDynamicSpreadValue() && GetWorld())
 	{
 		IsSpreading = GetDynamicSpreadValue() > LastSpreadValue;
 		GetWorld()->GetTimerManager().ClearTimer(FSpreadCrossHairTimer);

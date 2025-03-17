@@ -77,7 +77,7 @@ void ASPowerUpCreator::NotifyActorBeginOverlap(AActor* OtherActor)
 			PowerUpInstance = nullptr;
 		}
 		
-		if(RespawnInterval > 0) //道具生成点重新生成道具
+		if(RespawnInterval > 0 && GetWorld()) //道具生成点重新生成道具
 		{
 			//设置定时器用于重新生成道具
 			GetWorldTimerManager().SetTimer(TimerHandle_Respawn, this, &ASPowerUpCreator::Respawn, RespawnInterval, false, RespawnInterval);

@@ -140,7 +140,7 @@ void ATPSPlayerController::RequestRespawn_Implementation()
 	if(GM)
 	{
 		const float RespawnCount = GM->GetRespawnCount();
-		if(RespawnCount >= 0)  //复活时间小于0 约定为禁止复活
+		if(RespawnCount >= 0 && GetWorld())  //复活时间小于0 约定为禁止复活
 		{
 			//尝试复活
 			GetWorldTimerManager().SetTimer(FPlayerRespawnTimerHandle,
@@ -261,7 +261,7 @@ void ATPSPlayerController::CheckLag()  //在Tick()中每帧执行
 		//Ping是uint8类型数据且被UE除以了4，所以乘以4才是真实延迟
 		if(PlayerState->GetPing() * 4 >= HighPingThreshold)
 		{
-			if(!GetWorldTimerManager().IsTimerActive(FShowLagIconHandle))
+			if(GetWorld() && !GetWorldTimerManager().IsTimerActive(FShowLagIconHandle))
 			{
 				GetWorldTimerManager().SetTimer(
 					FShowLagIconHandle,
@@ -286,7 +286,7 @@ void ATPSPlayerController::CheckLag()  //在Tick()中每帧执行
 
 void ATPSPlayerController::AskForLagSituation()
 {
-	if(IsLocalController() && PlayerState && PlayerState->GetPing() * 4 >= HighPingThreshold)
+	if(GetWorld() && IsLocalController() && PlayerState && PlayerState->GetPing() * 4 >= HighPingThreshold)
 	{
 		GetWorldTimerManager().ClearTimer(FShowLagIconHandle);
 		GetWorldTimerManager().SetTimer(

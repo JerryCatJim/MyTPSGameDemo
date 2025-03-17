@@ -618,12 +618,15 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 				});
 				
 				float TimerRate = SwapAnimPlayRate > 0 ? 0.8 : 0.7;//反播动画时候稍微快点结束
-				//GetWorldTimerManager().ClearTimer(SwapWeaponTimer);  //Set已存在的Timer会自动先Clear
-				MyOwnerPlayer->GetWorldTimerManager().SetTimer(
-					SwapWeaponTimer,
-					STD,
-					MontagePlayTime* TimerRate,
-					false);
+				if(GetWorld())
+				{
+					//GetWorldTimerManager().ClearTimer(SwapWeaponTimer);  //Set已存在的Timer会自动先Clear
+					MyOwnerPlayer->GetWorldTimerManager().SetTimer(
+						SwapWeaponTimer,
+						STD,
+						MontagePlayTime* TimerRate,
+						false);
+				}
 			}
 			else
 			{
