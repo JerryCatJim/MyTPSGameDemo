@@ -662,12 +662,15 @@ void UWeaponManagerComponent::Multi_ClientSyncPlaySwapWeaponAnim_Implementation(
 
 void UWeaponManagerComponent::OnRep_CurrentWeapon()
 {
-	if(!MyOwnerPlayer) return;
-	
-	ATPSPlayerController* MyController = Cast<ATPSPlayerController>(MyOwnerPlayer->GetController());
-	if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置准星
+	//此时客户端直接获取MyOwnerPlayer失败? 所以重新Cast一个用一下
+	ASCharacter* MyLocalOwner = Cast<ASCharacter>(GetOwner());
+	if(MyLocalOwner)
 	{
-		MyController->ResetHUDWidgets(EHUDViewType::CrossHairView);
+		ATPSPlayerController* MyController = Cast<ATPSPlayerController>(MyLocalOwner->GetController());
+		if(MyController)  //服务端RestartPlayer时先触发BeginPlay然后OnPossess，BeginPlay时Controller暂时为空，所以在PossessedBy中再触发一次设置准星
+		{
+			MyController->ResetHUDWidgets(EHUDViewType::CrossHairView);
+		}
 	}
 	ShowAutoLockEnemyTipView();
 	
