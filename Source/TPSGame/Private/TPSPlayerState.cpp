@@ -50,14 +50,14 @@ void ATPSPlayerState::TryGetGameState()
 void ATPSPlayerState::LoopSetGameState()
 {
 	CurGameState = Cast<ATPSGameState>(GetWorld()->GetGameState());
-	if(CurGameState)
+	if(GetWorld() && CurGameState)
 	{
 		GetWorldTimerManager().ClearTimer(FGetGameStateHandle);
 	}
 	else
 	{
 		TryGetGameStateTimes++;
-		if(TryGetGameStateTimes >= 5 )
+		if(GetWorld() && TryGetGameStateTimes >= 5 )
 		{
 			//超过5次还没成功就停止计时器
 			GetWorldTimerManager().ClearTimer(FGetGameStateHandle);

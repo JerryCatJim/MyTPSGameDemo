@@ -513,8 +513,11 @@ void UWeaponManagerComponent::StartSwapWeapon(TEnumAsByte<EWeaponEquipType> NewW
 void UWeaponManagerComponent::StopSwapWeapon(bool bWaitCurrentWeaponReplicated)
 {
 	if(!MyOwnerPlayer) return;
-	
-	MyOwnerPlayer->GetWorldTimerManager().ClearTimer(SwapWeaponTimer);
+
+	if(GetWorld())
+	{
+		MyOwnerPlayer->GetWorldTimerManager().ClearTimer(SwapWeaponTimer);
+	}
 	MyOwnerPlayer->StopAnimMontage(CurrentSwapWeaponAnim);
 	CurrentSwapWeaponAnim = nullptr;
 
@@ -744,6 +747,10 @@ bool UWeaponManagerComponent::IsLocallyControlled()
 
 void UWeaponManagerComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
+	StopFire();
+	StopReload();
+	StopSwapWeapon(false);
+	
 	if(AutoLockEnemyTipView)
 	{
 		AutoLockEnemyTipView->RemoveFromParent();

@@ -224,7 +224,10 @@ void ATPSPlayerController::PlayerLeaveGame()//_Implementation()	//在ReturnToMai
 		MyCharacter->PlayerLeaveGame();
 	}
 
-	GetWorldTimerManager().ClearTimer(FPlayerRespawnTimerHandle);
+	if(GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(FPlayerRespawnTimerHandle);
+	}
 
 	if(IsLocalController()) //ReturnToMainMenu是UI，存在于本地，所以限制本地发送广播
 	{
@@ -275,7 +278,7 @@ void ATPSPlayerController::CheckLag()  //在Tick()中每帧执行
 		}
 		else
 		{
-			if(GetWorldTimerManager().IsTimerActive(FShowLagIconHandle))
+			if(GetWorld() && GetWorldTimerManager().IsTimerActive(FShowLagIconHandle))
 			{
 				GetWorldTimerManager().ClearTimer(FShowLagIconHandle);
 				OnLagEnded.Broadcast();

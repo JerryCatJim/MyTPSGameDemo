@@ -51,9 +51,12 @@ void ASPowerUpActor::OnExpired()
 	}
 	
 	OnExpired_BP();
-	
-	//关闭计时器
-	GetWorldTimerManager().ClearTimer(TimerHandle_PowerUpTick);
+
+	if(GetWorld())
+	{
+		//关闭计时器
+		GetWorldTimerManager().ClearTimer(TimerHandle_PowerUpTick);
+	}
 	
 	Destroy();
 }

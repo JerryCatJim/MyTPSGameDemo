@@ -264,13 +264,19 @@ void AProjectile::PostOnHit()
 
 void AProjectile::StartDestroyTimerFinished()
 {
-	GetWorldTimerManager().ClearTimer(OnHitDestroyTimerHandle);
+	if(GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(OnHitDestroyTimerHandle);
+	}
 	Destroy();
 }
 
 void AProjectile::OnHitDestroyTimerFinished()
 {
-	GetWorldTimerManager().ClearTimer(StartDestroyTimerHandle);
+	if(GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(StartDestroyTimerHandle);
+	}
 	Destroy();
 }
 

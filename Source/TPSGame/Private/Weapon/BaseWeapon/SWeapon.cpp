@@ -240,8 +240,11 @@ void ASWeapon::StopFireAnimAndTimer()//_Implementation()
 	}
 	
 	MyOwner->SetIsFiring(false);
-	
-	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+
+	if(GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+	}
 	MyOwner->StopAnimMontage(CurrentFireMontage);
 }
 
@@ -253,9 +256,12 @@ void ASWeapon::StopReloadAnimAndTimer()
 	}
 	
 	MyOwner->SetIsReloading(false);
-	
-	GetWorldTimerManager().ClearTimer(ReloadTimer);
-	GetWorldTimerManager().ClearTimer(ReloadSoundTimer);
+
+	if(GetWorld())
+	{
+		GetWorldTimerManager().ClearTimer(ReloadTimer);
+		GetWorldTimerManager().ClearTimer(ReloadSoundTimer);
+	}
 	MyOwner->StopAnimMontage(ReloadMontage);
 }
 
@@ -284,7 +290,10 @@ void ASWeapon::Fire()
 		//射击时被人打死或者高延迟下导致了先切枪后射击，如果不调用StopFire()会一直尝试射击
 		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
 		MyOwner->SetIsFiring(false);
-		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+		if(GetWorld())
+		{
+			GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
+		}
 		return;
 	}
 	
@@ -377,7 +386,10 @@ void ASWeapon::LocalFire()
 		}
 		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
 		MyOwner->SetIsFiring(false);
-		GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot); 
+		if(GetWorld())
+		{
+			GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot); 
+		}
 		return;
 	}
 	
@@ -881,11 +893,11 @@ void ASWeapon::PlayReloadAnimAndSound()//_Implementation()
 		
 		const float MontagePlayTime = ReloadMontage && ReloadPlayRate>0.f ? ReloadMontage->SequenceLength/ReloadPlayRate : 1.0f ;
 		GetWorldTimerManager().SetTimer(ReloadSoundTimer,
-		[this]()->void
+		[this, SWP = TWeakObjectPtr<USoundCue>(ReloadSound)]()->void
 		{
-			if(ReloadSound)
+			if(SWP.IsValid())
 			{
-				WeaponSoundAudio->SetSound(ReloadSound);
+				WeaponSoundAudio->SetSound(SWP.Get());
 				WeaponSoundAudio->Play();
 			}
 		},

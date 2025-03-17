@@ -167,7 +167,7 @@ void ASCharacter::TryInitBodyColor()
 void ASCharacter::LoopSetBodyColor()
 {
 	ATPSPlayerState* MyPlayerState = GetPlayerState<ATPSPlayerState>();
-	if(MyPlayerState)
+	if(GetWorld() && MyPlayerState)
 	{
 		SetBodyColor(MyPlayerState->GetTeam());
 		GetWorldTimerManager().ClearTimer(FGetPlayerStateHandle);
@@ -175,7 +175,7 @@ void ASCharacter::LoopSetBodyColor()
 	else
 	{
 		TryGetPlayerStateTimes++;
-		if(TryGetPlayerStateTimes >= 5 )
+		if(GetWorld() && TryGetPlayerStateTimes >= 5)
 		{
 			//超过5次还没成功就停止计时器
 			GetWorldTimerManager().ClearTimer(FGetPlayerStateHandle);
@@ -273,9 +273,12 @@ void ASCharacter::InteractKeyReleased()//_Implementation()
 {
 	if(bDisableGamePlayInput || bDied) return;
 
-	//松开按键就清除长按计时器
-	GetWorldTimerManager().ClearTimer(FInteractKeyLongPressBeginHandle);
-	GetWorldTimerManager().ClearTimer(FInteractKeyLongPressFinishHandle);
+	if(GetWorld())
+	{
+		//松开按键就清除长按计时器
+		GetWorldTimerManager().ClearTimer(FInteractKeyLongPressBeginHandle);
+		GetWorldTimerManager().ClearTimer(FInteractKeyLongPressFinishHandle);
+	}
 	
 	if(!bIsLongPressing) //如果按住时间太短，未进入长按状态，则执行普通按键逻辑
 	{
