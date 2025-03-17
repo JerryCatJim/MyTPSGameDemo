@@ -54,9 +54,13 @@ protected:
 
 private:
 	UFUNCTION()
+	void OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser,const UDamageType* DamageType);
+	UFUNCTION()
 	void LearnAllSkills(bool HasGameBegun);
-
+	UFUNCTION()
 	void SetAutoSkillChargeTimer(bool HasGameBegun);
+
+	void AutoAddSkillChargePercentByTime();
 	
 public:
 	UPROPERTY(BlueprintAssignable)

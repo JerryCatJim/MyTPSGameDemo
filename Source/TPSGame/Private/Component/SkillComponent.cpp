@@ -48,8 +48,12 @@ void USkillComponent::BeginPlay()
 	
 	if(GetOwnerRole()==ROLE_Authority)
 	{
+		if(MyOwnerPlayer)
+		{
+			MyOwnerPlayer->OnPlayerDead.AddDynamic(this, &USkillComponent::OnPlayerDead);
+		}
 		ATPSGameMode* GM = Cast<ATPSGameMode>(UGameplayStatics::GetGameMode(this));
-		if(MyOwnerPlayer && GM)
+		if(GM)// && MyOwnerPlayer)
 		{
 			GM->OnGameBegin.AddDynamic(this, &USkillComponent::LearnAllSkills);
 			GM->OnGameBegin.AddDynamic(this, &USkillComponent::SetAutoSkillChargeTimer);
@@ -122,6 +126,14 @@ void USkillComponent::ActivateUltimateSkill_Implementation()
 	}
 }
 
+void USkillComponent::OnPlayerDead(AController* InstigatedBy, AActor* DamageCauser,const UDamageType* DamageType)
+{
+	if(GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(AutoSkillChargeTimer);
+	}
+}
+
 void USkillComponent::LearnAllSkills(bool HasGameBegun)
 {
 	if(HasGameBegun && MyOwnerPlayer && MyOwnerPlayer->GetAbilitySystemComponent())
@@ -142,18 +154,22 @@ void USkillComponent::SetAutoSkillChargeTimer(bool HasGameBegun)
 	
 	if(GetWorld())
 	{
-		if(GetWorld()->GetTimerManager().IsTimerActive(AutoSkillChargeTimer)) return;
+		//用IsTimerActive 在StandAlone模式下客户端加入游戏会直接崩溃？？？
+		//if(GetWorld()->GetTimerManager().IsTimerActive(AutoSkillChargeTimer)) return;
 		
 		GetWorld()->GetTimerManager().SetTimer(
 			AutoSkillChargeTimer,
-			[this]()->void
-			{
-				AddSkillChargePercent(AutoSkillChargePercent);
-			},
+			this,
+			&USkillComponent::AutoAddSkillChargePercentByTime,
 			AutoSkillChargeTime,
 			true
 			);
 	}
+}
+
+void USkillComponent::AutoAddSkillChargePercentByTime()
+{
+	AddSkillChargePercent(AutoSkillChargePercent);
 }
 
 void USkillComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
