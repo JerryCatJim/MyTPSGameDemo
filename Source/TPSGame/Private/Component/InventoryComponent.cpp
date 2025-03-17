@@ -248,17 +248,20 @@ void UInventoryComponent::SpawnCurrentThrowItem_Implementation(FMyItem ItemToRem
 	{
 		return;
 	}
-	
-	//本函数在服务器运行，本地客户端不要重复生成，等待服务端网络复制
-	const FTransform PawnTransform = FTransform(MyOwnerPawn->GetActorLocation() + MyOwnerPawn->GetActorForwardVector() * ThrowForwardDistance);
-	//AActor* SpawnedActor = UGameplayStatics::BeginDeferredActorSpawnFromClass(MyOwnerPawn->GetWorld(), ItemToRemove.ItemClass, PawnTransform, ESpawnActorCollisionHandlingMethod::AlwaysSpawn); //第五个参数是Owner,希望用Instigator
-	AInventoryItemBase* SpawnedActor = MyOwnerPawn->GetWorld()->SpawnActorDeferred<AInventoryItemBase>(ItemToRemove.ItemClass, PawnTransform, nullptr, MyOwnerPawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
-	if(SpawnedActor)
+
+	if(GetWorld())
 	{
-		ThrownItem = Cast<AInventoryItemBase>(SpawnedActor);
-		ThrownItem->ItemSlot = ItemToRemove;
-		UGameplayStatics::FinishSpawningActor(SpawnedActor, PawnTransform);
-		OnRep_ThrownItem();
+		//本函数在服务器运行，本地客户端不要重复生成，等待服务端网络复制
+		const FTransform PawnTransform = FTransform(MyOwnerPawn->GetActorLocation() + MyOwnerPawn->GetActorForwardVector() * ThrowForwardDistance);
+		//AActor* SpawnedActor = UGameplayStatics::BeginDeferredActorSpawnFromClass(MyOwnerPawn->GetWorld(), ItemToRemove.ItemClass, PawnTransform, ESpawnActorCollisionHandlingMethod::AlwaysSpawn); //第五个参数是Owner,希望用Instigator
+		TWeakObjectPtr<AInventoryItemBase> SpawnedActor = MyOwnerPawn->GetWorld()->SpawnActorDeferred<AInventoryItemBase>(ItemToRemove.ItemClass, PawnTransform, nullptr, MyOwnerPawn, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		if(SpawnedActor.IsValid())
+		{
+			ThrownItem = Cast<AInventoryItemBase>(SpawnedActor);
+			ThrownItem->ItemSlot = ItemToRemove;
+			UGameplayStatics::FinishSpawningActor(SpawnedActor.Get(), PawnTransform);
+			OnRep_ThrownItem();
+		}
 	}
 }
 
