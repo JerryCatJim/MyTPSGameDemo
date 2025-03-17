@@ -12,11 +12,14 @@
 AProjectileWeapon::AProjectileWeapon()
 {
 	WeaponBulletType = EWeaponBulletType::Projectile;
-	
-	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
-	SplineComponent->SetupAttachment(GetRootComponent());
+
+	if(!SplineComponent)
+	{
+		SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
+	}
 	if(SplineComponent)
 	{
+		SplineComponent->SetupAttachment(GetRootComponent());
 		SplineComponent->ClearSplinePoints();
 	}
 }
