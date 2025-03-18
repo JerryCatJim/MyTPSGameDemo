@@ -93,6 +93,12 @@ protected:
 	//OnLagDetected和OnLagEnd委托在蓝图WBP_TPSGameMainView中绑定，此时OnLagDetected可能已经广播过，所以绑定完成后重设一次计时器并发送广播
 	UFUNCTION(BlueprintCallable)
 	void AskForLagSituation();
+private:
+	UFUNCTION()
+	void LagDetectedBroadcast();
+	UFUNCTION()
+	void LagEndedBroadcast();
+	
 public:
 	//背包组件
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= Component)
