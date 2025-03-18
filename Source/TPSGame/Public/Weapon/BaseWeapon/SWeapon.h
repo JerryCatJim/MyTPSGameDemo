@@ -285,12 +285,14 @@ private:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetEnemyPositionNearestToCrossHair();
 	
+	UFUNCTION(Client, Reliable)
 	void LocalSetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect = true);
 	UFUNCTION(Server, Reliable)
 	void ServerSetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect = true);
 	UFUNCTION(Client, Reliable)  //只作为验证函数
 	void ClientSyncCurrentAmmo(int ServerAmmo, int ChangedNum);  //减少则ChangedNum填入负数，增加则填入正数
-	
+
+	UFUNCTION(Client, Reliable)
 	void LocalSetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect = true);
 	UFUNCTION(Server, Reliable)
 	void ServerSetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect = true);

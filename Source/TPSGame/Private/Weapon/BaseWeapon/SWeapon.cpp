@@ -670,13 +670,14 @@ void ASWeapon::SetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect)
 	ServerSetCurrentAmmoNum(NewCurrentAmmoNum, PlayEffect);
 }
 
-void ASWeapon::LocalSetCurrentAmmoNum(int NewCurrentAmmoNum, bool PlayEffect)
+void ASWeapon::LocalSetCurrentAmmoNum_Implementation(int NewCurrentAmmoNum, bool PlayEffect)
 {
 	if(CurrentAmmoNum == NewCurrentAmmoNum) return;
 	
 	CurrentAmmoSequence += NewCurrentAmmoNum-CurrentAmmoNum;
 	CurrentAmmoNum = NewCurrentAmmoNum;
 	OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum,PlayEffect);
+	//GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red,FString::Printf(TEXT("%d Current %d"),HasAuthority(),CurrentAmmoNum));
 }
 
 void ASWeapon::ServerSetCurrentAmmoNum_Implementation(int NewCurrentAmmoNum, bool PlayEffect)
@@ -686,6 +687,7 @@ void ASWeapon::ServerSetCurrentAmmoNum_Implementation(int NewCurrentAmmoNum, boo
 	ClientSyncCurrentAmmo(NewCurrentAmmoNum, NewCurrentAmmoNum-CurrentAmmoNum);
 	CurrentAmmoNum = NewCurrentAmmoNum;
 	OnCurrentAmmoChanged.Broadcast(CurrentAmmoNum,PlayEffect);
+	//GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red,FString::Printf(TEXT("%d Current %d"),HasAuthority(),CurrentAmmoNum));
 }
 
 void ASWeapon::ClientSyncCurrentAmmo_Implementation(int ServerAmmo, int ChangedNum)
@@ -703,13 +705,14 @@ void ASWeapon::SetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect)
 	ServerSetBackUpAmmoNum(NewBackUpAmmoNum,PlayEffect);
 }
 
-void ASWeapon::LocalSetBackUpAmmoNum(int NewBackUpAmmoNum, bool PlayEffect)
+void ASWeapon::LocalSetBackUpAmmoNum_Implementation(int NewBackUpAmmoNum, bool PlayEffect)
 {
 	if(BackUpAmmoNum == NewBackUpAmmoNum) return;
 	
 	BackUpAmmoSequence += NewBackUpAmmoNum-BackUpAmmoNum;
 	BackUpAmmoNum = NewBackUpAmmoNum;
 	OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum,PlayEffect);
+	//GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red,FString::Printf(TEXT("%d BackUp %d"),HasAuthority(),BackUpAmmoNum));
 }
 
 void ASWeapon::ServerSetBackUpAmmoNum_Implementation(int NewBackUpAmmoNum, bool PlayEffect)
@@ -719,6 +722,7 @@ void ASWeapon::ServerSetBackUpAmmoNum_Implementation(int NewBackUpAmmoNum, bool 
 	ClientSyncBackUpAmmo(NewBackUpAmmoNum, NewBackUpAmmoNum-BackUpAmmoNum);
 	BackUpAmmoNum = NewBackUpAmmoNum;
 	OnBackUpAmmoChanged.Broadcast(BackUpAmmoNum,PlayEffect);
+	//GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red,FString::Printf(TEXT("%d BackUp %d"),HasAuthority(),BackUpAmmoNum));
 }
 
 void ASWeapon::ClientSyncBackUpAmmo_Implementation(int ServerAmmo, int ChangedNum)
