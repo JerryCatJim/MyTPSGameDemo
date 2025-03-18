@@ -1160,7 +1160,6 @@ void ASWeapon::Destroyed()
 	
 }
 
-
 //一个模板
 void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -1174,6 +1173,7 @@ void ASWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(ASWeapon, WeaponName);
 	DOREPLIFETIME(ASWeapon, WeaponPickUpInfo);
 	DOREPLIFETIME(ASWeapon, bCanDropDown);
+	DOREPLIFETIME(ASWeapon, bCanManuallyDiscard);
 	DOREPLIFETIME(ASWeapon, WeaponEquipType);
 	DOREPLIFETIME(ASWeapon, EyeLocation);
 	DOREPLIFETIME(ASWeapon, EyeRotation);

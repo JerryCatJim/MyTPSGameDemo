@@ -114,13 +114,17 @@ protected:
 	virtual void BeginPlay() override;
 
 	void SwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+	UFUNCTION(Server, Reliable)  //标记Server等RPC方法后不让TEnumAsByte做参数？(TEnumAsByte标记后，将值包装为了一个结构体)
+	void ServerSwapWeapon(EWeaponEquipType NewWeaponEquipType, bool Immediately);
 	void LocalSwapWeapon(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
+
+	UFUNCTION(Server, Reliable)
+	void ServerStopSwapWeapon(bool bWaitCurrentWeaponReplicated);
+	void LocalStopSwapWeapon(bool bWaitCurrentWeaponReplicated);
+	
 	void DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipType> NewWeaponEquipType, bool Immediately);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ClientSyncPlaySwapWeaponAnim(EWeaponEquipType NewWeaponEquipType, bool Immediately);
-
-	UFUNCTION(Server, Reliable)  //标记Server等RPC方法后不让TEnumAsByte做参数？(TEnumAsByte标记后，将值包装为了一个结构体)
-	void ServerSwapWeapon(EWeaponEquipType NewWeaponEquipType, bool Immediately);
 
 	//武器在服务器生成后复制到客户端有延迟，需要复制完成后再调用委托做一些初始化操作
 	UFUNCTION()

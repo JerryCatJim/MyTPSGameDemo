@@ -236,7 +236,15 @@ void UWeaponManagerComponent::DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipT
 		//若要切换位置的武器已经被装备为当前武器则无事发生
 		if(CurrentWeapon == GetWeaponByEquipType(WeaponEquipType))
 		{
-			StopSwapWeapon(false);
+			//由于这是双端函数，所以分开处理，不要只写StopSwapWeapon导致执行两次，还可能因为延迟而本地预测先Stop后取消了服务器的Stop
+			if(HasAuthority())
+			{
+				ServerStopSwapWeapon(false);
+			}
+			else
+			{
+				LocalStopSwapWeapon(false);
+			}
 			return;
 		}
 		CurrentWeapon->AttachToComponent(MyOwnerPlayer->GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, GetWeaponSocketName(CurrentWeapon->GetWeaponEquipType()));
@@ -247,7 +255,7 @@ void UWeaponManagerComponent::DealSwapWeaponAttachment(TEnumAsByte<EWeaponEquipT
 	if(!HasAuthority())
 	{
 		//客户端需等待服务器完成判断，在此之前本地虽结束了动画播放和计时器，但bIsSwapping状态应该仍为true，以禁止当前武器开火
-		StopSwapWeapon(true);
+		LocalStopSwapWeapon(true);
 		return;
 	}
 
@@ -516,22 +524,50 @@ void UWeaponManagerComponent::StopSwapWeapon(bool bWaitCurrentWeaponReplicated)
 {
 	if(!MyOwnerPlayer) return;
 
-	if(GetWorld())
+	if(!HasAuthority())  //本地只处理一些表现效果，权威端在服务器
 	{
-		GetWorld()->GetTimerManager().ClearTimer(SwapWeaponTimer);
-	}
-	MyOwnerPlayer->StopAnimMontage(CurrentSwapWeaponAnim);
-	CurrentSwapWeaponAnim = nullptr;
-
-	if(HasAuthority())
-	{
-		bIsSwappingWeapon = false;
-		bIsSwappingWeaponLocally = false;
+		//分开处理是为了高延迟下客户端也能立刻响应一些表现
+		ServerStopSwapWeapon(bWaitCurrentWeaponReplicated);
+		LocalStopSwapWeapon(bWaitCurrentWeaponReplicated);
 		return;
 	}
 	
+	if(HasAuthority())
+	{
+		if(GetWorld())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(SwapWeaponTimer);
+		}
+		if(CurrentSwapWeaponAnim != nullptr)
+		{
+			MyOwnerPlayer->StopAnimMontage(CurrentSwapWeaponAnim);
+			CurrentSwapWeaponAnim = nullptr;
+		}
+		
+		bIsSwappingWeapon = false;
+		bIsSwappingWeaponLocally = false;
+	}
+}
+
+void UWeaponManagerComponent::ServerStopSwapWeapon_Implementation(bool bWaitCurrentWeaponReplicated)
+{
+	StopSwapWeapon(bWaitCurrentWeaponReplicated);
+}
+
+void UWeaponManagerComponent::LocalStopSwapWeapon(bool bWaitCurrentWeaponReplicated)
+{
 	if(IsLocallyControlled())
 	{
+		if(GetWorld())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(SwapWeaponTimer);
+		}
+		if(CurrentSwapWeaponAnim != nullptr)
+		{
+			MyOwnerPlayer->StopAnimMontage(CurrentSwapWeaponAnim);
+			CurrentSwapWeaponAnim = nullptr;
+		}
+		
 		//客户端需等待武器真正完成复制后才算完成交换(未实际交换时bWaitCurrentWeaponReplicated会填入false)
 		bIsSwappingWeapon = bWaitCurrentWeaponReplicated;
 		bIsSwappingWeaponLocally = bWaitCurrentWeaponReplicated;
@@ -584,10 +620,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 {
 	if(Immediately)
 	{
-		if(HasAuthority())  //客户端只播放动画
-		{
-			DealSwapWeaponAttachment(NewWeaponEquipType);
-		}
+		DealSwapWeaponAttachment(NewWeaponEquipType); //里面有一些武器吸附的表现动作，可以双端都进入，但是只有服务端修改值并网络复制给客户端
 	}
 	else
 	{
@@ -639,10 +672,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 				GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red,
 					FString::Printf(TEXT("%s的 SwapAnimPlayRate < 0 ！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
 			
-				if(HasAuthority())  //客户端只播放动画
-				{
-					DealSwapWeaponAttachment(NewWeaponEquipType);
-				}
+				DealSwapWeaponAttachment(NewWeaponEquipType); //里面有一些武器吸附的表现动作，可以双端都进入，但是只有服务端修改值并网络复制给客户端
 			}
 		}
 		else
@@ -651,10 +681,7 @@ void UWeaponManagerComponent::DealPlaySwapWeaponAnim(TEnumAsByte<EWeaponEquipTyp
 			GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red,
 				FString::Printf(TEXT("Swap%sAnim蒙太奇不存在！"),*TestEnumPtr->GetDisplayNameTextByValue(static_cast<uint8>(NewWeaponEquipType)).ToString()));
 				
-			if(HasAuthority())  //客户端只播放动画
-			{
-				DealSwapWeaponAttachment(NewWeaponEquipType);
-			}
+			DealSwapWeaponAttachment(NewWeaponEquipType); //里面有一些武器吸附的表现动作，可以双端都进入，但是只有服务端修改值并网络复制给客户端
 		}
 	}
 }
@@ -683,7 +710,15 @@ void UWeaponManagerComponent::OnRep_CurrentWeapon()
 	ShowAutoLockEnemyTipView();
 	
 	//服务器调用OnRep时会立刻将bIsSwappingWeapon赋值为false，客户端需等待OnRep完成复制时才改为false以保持同步
-	StopSwapWeapon(false);
+	//由于这是双端函数，所以分开处理，不要只写StopSwapWeapon导致本地复制后又向服务器申请一次双端Stop
+	if(HasAuthority())
+	{
+		ServerStopSwapWeapon(false);
+	}
+	else
+	{
+		LocalStopSwapWeapon(false);
+	}
 	
 	OnCurrentWeaponChanged.Broadcast();
 }
@@ -749,10 +784,6 @@ bool UWeaponManagerComponent::IsLocallyControlled()
 
 void UWeaponManagerComponent::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
-	StopFire();
-	StopReload();
-	StopSwapWeapon(false);
-	
 	if(AutoLockEnemyTipView)
 	{
 		AutoLockEnemyTipView->RemoveFromParent();
