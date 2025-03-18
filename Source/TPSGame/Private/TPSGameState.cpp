@@ -70,6 +70,18 @@ void ATPSGameState::SortPlayerScoreRank(int PlayerIdToIgnore, bool RemovePlayer)
 	SortPlayerRank_Stable(PlayerDataInGameArray, true);
 }
 
+void ATPSGameState::AddPlayerPoint(int PlayerID, int AddScore)
+{
+	if(!PlayerScoreBoard.Contains(PlayerID))
+	{
+		PlayerScoreBoard.Add(PlayerID, AddScore);
+	}
+	else
+	{
+		PlayerScoreBoard.Add(PlayerID, PlayerScoreBoard.FindRef(PlayerID)+ AddScore);
+	}
+}
+
 void ATPSGameState::AddTeamPoint(ETeam Team, int TeamScore, int PlayerID)
 {
 	switch(Team)
@@ -121,6 +133,24 @@ void ATPSGameState::UpdateScoreBoard(int PlayerID, ETeam Team, int AddScore)
 	}
 }
 
+int ATPSGameState::GetWinnerID(int& WinnerScore)
+{
+	TArray<int> TempKeysArray;
+	PlayerScoreBoard.GetKeys(TempKeysArray);
+	for(auto& TempID : TempKeysArray)
+	{
+		if(PlayerScoreBoard.Contains(TempID) && PlayerScoreBoard.FindRef(TempID) >= WinThreshold)
+		{
+			WinnerID = TempID;
+			WinnerScore = PlayerScoreBoard.FindRef(TempID);
+			WinningTeam = ETeam::ET_NoTeam;
+			return WinnerID;
+		}
+	}
+	WinnerScore = 0;
+	return -1;
+}
+
 ETeam ATPSGameState::GetWinningTeam()
 {
 	if(BlueTeamScore >= WinThreshold)
@@ -151,7 +181,7 @@ void ATPSGameState::OnMatchEnded(int NewWinnerID, ETeam NewWinningTeam)
 void ATPSGameState::Multi_OnMatchEnd_Implementation(int NewWinnerID, ETeam NewWinningTeam, int WinnerScore, bool IsTeamMatchMode)
 {
 	APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	if(PC)
+	if(PC && PC->IsLocalController())
 	{
 		ASCharacter* Player = Cast<ASCharacter>(PC->GetPawn());
 		if(Player) Player->OnMatchEnd(NewWinnerID, NewWinningTeam);

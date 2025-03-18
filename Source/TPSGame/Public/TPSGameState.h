@@ -32,7 +32,7 @@ public:
 	void PlayerLeaveGame(AController* Controller);
 
 	UFUNCTION(BlueprintCallable)
-	void AddPlayerPoint(int PlayerID, int AddScore){PlayerScoreBoard.Add(PlayerID, AddScore);}
+	void AddPlayerPoint(int PlayerID, int AddScore);
 	UFUNCTION(BlueprintCallable)
 	void AddTeamPoint(ETeam Team, int AddScore, int PlayerID);
 
@@ -43,6 +43,7 @@ public:
 	void UpdateScoreBoard(int PlayerID, ETeam Team, int PlayerScore);
 
 #pragma region GetterAndSetter
+	int GetWinnerID(UPARAM(ref) int& WinnerScore);
 	ETeam GetWinningTeam();
 
 	int GetTeamScore(ETeam Team);

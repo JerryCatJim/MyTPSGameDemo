@@ -126,18 +126,13 @@ bool ATPSGameMode::ReadyToEndMatch_Implementation()
 	{
 		if(!bIsTeamMatchMode)
 		{
-			TMap<int, int> TempMap = MyGameState->PlayerScoreBoard;
-			TArray<int> TempKeysArray;
-			TempMap.GetKeys(TempKeysArray);
-			for(auto& TempID : TempKeysArray)
+			int WinnerScore = 0;
+			WinnerID = MyGameState->GetWinnerID(WinnerScore);
+			if(WinnerID != -1)
 			{
-				if(TempMap.Find(TempID) && TempMap.FindRef(TempID) >= WinThreshold)
-				{
-					WinnerID = TempID;
-					WinningTeam = ETeam::ET_NoTeam;
-					OnMatchEnd.Broadcast(WinnerID, WinningTeam);
-					return true;
-				}
+				WinningTeam = ETeam::ET_NoTeam;
+				OnMatchEnd.Broadcast(WinnerID, WinningTeam);
+				return true;
 			}
 		}
 		else
