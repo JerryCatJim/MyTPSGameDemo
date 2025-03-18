@@ -12,8 +12,8 @@
 
 AShotgun::AShotgun()
 {
-	BulletSpread = 3;
-	ReloadPlayRate = 3;
+	BulletSpread = 3.f;
+	ReloadPlayRate = 4.f;
 	BaseDamage = 15.f;
 	HeadShotBonus = 4.f;
 	RateOfShoot = 100.f;
