@@ -205,7 +205,7 @@ void AProjectileWeapon::DrawMovementTrajectory()
 			
 			for(int i = 0; i < OutPoints.Num()-1 ; i += DrawTrajectoryJumpNum <= 0 ? 1 : DrawTrajectoryJumpNum)
 			{
-				TWeakObjectPtr<USplineMeshComponent> Spl = NewObject<USplineMeshComponent>(this, TEXT("SplineMesh" + i));
+				TWeakObjectPtr<USplineMeshComponent> Spl = NewObject<USplineMeshComponent>(SplineComponent, TEXT("SplineMesh" + i));
 				Spl->RegisterComponent();
 				//默认生成的是Static
 				Spl->SetMobility(EComponentMobility::Movable);
