@@ -44,7 +44,7 @@ public:
 	{
 		if(!HasGameBegun && NewHasGameBegun == true)
 		{
-			OnGameBegin.Broadcast(HasGameBegun);
+			OnGameBegin.Broadcast(NewHasGameBegun);
 		}
 		HasGameBegun = NewHasGameBegun;
 	}
