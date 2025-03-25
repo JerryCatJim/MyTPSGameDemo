@@ -31,6 +31,11 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void TryPickUpWeapon();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SetCanBePickedUp(bool CanBePickedUp);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_SetCanBePickedUp(bool CanBePickedUp);
 	
 protected:
 	// Called when the game starts or when spawned
@@ -59,6 +64,8 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void ThrowAfterSpawn();
+
+private:
 	
 public:
 	UPROPERTY(EditAnywhere, Category=Component)
@@ -99,4 +106,7 @@ protected:
 private:
 	//同一时间只能有一个可拾取武器发生重叠时间，记录正在发生重叠的武器是不是此武器自己
 	bool bIsThisTheOverlapOne = false;
+
+	//防止客户端在未完成一次拾取流程之前多次按键快速拾取武器导致刷新数据错误，加个锁
+	bool bCanBePickedUp = true;
 };

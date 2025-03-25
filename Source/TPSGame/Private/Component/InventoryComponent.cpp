@@ -99,13 +99,14 @@ bool UInventoryComponent::CheckIsValidIndex(int Index) const
 	return	Index >= 0 && Index <= InventorySize - 1;
 }
 
-void UInventoryComponent::InputAddItem()
+void UInventoryComponent::InputAddItem_Implementation()
 {
-	if(!CurrentFocusItem)
+	if(!IsValid(CurrentFocusItem))
 	{
 		return;
 	}
-	AddItem(CurrentFocusItem->ItemSlot, true);
+	const FMyItem InputItem = CurrentFocusItem->ItemSlot;
+	AddItem(InputItem, true);
 }
 
 void UInventoryComponent::AddItem_Implementation(FMyItem ItemToAdd, bool IsPickUp)

@@ -113,7 +113,7 @@ void APickUpWeapon::BeginPlay()
 void APickUpWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 }
 
 void APickUpWeapon::OnInteractKeyUp()
@@ -146,8 +146,13 @@ void APickUpWeapon::OnInteractKeyLongPressed()
 
 void APickUpWeapon::TryPickUpWeapon()
 {
-	if(LastOverlapPlayer)
+	if(LastOverlapPlayer && bCanBePickedUp && WeaponPickUpInfo.IsWeaponValid)
 	{
+		if(LastOverlapPlayer->IsLocallyControlled())
+		{
+			bCanBePickedUp = false;  //提前在本地设置为false，防止短时间内多次拾取因延迟而未同步属性导致错误
+		}
+		SetCanBePickedUp(false);
 		LastOverlapPlayer->PickUpWeapon(WeaponPickUpInfo);  //PickUpWeapon会在Server端执行OnPickUpWeapon的广播回到这个Actor
 	}
 }
@@ -172,7 +177,18 @@ void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInf
 			WeaponPickUpInfo.IsWeaponValid = NewInfo.IsWeaponValid;
 		}
 		OnRep_WeaponPickUpInfo();
+		SetCanBePickedUp(true);
 	}
+}
+
+void APickUpWeapon::SetCanBePickedUp_Implementation(bool CanBePickedUp)
+{
+	Multi_SetCanBePickedUp(CanBePickedUp);
+}
+
+void APickUpWeapon::Multi_SetCanBePickedUp_Implementation(bool CanBePickedUp)
+{
+	bCanBePickedUp = CanBePickedUp;
 }
 
 void APickUpWeapon::OnRep_WeaponPickUpInfo()

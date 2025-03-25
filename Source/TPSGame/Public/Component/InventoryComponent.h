@@ -69,7 +69,7 @@ public:
 
 	bool CheckIsValidIndex(int Index) const;
 	//留给外部调用的接口
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,Server,Reliable)
 	void InputAddItem();
 	UFUNCTION(BlueprintCallable)
 	void InputRemoveItem(int ArrayIndex = 0, int RemoveQuantity = 0);
