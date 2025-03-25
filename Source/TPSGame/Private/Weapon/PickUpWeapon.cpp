@@ -148,12 +148,16 @@ void APickUpWeapon::TryPickUpWeapon()
 {
 	if(LastOverlapPlayer && bCanBePickedUp && WeaponPickUpInfo.IsWeaponValid)
 	{
-		if(LastOverlapPlayer->IsLocallyControlled())
+		//WeaponManagerComponent里做了限制PickUp频率的Timer，如果在其不可拾取时设置自身的bCanBePickedUp会收不到反馈而导致此道具永远无法被拾取切换
+		if(LastOverlapPlayer->GetWeaponManagerComponent() && LastOverlapPlayer->GetWeaponManagerComponent()->GetCanPickUpWeapon())
 		{
-			bCanBePickedUp = false;  //提前在本地设置为false，防止短时间内多次拾取因延迟而未同步属性导致错误
+			if(LastOverlapPlayer->IsLocallyControlled())
+			{
+				bCanBePickedUp = false;  //提前在本地设置为false，防止短时间内多次拾取因延迟而未同步属性导致错误
+			}
+			SetCanBePickedUp(false);
+			LastOverlapPlayer->PickUpWeapon(WeaponPickUpInfo);  //PickUpWeapon会在Server端执行OnPickUpWeapon的广播回到这个Actor
 		}
-		SetCanBePickedUp(false);
-		LastOverlapPlayer->PickUpWeapon(WeaponPickUpInfo);  //PickUpWeapon会在Server端执行OnPickUpWeapon的广播回到这个Actor
 	}
 }
 

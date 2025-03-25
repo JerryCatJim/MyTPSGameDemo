@@ -109,6 +109,10 @@ public:
 			OnRep_IsAutoLockEnemy();
 		}
 	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool GetCanPickUpWeapon() const { return bCanPickUpWeapon; }
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
