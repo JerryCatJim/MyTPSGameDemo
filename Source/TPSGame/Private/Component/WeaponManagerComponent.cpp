@@ -302,12 +302,25 @@ void UWeaponManagerComponent::ResetWeaponZoom()
 void UWeaponManagerComponent::PickUpWeapon(FWeaponPickUpInfo WeaponInfo)
 {
 	if(!MyOwnerPlayer) return;
+
+	if(!bCanPickUpWeapon) return;
 	
 	//要先StopFire再StopReload，否则会导致0子弹时更换武器，StopFire中因为0子弹又执行了一次Reload，生成武器后的新武器子弹数没及时刷新时又执行一次换弹
 	//(当然，你也可以生成时再执行一次StopReload，但我感觉那样不好)
 	StopFire();
 	StopReload();
 	StopSwapWeapon(false);
+
+	bCanPickUpWeapon = false;
+	if(GetWorld())
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			PickUpWeaponCooldownTimer,
+			this,
+			&UWeaponManagerComponent::SetCanPickUpWeaponToTrue,
+			PickUpWeaponCooldown
+			);
+	}
 	
 	//客户端或服务端都应在拾取武器时停止开火，但是生成新武器等操作仅在服务端执行
 	DealPickUpWeapon(WeaponInfo);

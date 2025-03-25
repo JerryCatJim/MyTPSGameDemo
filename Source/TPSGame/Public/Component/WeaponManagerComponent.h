@@ -234,6 +234,9 @@ protected:
 	//记录客户端本地的交换武器状态，防止延迟较高时，本地预测的先行状态被服务器覆盖了旧时间的状态
 	bool bIsSwappingWeaponLocally;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= Weapon)  //给拾取武器行为加个冷却，防止一直触发
+	bool bCanPickUpWeapon = true;
+
 	//为玩家生成武器
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= Weapon)
 	TSubclassOf<ASWeapon> MainWeaponClass;
@@ -295,4 +298,9 @@ private:
 	
 	UPROPERTY()
 	class UUserWidget* AutoLockEnemyTipView;
+
+	FTimerHandle PickUpWeaponCooldownTimer;
+	float PickUpWeaponCooldown = 0.7f;
+	UFUNCTION()
+	void SetCanPickUpWeaponToTrue(){ bCanPickUpWeapon = true; }
 };
