@@ -143,6 +143,7 @@ void UTPSMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionR
 	if (!bWasSuccessful || SessionResults.Num() == 0)
 	{
 		JoinButton->SetIsEnabled(true);
+		FindButton->SetIsEnabled(true);
 	}
 }
 
