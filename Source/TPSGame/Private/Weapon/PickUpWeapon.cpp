@@ -177,8 +177,16 @@ void APickUpWeapon::Server_ResetPickUpWeaponInfo_Implementation(FWeaponPickUpInf
 		}
 		else
 		{
-			//如果FWeaponPickUpInfo结构体中的指针在传过来是就为nullptr，赋值时不会保留指针而是直接回收，导致连WeaponPickUpInfo.WeaponMesh/WeaponClass都会直接报错导致程序崩溃
-			WeaponPickUpInfo.IsWeaponValid = NewInfo.IsWeaponValid;
+			if(bCanInteractKeyLongPress)
+			{
+				//如果是常驻的可拾取道具，被传入空武器时则不会改变自身，即表现为使玩家凭空拾取出一把武器
+				//Do Nothing.
+			}
+			else
+			{
+				//如果FWeaponPickUpInfo结构体中的指针在传过来是就为nullptr，赋值时不会保留指针而是直接回收，导致连WeaponPickUpInfo.WeaponMesh/WeaponClass都会直接报错导致程序崩溃
+				WeaponPickUpInfo.IsWeaponValid = NewInfo.IsWeaponValid;
+			}
 		}
 		OnRep_WeaponPickUpInfo();
 		SetCanBePickedUp(true);
