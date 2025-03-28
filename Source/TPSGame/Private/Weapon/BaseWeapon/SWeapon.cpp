@@ -288,12 +288,7 @@ void ASWeapon::Fire()
 	if(!CheckOwnerValidAndAlive() || (MyOwner && MyOwner->GetIsSwappingWeapon()))
 	{
 		//射击时被人打死或者高延迟下导致了先切枪后射击，如果不调用StopFire()会一直尝试射击
-		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
-		MyOwner->SetIsFiring(false);
-		if(GetWorld())
-		{
-			GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot);
-		}
+		StopFire();
 		return;
 	}
 	
@@ -313,7 +308,12 @@ void ASWeapon::Fire()
 			MyOwner->SetIsFiring(false);
 			return;
 		}
-		//
+		//没直接调用StopFire是因为StopAnimMontage时人物会动一下，不希望这样
+		MyOwner->SetIsFiring(false);
+		if(GetWorld())
+		{
+			GetWorldTimerManager().ClearTimer(TimerHandle_TimerBetweenShot); 
+		}
 		return;
 	}
 	
@@ -436,7 +436,7 @@ void ASWeapon::StopFire()
 	//所以收到StopFire()请求时，把SetIsFiring(false)和StopTimer放在一起执行防止延迟，并且Client和Server都立刻执行而不是Server通过Multi函数通知Client
 	StopFireAnimAndTimer();
 	
-	if(CurrentAmmoNum == 0)
+	if(CurrentAmmoNum == 0 && !MyOwner->GetIsReloading())
 	{
 		Reload(true);
 	}
@@ -454,7 +454,7 @@ void ASWeapon::LocalStopFire()
 	
 	StopFireAnimAndTimer();
 	
-	if(CurrentAmmoNum == 0)
+	if(CurrentAmmoNum == 0 && !MyOwner->GetIsReloading())
 	{
 		LocalReload(true);
 	}
